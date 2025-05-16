@@ -2,6 +2,7 @@ package com.aiepoissac.busapp.data.busarrival
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.time.Duration
 import java.time.LocalDateTime
 
 @Serializable
@@ -27,5 +28,13 @@ data class Bus (
 ) {
     fun isValid(): Boolean {
         return this.estimatedArrival != LocalDateTime.MIN
+    }
+
+    fun getDuration() : Int {
+        return if (this.isValid()) {
+            Duration.between(LocalDateTime.now(), this.estimatedArrival).toMinutes().toInt()
+        } else {
+            -1;
+        }
     }
 }

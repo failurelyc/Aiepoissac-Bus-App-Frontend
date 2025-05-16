@@ -1,12 +1,14 @@
 package com.aiepoissac.busapp.data.busarrival
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
@@ -44,7 +46,8 @@ object DoubleStringSerializer : KSerializer<Double> {
 object LocalDateTimeDeserializer : KSerializer<LocalDateTime> {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
 
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): LocalDateTime {
         // Get the string value and parse it using the formatter
@@ -62,14 +65,20 @@ object LocalDateTimeDeserializer : KSerializer<LocalDateTime> {
     }
 }
 
-fun getBusArrivalData(busStopCode: Int): BusStop {
+fun getBusArrival(busStopCode: Int): BusStop = runBlocking {
 
+    return@runBlocking Json.decodeFromString<BusStop>(getBusArrivalData(busStopCode))
+
+}
+
+private suspend fun getBusArrivalData(busStopCode: Int): String = withContext(Dispatchers.IO) {
     val url = URL("https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival?BusStopCode=$busStopCode")
     val connection = url.openConnection() as HttpURLConnection
     connection.requestMethod = "GET"
     connection.setRequestProperty("AccountKey", "***REMOVED***")
     connection.setRequestProperty("accept", "application/json")
     connection.connect()
+
     if (connection.responseCode != 200) {
         throw RuntimeException(connection.responseMessage)
     } else {
@@ -79,7 +88,6 @@ fun getBusArrivalData(busStopCode: Int): BusStop {
             result.append(scanner.nextLine())
         }
         scanner.close()
-        return Json.decodeFromString<BusStop>(result.toString())
-    }
-
+        return@withContext result.toString()
+        }
 }
