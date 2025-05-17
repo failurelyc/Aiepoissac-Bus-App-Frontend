@@ -1,11 +1,15 @@
 package com.aiepoissac.busapp.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
@@ -20,6 +24,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -57,16 +63,20 @@ fun BusStopCodeForBusArrival(
     onKeyBoardDone: () -> Unit,
     busStopCodeInput: String) {
 
+    val configuration = LocalConfiguration.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
     ) {
-        Text(
-            fontSize = 36.sp,
-            text = "Bus Arrival Time",
-            modifier = Modifier.padding(8.dp)
-        )
+        if (configuration.orientation == 1) {
+            Text(
+                fontSize = 36.sp,
+                text = "Bus Arrival Time",
+                modifier = Modifier.padding(8.dp)
+            )
+        }
         OutlinedTextField(
             value = busStopCodeInput,
             singleLine = true,
@@ -91,6 +101,7 @@ fun BusArrivalsList(
     onRefresh: () -> Unit) {
 
     val data: BusStop? = uiState.busArrivalData
+    val configuration = LocalConfiguration.current
 
     if (uiState.networkIssue) {
         Text(
@@ -99,17 +110,22 @@ fun BusArrivalsList(
             modifier = Modifier.padding(8.dp)
         )
     } else if (data != null && data.services.isNotEmpty()) {
-        Text(
-            fontSize = 24.sp,
-            text = "Bus Stop ${data.busStopCode}",
-            modifier = Modifier.padding(8.dp)
-        )
+        if (configuration.orientation == 1) {
+            Text(
+                fontSize = 24.sp,
+                text = "Bus Stop ${data.busStopCode}",
+                modifier = Modifier.padding(8.dp)
+            )
+        }
         PullToRefreshBox(
             isRefreshing = uiState.isRefreshing,
             onRefresh = onRefresh,
             modifier = Modifier
         ) {
-            LazyColumn(modifier = Modifier) {
+            LazyVerticalGrid (
+                modifier = Modifier,
+                columns = GridCells.Adaptive(minSize = 320.dp)
+            ) {
                 items(data.services) { service ->
                     BusArrivalsLayout(data = service)
                 }
@@ -142,11 +158,18 @@ fun BusArrivalsLayout(data: BusService) {
                     .padding(8.dp)
             )
             Text(
+                text = "To: ${data.nextBus.destinationCode}",
+                fontSize = 12.sp,
+                modifier = Modifier
+                    .align(alignment = Alignment.CenterHorizontally)
+                    .padding(horizontal = 8.dp)
+            )
+            Text(
                 text = data.operator,
                 fontSize = 12.sp,
                 modifier = Modifier
                     .align(alignment = Alignment.CenterHorizontally)
-                    .padding(8.dp)
+                    .padding(horizontal = 8.dp)
             )
         }
         Card(modifier = Modifier.weight(2f)) {
@@ -178,41 +201,38 @@ fun BusArrivalsLayout(data: BusService) {
 
 @Composable
 fun BusArrivalLayout(data: Bus, modifier: Modifier = Modifier) {
-
+    val busArrivalViewModel: BusArrivalViewModel = viewModel()
     Surface(
-        color =
-            if (data.monitored == 0) {
-                Color.LightGray
-            } else if (data.load == "SEA") {
-                Color.Green
-            } else if (data.load == "SDA") {
-                Color.Yellow
-            } else if (data.load == "LSD") {
-                Color.Red
-            } else {
-                Color.Black
-            },
+        color = busArrivalViewModel.getBusArrivalColor(data),
         modifier = modifier
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = data.type,
-                color = Color.Black,
-                fontSize = 24.sp,
-                modifier = Modifier.padding(4.dp)
+//            Text(
+//                text = data.type,
+//                color = Color.Black,
+//                fontSize = 24.sp,
+//                modifier = Modifier.padding(4.dp)
+//            )
+
+            Image(
+                painter = painterResource(id = busArrivalViewModel.busTypeToPicture(data)),
+                contentDescription = "Bus Image",
+                modifier = Modifier.heightIn(max = 80.dp).widthIn(max = 80.dp)
             )
+
             Text(
                 text = "${data.getDuration()} min",
                 color = Color.Black,
-                modifier = Modifier.padding(4.dp)
+                modifier = Modifier.padding(horizontal = 4.dp)
             )
             if (data.visitNumber != "1") {
                 Text(
-                    text = "Visit: ${data.visitNumber}",
+                    text = "(Visit: ${data.visitNumber})",
                     color = Color.Black,
-                    modifier = Modifier.padding(4.dp)
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(horizontal = 4.dp)
                 )
             }
 
