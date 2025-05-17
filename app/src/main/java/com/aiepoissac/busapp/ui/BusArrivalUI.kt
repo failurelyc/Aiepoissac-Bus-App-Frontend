@@ -19,6 +19,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -35,6 +36,7 @@ import com.aiepoissac.busapp.data.busarrival.Bus
 import com.aiepoissac.busapp.data.busarrival.BusService
 import com.aiepoissac.busapp.data.busarrival.BusStop
 import com.aiepoissac.busapp.ui.theme.AiepoissacBusAppTheme
+import kotlinx.coroutines.delay
 
 @Composable
 fun BusArrivalUI(busArrivalViewModel: BusArrivalViewModel = viewModel()) {
@@ -144,6 +146,7 @@ fun BusArrivalsList(
 
 @Composable
 fun BusArrivalsLayout(data: BusService) {
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -178,21 +181,9 @@ fun BusArrivalsLayout(data: BusService) {
                     .fillMaxWidth()
                     .padding(16.dp)
                 ) {
-                if (data.nextBus.isValid()) {
-                    BusArrivalLayout(data = data.nextBus, modifier = Modifier.weight(1f))
-                } else {
-                    BusArrivalEmptyLayout(modifier = Modifier.weight(1f))
-                }
-                if (data.nextBus2.isValid()) {
-                    BusArrivalLayout(data = data.nextBus2, modifier = Modifier.weight(1f))
-                } else {
-                    BusArrivalEmptyLayout(modifier = Modifier.weight(1f))
-                }
-                if (data.nextBus3.isValid()) {
-                    BusArrivalLayout(data = data.nextBus3, modifier = Modifier.weight(1f))
-                } else {
-                    BusArrivalEmptyLayout(modifier = Modifier.weight(1f))
-                }
+                BusArrivalLayout(data = data.nextBus, modifier = Modifier.weight(1f))
+                BusArrivalLayout(data = data.nextBus2, modifier = Modifier.weight(1f))
+                BusArrivalLayout(data = data.nextBus3, modifier = Modifier.weight(1f))
             }
         }
 
@@ -201,7 +192,9 @@ fun BusArrivalsLayout(data: BusService) {
 
 @Composable
 fun BusArrivalLayout(data: Bus, modifier: Modifier = Modifier) {
+
     val busArrivalViewModel: BusArrivalViewModel = viewModel()
+
     Surface(
         color = busArrivalViewModel.getBusArrivalColor(data),
         modifier = modifier
@@ -222,35 +215,27 @@ fun BusArrivalLayout(data: Bus, modifier: Modifier = Modifier) {
                 modifier = Modifier.heightIn(max = 80.dp).widthIn(max = 80.dp)
             )
 
-            Text(
-                text = "${data.getDuration()} min",
-                color = Color.Black,
-                modifier = Modifier.padding(horizontal = 4.dp)
-            )
-            if (data.visitNumber != "1") {
+            if (data.isValid()) {
                 Text(
-                    text = "(Visit: ${data.visitNumber})",
+                    text = "${data.getDuration()} min",
                     color = Color.Black,
-                    fontSize = 10.sp,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+                if (data.visitNumber != "1") {
+                    Text(
+                        text = "(Visit: ${data.visitNumber})",
+                        color = Color.Black,
+                        fontSize = 10.sp,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                }
+            } else {
+                Text(
+                    text = "-",
+                    color = Color.Black,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
             }
-
-        }
-    }
-}
-
-@Composable
-fun BusArrivalEmptyLayout(modifier: Modifier = Modifier) {
-    Surface(modifier = modifier) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "NA",
-                fontSize = 24.sp,
-                modifier = Modifier.padding(4.dp)
-            )
 
         }
     }

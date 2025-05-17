@@ -68,23 +68,36 @@ class BusArrivalViewModel : ViewModel() {
         } else if (bus.type == "BD") {
             R.drawable.bd
         } else {
-            R.drawable.bd
+            R.drawable.na
         }
     }
 
     fun getBusArrivalColor(bus: Bus): Color {
-        return if (bus.monitored == 0) {
-            Color.LightGray
-        } else if (bus.load == "SEA") {
-            Color.Green
-        } else if (bus.load == "SDA") {
-            Color.Yellow
-        } else if (bus.load == "LSD") {
-            Color.Red
+        return if(bus.isValid()) {
+            if (bus.monitored == 0) {
+                Color.White
+            } else if (bus.load == "SEA") {
+                Color.Green
+            } else if (bus.load == "SDA") {
+                Color.Yellow
+            } else if (bus.load == "LSD") {
+                Color.Red
+            } else {
+                Color.Black //Invalid data
+            }
         } else {
-            Color.Black
+            Color.LightGray
         }
 
+    }
+
+    init {
+        viewModelScope.launch {
+            while (true) {
+                refreshBusArrival()
+                delay(60000)
+            }
+        }
     }
 
 }
