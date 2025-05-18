@@ -30,7 +30,9 @@ class BusArrivalViewModel : ViewModel() {
 
 
     fun updateBusStopCodeInput(busStopCodeInput: String) {
-        this.busStopCodeInput = busStopCodeInput
+        if (busStopCodeInput.length <= 5) {
+            this.busStopCodeInput = busStopCodeInput
+        }
     }
 
     fun updateBusStop() {
@@ -39,7 +41,8 @@ class BusArrivalViewModel : ViewModel() {
                 _uiState.update {
                     BusArrivalUIState(busStopCodeInput = busStopCodeInput,
                         busArrivalData = getBusArrival(busStopCodeInput.toInt())
-                    ) }
+                    )
+                }
             } catch (e: NumberFormatException) {
                 _uiState.update {
                     BusArrivalUIState(busStopCodeInput = busStopCodeInput) }

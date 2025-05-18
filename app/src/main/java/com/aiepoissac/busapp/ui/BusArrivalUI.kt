@@ -19,7 +19,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -28,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,7 +36,6 @@ import com.aiepoissac.busapp.data.busarrival.Bus
 import com.aiepoissac.busapp.data.busarrival.BusService
 import com.aiepoissac.busapp.data.busarrival.BusStop
 import com.aiepoissac.busapp.ui.theme.AiepoissacBusAppTheme
-import kotlinx.coroutines.delay
 
 @Composable
 fun BusArrivalUI(busArrivalViewModel: BusArrivalViewModel = viewModel()) {
@@ -85,13 +84,12 @@ fun BusStopCodeForBusArrival(
             onValueChange = onBusStopCodeChanged,
             label = {Text("Bus Stop Code")},
             isError = false,
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Done,
+                keyboardType = KeyboardType.Number),
             keyboardActions = KeyboardActions(onDone = {onKeyBoardDone()}),
             modifier = Modifier.padding(16.dp)
         )
-
-
-
     }
 
 }
@@ -107,7 +105,7 @@ fun BusArrivalsList(
 
     if (uiState.networkIssue) {
         Text(
-            text = "Error in getting data. Check your internet connection!",
+            text = "Error in getting data. \nCheck your internet connection!",
             fontSize = 24.sp,
             modifier = Modifier.padding(8.dp)
         )

@@ -11,6 +11,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.LocalDateTime
@@ -80,7 +81,7 @@ private suspend fun getBusArrivalData(busStopCode: Int): String = withContext(Di
     connection.connect()
 
     if (connection.responseCode != 200) {
-        throw RuntimeException(connection.responseMessage)
+        throw IOException(connection.responseMessage)
     } else {
         val result = StringBuilder()
         val scanner = Scanner(connection.inputStream)
