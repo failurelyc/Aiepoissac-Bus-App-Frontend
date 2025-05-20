@@ -12,11 +12,16 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -28,6 +33,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,23 +43,95 @@ import com.aiepoissac.busapp.data.busarrival.BusService
 import com.aiepoissac.busapp.data.busarrival.BusStop
 import com.aiepoissac.busapp.ui.theme.AiepoissacBusAppTheme
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BusArrivalUI(busArrivalViewModel: BusArrivalViewModel = viewModel()) {
 
     val busArrivalUIState by busArrivalViewModel.uiState.collectAsState()
+    val configuration = LocalConfiguration.current
 
-    Column (
-        modifier = Modifier.fillMaxWidth()
-
+    Scaffold (
+        topBar = {
+            if (configuration.orientation == 1) {
+                TopAppBar(
+                    colors = topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.primary,
+                    ),
+                    title = {
+                        Text("Bus Arrival")
+                    }
+                )
+            }
+        },
+        bottomBar = {
+            if (configuration.orientation == 1) {
+                BottomAppBar(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Surface(
+                            color = Color.Green,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "Seats Available",
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        Surface(
+                            color = Color.Yellow,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "Standing Available",
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        Surface(
+                            color = Color.Red,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "Standing Limited",
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        Surface(
+                            color = Color.White,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "At terminus/ start point",
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            }
+        }
     ) {
-        BusStopCodeForBusArrival(
-            onBusStopCodeChanged = { busArrivalViewModel.updateBusStopCodeInput(it) },
-            onKeyBoardDone = { busArrivalViewModel.updateBusStop() },
-            busStopCodeInput = busArrivalViewModel.busStopCodeInput
-        )
-        BusArrivalsList(
-            uiState = busArrivalUIState,
-            onRefresh = { busArrivalViewModel.refreshBusArrival() })
+        innerPadding ->
+        Column (
+            modifier = Modifier.padding(innerPadding)
+
+        ) {
+            BusStopCodeForBusArrival(
+                onBusStopCodeChanged = { busArrivalViewModel.updateBusStopCodeInput(it) },
+                onKeyBoardDone = { busArrivalViewModel.updateBusStop() },
+                busStopCodeInput = busArrivalViewModel.busStopCodeInput
+            )
+            BusArrivalsList(
+                uiState = busArrivalUIState,
+                onRefresh = { busArrivalViewModel.refreshBusArrival() })
+        }
     }
 
 }
@@ -64,20 +142,12 @@ fun BusStopCodeForBusArrival(
     onKeyBoardDone: () -> Unit,
     busStopCodeInput: String) {
 
-    val configuration = LocalConfiguration.current
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
     ) {
-        if (configuration.orientation == 1) {
-            Text(
-                fontSize = 36.sp,
-                text = "Bus Arrival Time",
-                modifier = Modifier.padding(8.dp)
-            )
-        }
+
         OutlinedTextField(
             value = busStopCodeInput,
             singleLine = true,
@@ -88,7 +158,7 @@ fun BusStopCodeForBusArrival(
                 imeAction = ImeAction.Done,
                 keyboardType = KeyboardType.Number),
             keyboardActions = KeyboardActions(onDone = {onKeyBoardDone()}),
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp).fillMaxWidth()
         )
     }
 
@@ -154,23 +224,20 @@ fun BusArrivalsLayout(data: BusService) {
             Text(
                 text = data.serviceNo,
                 fontSize = 36.sp,
-                modifier = Modifier
-                    .align(alignment = Alignment.CenterHorizontally)
-                    .padding(8.dp)
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
             Text(
                 text = "To: ${data.nextBus.destinationCode}",
                 fontSize = 12.sp,
-                modifier = Modifier
-                    .align(alignment = Alignment.CenterHorizontally)
-                    .padding(horizontal = 8.dp)
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
             Text(
                 text = data.operator,
                 fontSize = 12.sp,
-                modifier = Modifier
-                    .align(alignment = Alignment.CenterHorizontally)
-                    .padding(horizontal = 8.dp)
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
         }
         Card(modifier = Modifier.weight(2f)) {

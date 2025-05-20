@@ -79,19 +79,25 @@ class BusArrivalViewModel : ViewModel() {
         return if(bus.isValid()) {
             if (bus.monitored == 0) {
                 Color.White
-            } else if (bus.load == "SEA") {
-                Color.Green
-            } else if (bus.load == "SDA") {
-                Color.Yellow
-            } else if (bus.load == "LSD") {
-                Color.Red
             } else {
-                Color.Black //Invalid data
+                return getBusArrivalColor(bus.load)
             }
         } else {
             Color.LightGray
         }
 
+    }
+
+    fun getBusArrivalColor(s: String) : Color {
+        return if (s == "SEA") {
+            Color.Green
+        } else if (s == "SDA") {
+            Color.Yellow
+        } else if (s == "LSD") {
+            Color.Red
+        } else {
+            Color.Black //Invalid data
+        }
     }
 
     init {
