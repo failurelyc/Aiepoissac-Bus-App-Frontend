@@ -9,6 +9,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
@@ -32,6 +33,15 @@ private val LightColorScheme = lightColorScheme(
     onSurface = Color(0xFF1C1B1F),
     */
 )
+
+val GreenLight = Color(0xFF4CAF50) // Light mode green
+val GreenDark = Color(0xFF388E3C) // Dark mode green
+
+val YellowLight = Color(0xFFFFEB3B) // Light mode yellow
+val YellowDark = Color(0xFFFFC107) // Dark mode yellow
+
+val RedLight = Color(0xFFF44336) // Light mode red
+val RedDark = Color(0xFFD32F2F) // Dark mode red
 
 @Composable
 fun AiepoissacBusAppTheme(

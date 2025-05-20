@@ -3,10 +3,8 @@ package com.aiepoissac.busapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.aiepoissac.busapp.ui.BusArrivalUI
+import com.aiepoissac.busapp.ui.BusApp
 import com.aiepoissac.busapp.ui.theme.AiepoissacBusAppTheme
-
-private const val TAG = "MainActivity"
 
 class MainActivity : ComponentActivity() {
 
@@ -14,7 +12,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             AiepoissacBusAppTheme {
-                BusArrivalUI()
+                BusApp()
             }
         }
     }
