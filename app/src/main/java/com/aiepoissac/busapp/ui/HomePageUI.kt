@@ -19,6 +19,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.input.ImeAction
@@ -36,7 +37,7 @@ import androidx.navigation.compose.rememberNavController
 enum class Pages(val route: String, val title: String) {
     HomePage(route = "HomePage", title = "Home"),
     BusArrival(route = "BusArrival/{text}", title = "Bus Arrival Timings"),
-    BusService(route = "BusServiceInfo/{text}", title = "Bus Service Information");
+    BusServiceInformation(route = "BusServiceInfo/{text}", title = "Bus Service Information");
 
     fun withText(text: String): String {
         return route.replace("{text}", text)
@@ -98,8 +99,15 @@ fun BusApp(
                             busStopCodeInput = text
                         )
                 }
+                composable(route = Pages.BusServiceInformation.route) {
+                    backStackEntry ->
+                        val text = backStackEntry.arguments?.getString("text") ?: ""
+                        BusServiceUI(
+                            navController = navController,
+                            busServiceInput = text
+                        )
+                }
             }
-
     }
 
 }
@@ -121,14 +129,20 @@ fun HomePageUI(
                 navigateToBusArrival(
                 navController = navController,
                 busStopInput = homePageViewModel.busArrivalBusStopCodeInput)
-                homePageViewModel.updateBusArrivalBusStopCodeInput(input = "")}
+                homePageViewModel.updateBusArrivalBusStopCodeInput(input = "")},
+            keyboardType = KeyboardType.Number
         )
         TextBox(
-            title = Pages.BusService.title,
+            title = Pages.BusServiceInformation.title,
             label = "Service No.",
-            text = homePageViewModel.busServiceInput,
-            onValueChange = { homePageViewModel.updateBusServiceInput(it) },
-            onDone = { }
+            text = homePageViewModel.busServiceNoInput,
+            onValueChange = { homePageViewModel.updateBusServiceNoInput(it) },
+            onDone = {
+                navigateToBusServiceInformation(
+                    navController = navController,
+                    busServiceInput = homePageViewModel.busServiceNoInput
+                )
+            }
         )
 
 
@@ -141,7 +155,8 @@ fun TextBox(
     label: String,
     text: String = "",
     onValueChange: (String) -> Unit,
-    onDone: () -> Unit
+    onDone: () -> Unit,
+    keyboardType: KeyboardType = KeyboardType.Text
 ) {
     Card(
         modifier = Modifier
@@ -163,7 +178,7 @@ fun TextBox(
             isError = false,
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Done,
-                keyboardType = KeyboardType.Number),
+                keyboardType = keyboardType),
             keyboardActions = KeyboardActions(onDone = { onDone() }),
             modifier = Modifier.padding(16.dp).fillMaxWidth()
         )
@@ -203,7 +218,16 @@ fun BusAppBar(
 
 private fun navigateToBusArrival(
     navController: NavHostController,
-    busStopInput: String = "") {
+    busStopInput: String = ""
+) {
     navController.navigate(Pages.BusArrival.withText(busStopInput))
 }
+
+fun navigateToBusServiceInformation(
+    navController: NavHostController,
+    busServiceInput: String = ""
+) {
+    navController.navigate(Pages.BusServiceInformation.withText(busServiceInput))
+}
+
 

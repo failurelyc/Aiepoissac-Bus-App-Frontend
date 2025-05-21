@@ -67,7 +67,7 @@ object LocalDateTimeDeserializer : KSerializer<LocalDateTime> {
 
 suspend fun getBusArrival(busStopCode: Int): BusStop {
     val json = withContext(Dispatchers.IO) {
-        getBusArrivalData(busStopCode) // e.g. network or file call
+        getBusArrivalData(busStopCode)
     }
     return Json.decodeFromString<BusStop>(json)
 }
@@ -90,5 +90,5 @@ private suspend fun getBusArrivalData(busStopCode: Int): String = withContext(Di
         }
         scanner.close()
         return@withContext result.toString()
-        }
+    }
 }

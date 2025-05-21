@@ -10,7 +10,7 @@ class HomePageViewModel : ViewModel() {
     var busArrivalBusStopCodeInput by mutableStateOf("")
         private set
 
-    var busServiceInput by mutableStateOf("")
+    var busServiceNoInput by mutableStateOf("")
         private set
 
     fun updateBusArrivalBusStopCodeInput(input: String) {
@@ -19,9 +19,9 @@ class HomePageViewModel : ViewModel() {
         }
     }
 
-    fun updateBusServiceInput(input: String) {
+    fun updateBusServiceNoInput(input: String) {
         if (input.length <= 4) {
-            this.busServiceInput = input
+            this.busServiceNoInput = input
         }
     }
 }

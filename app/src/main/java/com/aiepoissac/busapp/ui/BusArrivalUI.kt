@@ -1,6 +1,7 @@
 package com.aiepoissac.busapp.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,7 +46,7 @@ import com.aiepoissac.busapp.data.busarrival.BusStop
 @Composable
 fun BusArrivalUI(
     navController: NavHostController,
-    busStopCodeInput: String) {
+    busStopCodeInput: String = "") {
 
 
     val busArrivalViewModel: BusArrivalViewModel =
@@ -65,7 +66,9 @@ fun BusArrivalUI(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Surface(
-                            color = Color.Green,
+                            color = busArrivalViewModel.getBusArrivalColor(
+                                s = "SEA",
+                                darkMode = isSystemInDarkTheme()),
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
@@ -76,7 +79,9 @@ fun BusArrivalUI(
                             )
                         }
                         Surface(
-                            color = Color.Yellow,
+                            color = busArrivalViewModel.getBusArrivalColor(
+                                s = "SDA",
+                                darkMode = isSystemInDarkTheme()),
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
@@ -87,7 +92,9 @@ fun BusArrivalUI(
                             )
                         }
                         Surface(
-                            color = Color.Red,
+                            color = busArrivalViewModel.getBusArrivalColor(
+                                s = "LSD",
+                                darkMode = isSystemInDarkTheme()),
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
@@ -98,7 +105,8 @@ fun BusArrivalUI(
                             )
                         }
                         Surface(
-                            color = Color.White,
+                            color = busArrivalViewModel.getBusArrivalColor(
+                                darkMode = isSystemInDarkTheme()),
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
@@ -126,7 +134,8 @@ fun BusArrivalUI(
                 )
                 BusArrivalsList(
                     uiState = busArrivalUIState,
-                    onRefresh = { busArrivalViewModel.refreshBusArrival() })
+                    onRefresh = { busArrivalViewModel.refreshBusArrival() },
+                    navController = navController)
             }
     }
 
@@ -137,7 +146,8 @@ fun BusStopCodeForBusArrival(
     onBusStopCodeChanged: (String) -> Unit,
     onKeyBoardDone: () -> Unit,
     busStopCodeInput: String,
-    isError: Boolean) {
+    isError: Boolean
+) {
 
     Card(
         modifier = Modifier
@@ -165,7 +175,8 @@ fun BusStopCodeForBusArrival(
 @Composable
 fun BusArrivalsList(
     uiState: BusArrivalUIState,
-    onRefresh: () -> Unit) {
+    onRefresh: () -> Unit,
+    navController: NavHostController) {
 
     val data: BusStop? = uiState.busArrivalData
     val configuration = LocalConfiguration.current
@@ -194,7 +205,9 @@ fun BusArrivalsList(
                 columns = GridCells.Adaptive(minSize = 320.dp)
             ) {
                 items(data.services) { service ->
-                    BusArrivalsLayout(data = service)
+                    BusArrivalsLayout(
+                        data = service,
+                        navController = navController)
                 }
             }
         }
@@ -210,13 +223,22 @@ fun BusArrivalsList(
 }
 
 @Composable
-fun BusArrivalsLayout(data: BusService) {
+fun BusArrivalsLayout(
+    navController: NavHostController,
+    data: BusService) {
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)) {
-        Card(modifier = Modifier.weight(1f)) {
+        Card(modifier = Modifier
+            .weight(1f)
+            .clickable {
+                navigateToBusServiceInformation(
+                    navController = navController,
+                    busServiceInput = data.serviceNo
+                )
+            }) {
 
             Text(
                 text = data.serviceNo,

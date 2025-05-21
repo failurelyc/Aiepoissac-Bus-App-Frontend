@@ -27,12 +27,12 @@ import kotlinx.coroutines.launch
 import java.io.IOException
 
 
-class BusArrivalViewModelFactory(private val busStopCodeInput: String): ViewModelProvider.Factory {
+class BusArrivalViewModelFactory(private val busStopCodeInput: String) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return if (modelClass.isAssignableFrom(BusArrivalViewModel::class.java)) {
             BusArrivalViewModel(busStopCodeInput) as T
         } else {
-            throw IllegalArgumentException("Unknown ViewModel Class")
+            throw IllegalArgumentException("Unknown View Model Class")
         }
     }
 }
@@ -56,7 +56,8 @@ class BusArrivalViewModel(initialBusStopCodeInput: String) : ViewModel() {
         viewModelScope.launch {
             try {
                 _uiState.update {
-                    BusArrivalUIState(busStopCodeInput = busStopCodeInput,
+                    BusArrivalUIState(
+                        busStopCodeInput = busStopCodeInput,
                         busArrivalData = getBusArrival(busStopCodeInput.toInt())
                     )
                 }
@@ -70,6 +71,7 @@ class BusArrivalViewModel(initialBusStopCodeInput: String) : ViewModel() {
             }
         }
     }
+
     fun refreshBusArrival() {
         _uiState.value = _uiState.value.copy(isRefreshing = true)
         viewModelScope.launch {
@@ -105,7 +107,7 @@ class BusArrivalViewModel(initialBusStopCodeInput: String) : ViewModel() {
 
     }
 
-    fun getBusArrivalColor(s: String, darkMode: Boolean = false) : Color {
+    fun getBusArrivalColor(s: String = "", darkMode: Boolean = false) : Color {
 
         return if (s == "SEA") {
             if (!darkMode) GreenLight else GreenDark
@@ -114,7 +116,7 @@ class BusArrivalViewModel(initialBusStopCodeInput: String) : ViewModel() {
         } else if (s == "LSD") {
             if (!darkMode) RedLight else RedDark
         } else {
-            Color.Black //Invalid data
+            if (!darkMode) Color.White else Color.LightGray //Invalid data
         }
     }
 
