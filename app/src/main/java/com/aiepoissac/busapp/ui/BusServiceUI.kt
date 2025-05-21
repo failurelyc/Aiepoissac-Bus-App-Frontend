@@ -1,7 +1,6 @@
 package com.aiepoissac.busapp.ui
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -22,12 +21,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.aiepoissac.busapp.data.businfo.BusServiceInfo
 
 @Composable
 fun BusServiceUI(
-    navController: NavController,
+    navController: NavHostController,
     busServiceInput: String
 ) {
 
@@ -47,7 +46,7 @@ fun BusServiceUI(
                 busServiceNoInput = busServiceViewModel.busServiceNoInput,
                 isError = busServiceUIState.busServiceList.isEmpty()
             )
-            BusServicesList(uiState = busServiceUIState)
+            BusServicesList(navController = navController, uiState = busServiceUIState)
         }
 
 
@@ -56,7 +55,7 @@ fun BusServiceUI(
 }
 
 @Composable
-fun BusServiceNoForBusServiceInformation(
+private fun BusServiceNoForBusServiceInformation(
     onBusServiceNoChanged: (String) -> Unit,
     onKeyBoardDone: () -> Unit,
     busServiceNoInput: String,
@@ -84,7 +83,10 @@ fun BusServiceNoForBusServiceInformation(
 }
 
 @Composable
-fun BusServicesList(uiState: BusServiceUIState) {
+private fun BusServicesList(
+    navController: NavHostController,
+    uiState: BusServiceUIState
+) {
 
     val data: List<BusServiceInfo> = uiState.busServiceList
 
@@ -93,20 +95,27 @@ fun BusServicesList(uiState: BusServiceUIState) {
         columns = GridCells.Adaptive(minSize = 320.dp)
     ) {
         items(data) { service ->
-            BusServiceInformation(data = service)
+            BusServiceInformation(navController = navController, data = service)
         }
     }
 
 }
 
 @Composable
-fun BusServiceInformation(data: BusServiceInfo) {
+private fun BusServiceInformation(
+    navController: NavHostController,
+    data: BusServiceInfo
+) {
     Card(
-        modifier = Modifier.padding(16.dp)
+        modifier = Modifier.padding(16.dp),
+        onClick = { navigateToBusRouteInformation(
+            navController = navController,
+            serviceNo = data.serviceNo,
+            direction = data.direction) }
     ) {
 
         Text(
-            text = "${data.category} ${data.serviceNo}" ,
+            text = "${data.operator} ${data.category} ${data.serviceNo}" ,
             fontSize = 36.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
@@ -135,7 +144,46 @@ fun BusServiceInformation(data: BusServiceInfo) {
             )
         }
 
+        if (data.hasAMPeakFrequency()) {
+            Text(
+                text = "0630H - 0830H: ${data.amPeakFreq} minutes",
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        if (data.hasAMOffPeakFrequency()) {
+            Text(
+                text = "0831H - 1659H: ${data.amOffPeakFreq} minutes",
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        if (data.hasPMPeakFrequency()) {
+            Text(
+                text = "1700H - 1900H: ${data.pmPeakFreq} minutes",
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        if (data.hasPMOffPeakFrequency()) {
+            Text(
+                text = "After 1900H: ${data.pmOffPeakFreq} minutes",
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
 
     }
+}
+
+fun navigateToBusRouteInformation(
+    navController: NavHostController,
+    serviceNo: String = "",
+    direction: Int
+) {
+    navController.navigate(Pages.BusRouteInformation.with2Text(serviceNo, direction.toString()))
 }

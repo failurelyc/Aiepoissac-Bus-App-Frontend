@@ -1,5 +1,7 @@
 package com.aiepoissac.busapp.ui
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,7 +21,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.input.ImeAction
@@ -37,16 +38,24 @@ import androidx.navigation.compose.rememberNavController
 enum class Pages(val route: String, val title: String) {
     HomePage(route = "HomePage", title = "Home"),
     BusArrival(route = "BusArrival/{text}", title = "Bus Arrival Timings"),
-    BusServiceInformation(route = "BusServiceInfo/{text}", title = "Bus Service Information");
+    BusServiceInformation(route = "BusServiceInfo/{text}", title = "Bus Service Information"),
+    BusRouteInformation(route = "BusRouteInfo/{text1}/{text2}", title = "Bus Route Information");
 
     fun withText(text: String): String {
         return route.replace("{text}", text)
+    }
+
+    fun with2Text(text1: String, text2: String): String {
+        return route.replace("{text1}", text1)
+            .replace("{text2}", text2)
     }
 
     companion object {
         fun getRoute(route: String): Pages {
             return when {
                 route.startsWith(BusArrival.route) -> BusArrival
+                route.startsWith(BusServiceInformation.route) -> BusServiceInformation
+                route.startsWith(BusRouteInformation.route) -> BusRouteInformation
                 else -> HomePage
             }
         }
@@ -107,6 +116,16 @@ fun BusApp(
                             busServiceInput = text
                         )
                 }
+                composable(route = Pages.BusRouteInformation.route) {
+                    backStackEntry ->
+                        val text1 = backStackEntry.arguments?.getString("text1") ?: ""
+                        val text2 = backStackEntry.arguments?.getString("text2") ?: ""
+                        BusRouteUI(
+                            navController = navController,
+                            serviceNo = text1,
+                            direction = text2.toInt()
+                        )
+                }
             }
     }
 
@@ -114,7 +133,7 @@ fun BusApp(
 
 @Preview
 @Composable
-fun HomePageUI(
+private fun HomePageUI(
     homePageViewModel: HomePageViewModel = viewModel(),
     navController: NavHostController = rememberNavController()
 ) {
@@ -125,12 +144,19 @@ fun HomePageUI(
             label = "Bus Stop Code",
             text = homePageViewModel.busArrivalBusStopCodeInput,
             onValueChange = { homePageViewModel.updateBusArrivalBusStopCodeInput(it) },
+            keyboardType = KeyboardType.Number,
             onDone = {
-                navigateToBusArrival(
-                navController = navController,
-                busStopInput = homePageViewModel.busArrivalBusStopCodeInput)
-                homePageViewModel.updateBusArrivalBusStopCodeInput(input = "")},
-            keyboardType = KeyboardType.Number
+                if (homePageViewModel.downloaded) {
+                    navigateToBusArrival(
+                        navController = navController,
+                        busStopInput = homePageViewModel.busArrivalBusStopCodeInput
+                    )
+                    homePageViewModel.updateBusArrivalBusStopCodeInput(input = "")
+                } else {
+                    displayNotDownloadToast(context = BusApplication.instance)
+                }
+            }
+
         )
         TextBox(
             title = Pages.BusServiceInformation.title,
@@ -138,10 +164,15 @@ fun HomePageUI(
             text = homePageViewModel.busServiceNoInput,
             onValueChange = { homePageViewModel.updateBusServiceNoInput(it) },
             onDone = {
-                navigateToBusServiceInformation(
-                    navController = navController,
-                    busServiceInput = homePageViewModel.busServiceNoInput
-                )
+                if (homePageViewModel.downloaded) {
+                    navigateToBusServiceInformation(
+                        navController = navController,
+                        busServiceInput = homePageViewModel.busServiceNoInput
+                    )
+                    homePageViewModel.updateBusServiceNoInput(input = "")
+                } else {
+                    displayNotDownloadToast(context = BusApplication.instance)
+                }
             }
         )
 
@@ -149,8 +180,12 @@ fun HomePageUI(
     }
 }
 
+private fun displayNotDownloadToast(context: Context) {
+    Toast.makeText(context, "Data still downloading", Toast.LENGTH_LONG).show()
+}
+
 @Composable
-fun TextBox(
+private fun TextBox(
     title: String,
     label: String,
     text: String = "",
@@ -180,14 +215,16 @@ fun TextBox(
                 imeAction = ImeAction.Done,
                 keyboardType = keyboardType),
             keyboardActions = KeyboardActions(onDone = { onDone() }),
-            modifier = Modifier.padding(16.dp).fillMaxWidth()
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
         )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BusAppBar(
+private fun BusAppBar(
     currentPage: Pages,
     canNavigateBack: Boolean,
     navigateUp: () -> Unit,
@@ -216,10 +253,11 @@ fun BusAppBar(
     )
 }
 
-private fun navigateToBusArrival(
+fun navigateToBusArrival(
     navController: NavHostController,
     busStopInput: String = ""
 ) {
+
     navController.navigate(Pages.BusArrival.withText(busStopInput))
 }
 

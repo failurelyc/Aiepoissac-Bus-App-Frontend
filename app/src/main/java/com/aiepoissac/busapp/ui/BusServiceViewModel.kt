@@ -8,7 +8,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.data.businfo.BusRepository
-import com.aiepoissac.busapp.data.businfo.BusServiceInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -57,7 +56,6 @@ class BusServiceViewModel(
                     busServiceList = busRepository.getBusService(busServiceNoInput).first()
                 )
             }
-            println("updated")
         }
     }
 

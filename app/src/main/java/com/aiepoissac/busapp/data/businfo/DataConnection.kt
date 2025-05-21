@@ -58,7 +58,25 @@ suspend fun populateBusServices(busRepository: BusRepository) {
                 busRepository.insertBusService(busServiceInfo)
             }
         }
+        i++
+    }
+}
 
+suspend fun populateBusRoutes(busRepository: BusRepository) {
+    busRepository.deleteAllBusRoutes()
+    var i = 0
+    while (true) {
+        val json = withContext(Dispatchers.IO) {
+            getData(dataType = BusDataType.BusRoutes, count = i * 500)
+        }
+        val busRoutesInfo: BusRoutesInfo = Json.decodeFromString<BusRoutesInfo>(json)
+        if (busRoutesInfo.value.isEmpty()) {
+            break
+        } else {
+            for (busRouteInfo in busRoutesInfo.value) {
+                busRepository.insertBusRoute(busRouteInfo)
+            }
+        }
         i++
     }
 }

@@ -5,10 +5,12 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [BusServiceInfo::class], version = 1, exportSchema = false)
+@Database(entities = [BusServiceInfo::class, BusRouteInfo::class], version = 1, exportSchema = false)
 abstract class BusDatabase: RoomDatabase() {
 
     abstract fun busServiceInfoDao(): BusServiceInfoDAO
+
+    abstract fun BusRouteInfoDAO(): BusRouteInfoDAO
 
     companion object {
         @Volatile

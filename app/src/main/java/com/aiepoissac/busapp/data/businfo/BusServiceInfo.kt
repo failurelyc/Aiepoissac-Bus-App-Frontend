@@ -31,5 +31,22 @@ data class BusServiceInfo(
     fun isLoop(): Boolean {
         return loopDesc.isNotEmpty();
     }
+
+    fun hasAMPeakFrequency(): Boolean {
+        return amPeakFreq != "-"
+    }
+
+    fun hasAMOffPeakFrequency(): Boolean {
+        return amOffPeakFreq != "-"
+    }
+
+    fun hasPMPeakFrequency(): Boolean {
+        return pmPeakFreq != "-"
+    }
+
+    fun hasPMOffPeakFrequency(): Boolean {
+        return pmOffPeakFreq != "-"
+    }
+
 }
 

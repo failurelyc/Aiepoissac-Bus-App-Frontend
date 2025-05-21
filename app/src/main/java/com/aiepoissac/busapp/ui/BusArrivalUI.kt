@@ -34,7 +34,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -142,7 +141,7 @@ fun BusArrivalUI(
 }
 
 @Composable
-fun BusStopCodeForBusArrival(
+private fun BusStopCodeForBusArrival(
     onBusStopCodeChanged: (String) -> Unit,
     onKeyBoardDone: () -> Unit,
     busStopCodeInput: String,
@@ -173,7 +172,7 @@ fun BusStopCodeForBusArrival(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BusArrivalsList(
+private fun BusArrivalsList(
     uiState: BusArrivalUIState,
     onRefresh: () -> Unit,
     navController: NavHostController) {
@@ -223,22 +222,25 @@ fun BusArrivalsList(
 }
 
 @Composable
-fun BusArrivalsLayout(
+private fun BusArrivalsLayout(
     navController: NavHostController,
     data: BusService) {
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)) {
-        Card(modifier = Modifier
+            .padding(16.dp)
+    ) {
+        Card(
+            modifier = Modifier
             .weight(1f)
             .clickable {
                 navigateToBusServiceInformation(
                     navController = navController,
                     busServiceInput = data.serviceNo
                 )
-            }) {
+            }
+        ) {
 
             Text(
                 text = data.serviceNo,
@@ -275,7 +277,7 @@ fun BusArrivalsLayout(
 }
 
 @Composable
-fun BusArrivalLayout(data: Bus, modifier: Modifier = Modifier) {
+private fun BusArrivalLayout(data: Bus, modifier: Modifier = Modifier) {
 
     val busArrivalViewModel: BusArrivalViewModel = viewModel()
 
