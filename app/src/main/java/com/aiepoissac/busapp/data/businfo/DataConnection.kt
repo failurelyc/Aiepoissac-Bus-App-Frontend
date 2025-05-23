@@ -80,3 +80,22 @@ suspend fun populateBusRoutes(busRepository: BusRepository) {
         i++
     }
 }
+
+suspend fun populateBusStops(busRepository: BusRepository) {
+    busRepository.deleteAllBusStops()
+    var i = 0
+    while (true) {
+        val json = withContext(Dispatchers.IO) {
+            getData(dataType = BusDataType.BusStops, count = i * 500)
+        }
+        val busStopsInfo: BusStopsInfo = Json.decodeFromString(json)
+        if (busStopsInfo.value.isEmpty()) {
+            break
+        } else {
+            for (busStopInfo in busStopsInfo.value) {
+                busRepository.insertBusStop(busStopInfo)
+            }
+        }
+        i++
+    }
+}

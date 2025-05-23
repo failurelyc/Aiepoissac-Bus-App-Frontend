@@ -65,14 +65,14 @@ object LocalDateTimeDeserializer : KSerializer<LocalDateTime> {
     }
 }
 
-suspend fun getBusArrival(busStopCode: Int): BusStop {
+suspend fun getBusArrival(busStopCode: String): BusStop {
     val json = withContext(Dispatchers.IO) {
         getBusArrivalData(busStopCode)
     }
     return Json.decodeFromString<BusStop>(json)
 }
 
-private suspend fun getBusArrivalData(busStopCode: Int): String = withContext(Dispatchers.IO) {
+private suspend fun getBusArrivalData(busStopCode: String): String = withContext(Dispatchers.IO) {
     val url = URL("https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival?BusStopCode=$busStopCode")
     val connection = url.openConnection() as HttpURLConnection
     connection.requestMethod = "GET"

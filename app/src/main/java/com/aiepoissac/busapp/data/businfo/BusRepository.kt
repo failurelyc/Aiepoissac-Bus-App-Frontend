@@ -1,7 +1,5 @@
 package com.aiepoissac.busapp.data.businfo
 
-import kotlinx.coroutines.flow.Flow
-
 interface BusRepository {
 
     suspend fun insertBusService(busServiceInfo: BusServiceInfo)
@@ -12,11 +10,11 @@ interface BusRepository {
 
     suspend fun deleteAllBusServices()
 
-    fun getBusServicesCount(): Int
+    suspend fun getBusServicesCount(): Int
 
-    fun getBusService(serviceNo: String): Flow<List<BusServiceInfo>>
+    suspend fun getBusService(serviceNo: String): List<BusServiceInfo>
 
-    fun getBusService(serviceNo: String, direction: Int): Flow<BusServiceInfo>
+    suspend fun getBusService(serviceNo: String, direction: Int): BusServiceInfo
 
     suspend fun insertBusRoute(busRouteInfo: BusRouteInfo)
 
@@ -26,10 +24,21 @@ interface BusRepository {
 
     suspend fun deleteAllBusRoutes()
 
-    fun getBusServiceRoute(serviceNo: String, direction: Int): Flow<List<BusRouteInfo>>
+    suspend fun getBusServiceRoute(serviceNo: String, direction: Int):
+            List<BusRouteInfoWithBusStopInfo>
 
-    fun getBusServiceRouteAfterSpecifiedStop(serviceNo: String, direction: Int, stopSequence: Int):
-            Flow<List<BusRouteInfo>>
+    suspend fun getBusServiceRouteAfterSpecifiedStop(serviceNo: String, direction: Int, stopSequence: Int):
+            List<BusRouteInfoWithBusStopInfo>
 
-    fun getBusRoutesAtBusStop(busStopCode: String): Flow<List<BusRouteInfo>>
+    suspend fun getBusRoutesAtBusStop(busStopCode: String): List<BusRouteInfo>
+
+    suspend fun insertBusStop(busStopInfo: BusStopInfo)
+
+    suspend fun updateBusStop(busStopInfo: BusStopInfo)
+
+    suspend fun deleteBusStop(busStopInfo: BusStopInfo)
+
+    suspend fun deleteAllBusStops()
+
+    suspend fun getBusStop(busStopCode: String): BusStopInfo?
 }

@@ -4,8 +4,8 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
-import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface BusRouteInfoDAO {
@@ -22,14 +22,17 @@ interface BusRouteInfoDAO {
     @Query("DELETE FROM Bus_Routes_Table")
     suspend fun deleteAll()
 
+    @Transaction
     @Query("SELECT * from Bus_Routes_Table WHERE serviceNo = :serviceNo AND direction = :direction")
-    fun getBusServiceRoute(serviceNo: String, direction: Int): Flow<List<BusRouteInfo>>
+    suspend fun getBusServiceRoute(serviceNo: String, direction: Int):
+            List<BusRouteInfoWithBusStopInfo>
 
+    @Transaction
     @Query("SELECT * from Bus_Routes_Table WHERE " +
             "serviceNo = :serviceNo AND direction = :direction AND stopSequence >= :stopSequence")
-    fun getBusServiceRouteAfterSpecifiedStop(serviceNo: String, direction: Int, stopSequence: Int):
-            Flow<List<BusRouteInfo>>
+    suspend fun getBusServiceRouteAfterSpecifiedStop(serviceNo: String, direction: Int, stopSequence: Int):
+            List<BusRouteInfoWithBusStopInfo>
 
     @Query("SELECT * from Bus_Routes_Table WHERE busStopCode = :busStopCode")
-    fun getBusRoutesAtBusStop(busStopCode: String): Flow<List<BusRouteInfo>>
+    suspend fun getBusRoutesAtBusStop(busStopCode: String): List<BusRouteInfo>
 }

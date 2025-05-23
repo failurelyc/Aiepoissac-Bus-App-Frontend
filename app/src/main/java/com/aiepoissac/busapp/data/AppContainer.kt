@@ -13,7 +13,8 @@ class AppDataContainer(private val context: Context): AppContainer {
     override val busRepository: BusRepository by lazy {
         OfflineBusRepository(
             busServiceInfoDAO = BusDatabase.getDatabase(context).busServiceInfoDao(),
-            busRouteInfoDAO = BusDatabase.getDatabase(context).BusRouteInfoDAO()
+            busRouteInfoDAO = BusDatabase.getDatabase(context).busRouteInfoDAO(),
+            busStopInfoDAO = BusDatabase.getDatabase(context).busStopInfoDAO()
         )
     }
 }

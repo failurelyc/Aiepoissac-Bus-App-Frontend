@@ -23,14 +23,14 @@ interface BusServiceInfoDAO {
     suspend fun deleteAll()
 
     @Query("SELECT COUNT(*) FROM Bus_Services_Table")
-    fun getBusServicesCount(): Int
+    suspend fun getBusServicesCount(): Int
 
     @Query("SELECT * from Bus_Services_Table WHERE serviceNo LIKE :serviceNo || '%' AND " +
             "(LENGTH(serviceNo) = LENGTH(:serviceNo) OR SUBSTR(serviceNo, LENGTH(:serviceNo) + 1, 1) GLOB '[a-zA-Z]')")
-    fun getBusService(serviceNo: String): Flow<List<BusServiceInfo>>
+    suspend fun getBusService(serviceNo: String): List<BusServiceInfo>
 
     @Query("SELECT * from Bus_Services_Table " +
             "WHERE serviceNo = :serviceNo AND direction = :direction")
-    fun getBusService(serviceNo: String, direction: Int): Flow<BusServiceInfo>
+    suspend fun getBusService(serviceNo: String, direction: Int): BusServiceInfo
 
 }

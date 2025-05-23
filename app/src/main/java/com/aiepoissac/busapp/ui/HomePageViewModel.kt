@@ -7,8 +7,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.businfo.populateBusRoutes
 import com.aiepoissac.busapp.data.businfo.populateBusServices
+import com.aiepoissac.busapp.data.businfo.populateBusStops
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -56,6 +58,7 @@ private suspend fun initialiseData() = withContext(Dispatchers.IO) {
             Log.d("BusApplication", "Started Downloading Bus Data")
             populateBusServices(BusApplication.instance.container.busRepository)
             populateBusRoutes(BusApplication.instance.container.busRepository)
+            populateBusStops(BusApplication.instance.container.busRepository)
             Log.d("BusApplication", "Downloaded Bus Data")
         } catch (e: IOException) {
             Log.e("BusApplication", "Failed to download bus data")

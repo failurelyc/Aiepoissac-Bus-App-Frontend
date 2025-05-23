@@ -1,4 +1,4 @@
-package com.aiepoissac.busapp.ui
+package com.aiepoissac.busapp
 
 import android.app.Application
 import com.aiepoissac.busapp.data.AppContainer

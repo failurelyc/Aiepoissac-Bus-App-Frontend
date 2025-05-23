@@ -34,6 +34,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.aiepoissac.busapp.BusApplication
 
 enum class Pages(val route: String, val title: String) {
     HomePage(route = "HomePage", title = "Home"),

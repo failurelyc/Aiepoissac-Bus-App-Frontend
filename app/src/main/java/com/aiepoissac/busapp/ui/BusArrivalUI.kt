@@ -41,6 +41,7 @@ import androidx.navigation.NavHostController
 import com.aiepoissac.busapp.data.busarrival.Bus
 import com.aiepoissac.busapp.data.busarrival.BusService
 import com.aiepoissac.busapp.data.busarrival.BusStop
+import com.aiepoissac.busapp.data.businfo.BusStopInfo
 
 @Composable
 fun BusArrivalUI(
@@ -49,7 +50,8 @@ fun BusArrivalUI(
 
 
     val busArrivalViewModel: BusArrivalViewModel =
-        viewModel(factory = BusArrivalViewModelFactory(busStopCodeInput))
+        viewModel(factory = BusArrivalViewModelFactory(
+            busStopCodeInput = busStopCodeInput))
 
     val busArrivalUIState by busArrivalViewModel.uiState.collectAsState()
     val configuration = LocalConfiguration.current
@@ -129,7 +131,7 @@ fun BusArrivalUI(
                     onBusStopCodeChanged = { busArrivalViewModel.updateBusStopCodeInput(it) },
                     onKeyBoardDone = { busArrivalViewModel.updateBusStop() },
                     busStopCodeInput = busArrivalViewModel.busStopCodeInput,
-                    isError = busArrivalUIState.busArrivalData == null
+                    isError = busArrivalUIState.busStopInfo == null
                 )
                 BusArrivalsList(
                     uiState = busArrivalUIState,
@@ -178,47 +180,53 @@ private fun BusArrivalsList(
     navController: NavHostController) {
 
     val data: BusStop? = uiState.busArrivalData
+    val busStopInfo: BusStopInfo? = uiState.busStopInfo
     val configuration = LocalConfiguration.current
-
-    if (uiState.networkIssue) {
+    if (busStopInfo == null) {
         Text(
-            text = "Error in getting data. \nCheck your internet connection!",
+            text = "No such bus stop.",
             fontSize = 24.sp,
             modifier = Modifier.padding(8.dp)
         )
-    } else if (data != null && data.services.isNotEmpty()) {
+    } else {
         if (configuration.orientation == 1) {
             Text(
                 fontSize = 24.sp,
-                text = "Bus Stop ${data.busStopCode}",
+                text = "${busStopInfo.busStopCode} ${busStopInfo.description}",
                 modifier = Modifier.padding(8.dp)
             )
         }
-        PullToRefreshBox(
-            isRefreshing = uiState.isRefreshing,
-            onRefresh = onRefresh,
-            modifier = Modifier
-        ) {
-            LazyVerticalGrid (
-                modifier = Modifier,
-                columns = GridCells.Adaptive(minSize = 320.dp)
+        if (data == null) {
+            Text(
+                text = "Error in getting data. \nCheck your internet connection!",
+                fontSize = 24.sp,
+                modifier = Modifier.padding(8.dp)
+            )
+        } else if (data.services.isNotEmpty()){
+            PullToRefreshBox(
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = onRefresh,
+                modifier = Modifier
             ) {
-                items(data.services) { service ->
-                    BusArrivalsLayout(
-                        data = service,
-                        navController = navController)
+                LazyVerticalGrid (
+                    modifier = Modifier,
+                    columns = GridCells.Adaptive(minSize = 320.dp)
+                ) {
+                    items(data.services) { service ->
+                        BusArrivalsLayout(
+                            data = service,
+                            navController = navController)
+                    }
                 }
             }
+        } else {
+            Text(
+                text = "All Bus Services have Ended",
+                fontSize = 24.sp,
+                modifier = Modifier.padding(8.dp)
+            )
         }
-    } else {
-        Text(
-            text = "No bus services currently operating at this bus stop.",
-            fontSize = 24.sp,
-            modifier = Modifier.padding(8.dp)
-        )
     }
-
-
 }
 
 @Composable
@@ -307,6 +315,14 @@ private fun BusArrivalLayout(data: Bus, modifier: Modifier = Modifier) {
                     color = Color.Black,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
+
+                Text(
+                    text = busArrivalViewModel.getDistance(data),
+                    color = Color.Black,
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+
                 if (data.visitNumber != "1") {
                     Text(
                         text = "(Visit: ${data.visitNumber})",

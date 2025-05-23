@@ -9,9 +9,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.R
 import com.aiepoissac.busapp.data.busarrival.Bus
 import com.aiepoissac.busapp.data.busarrival.getBusArrival
+import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.ui.theme.GreenDark
 import com.aiepoissac.busapp.ui.theme.GreenLight
 import com.aiepoissac.busapp.ui.theme.RedDark
@@ -27,17 +29,24 @@ import kotlinx.coroutines.launch
 import java.io.IOException
 
 
-class BusArrivalViewModelFactory(private val busStopCodeInput: String) : ViewModelProvider.Factory {
+class BusArrivalViewModelFactory(
+    private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
+    private val busStopCodeInput: String
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return if (modelClass.isAssignableFrom(BusArrivalViewModel::class.java)) {
-            BusArrivalViewModel(busStopCodeInput) as T
+            BusArrivalViewModel(
+                busRepository = busRepository,
+                initialBusStopCodeInput = busStopCodeInput) as T
         } else {
             throw IllegalArgumentException("Unknown View Model Class")
         }
     }
 }
 
-class BusArrivalViewModel(initialBusStopCodeInput: String) : ViewModel() {
+class BusArrivalViewModel(
+    private val busRepository: BusRepository,
+    initialBusStopCodeInput: String) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BusArrivalUIState())
     val uiState: StateFlow<BusArrivalUIState> = _uiState.asStateFlow()
@@ -54,19 +63,20 @@ class BusArrivalViewModel(initialBusStopCodeInput: String) : ViewModel() {
     fun updateBusStop() {
 
         viewModelScope.launch {
+            val busStopInfo = busRepository.getBusStop(busStopCodeInput)
             try {
+                val busArrivalData = getBusArrival(busStopCodeInput)
                 _uiState.update {
                     BusArrivalUIState(
                         busStopCodeInput = busStopCodeInput,
-                        busArrivalData = getBusArrival(busStopCodeInput.toInt())
+                        busStopInfo = busStopInfo,
+                        busArrivalData = busArrivalData,
                     )
                 }
-            } catch (e: NumberFormatException) {
-                _uiState.update {
-                    BusArrivalUIState(busStopCodeInput = busStopCodeInput) }
             } catch (e: IOException) {
                 _uiState.update {
-                    BusArrivalUIState(networkIssue = true,
+                    BusArrivalUIState(
+                        busStopInfo = busStopInfo,
                         busStopCodeInput = busStopCodeInput) }
             }
         }
@@ -81,6 +91,13 @@ class BusArrivalViewModel(initialBusStopCodeInput: String) : ViewModel() {
         }
     }
 
+    fun getDistance(bus: Bus): String {
+        return if (bus.isLive()) {
+            "${bus.getDistanceFrom(uiState.value.busStopInfo)}m"
+        } else {
+            "-"
+        }
+    }
 
     fun busTypeToPicture(bus: Bus): Int {
         return if (bus.type == "SD") {
@@ -96,7 +113,7 @@ class BusArrivalViewModel(initialBusStopCodeInput: String) : ViewModel() {
 
     fun getBusArrivalColor(bus: Bus, darkMode: Boolean = false): Color {
         return if(bus.isValid()) {
-            if (bus.monitored == 0) {
+            if (!bus.isLive()) {
                 if (!darkMode) Color.White else Color.LightGray
             } else {
                 return getBusArrivalColor(bus.load, darkMode)
@@ -135,8 +152,8 @@ class BusArrivalViewModel(initialBusStopCodeInput: String) : ViewModel() {
             "BusArrivalViewModel created with parameter: $initialBusStopCodeInput")
         viewModelScope.launch {
             while (true) {
-                refreshBusArrival()
                 delay(60000)
+                refreshBusArrival()
             }
         }
     }

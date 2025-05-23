@@ -1,10 +1,9 @@
 package com.aiepoissac.busapp.data.businfo
 
-import kotlinx.coroutines.flow.Flow
-
 class OfflineBusRepository(
     private val busServiceInfoDAO: BusServiceInfoDAO,
-    private val busRouteInfoDAO: BusRouteInfoDAO): BusRepository {
+    private val busRouteInfoDAO: BusRouteInfoDAO,
+    private val busStopInfoDAO: BusStopInfoDAO): BusRepository {
 
     override suspend fun insertBusService(busServiceInfo: BusServiceInfo) {
         busServiceInfoDAO.insert(busServiceInfo = busServiceInfo)
@@ -22,15 +21,15 @@ class OfflineBusRepository(
         busServiceInfoDAO.deleteAll()
     }
 
-    override fun getBusServicesCount(): Int {
+    override suspend fun getBusServicesCount(): Int {
         return busServiceInfoDAO.getBusServicesCount()
     }
 
-    override fun getBusService(serviceNo: String): Flow<List<BusServiceInfo>> {
+    override suspend fun getBusService(serviceNo: String): List<BusServiceInfo> {
         return busServiceInfoDAO.getBusService(serviceNo)
     }
 
-    override fun getBusService(serviceNo: String, direction: Int): Flow<BusServiceInfo> {
+    override suspend fun getBusService(serviceNo: String, direction: Int): BusServiceInfo {
         return busServiceInfoDAO.getBusService(serviceNo, direction)
     }
 
@@ -50,16 +49,40 @@ class OfflineBusRepository(
         busRouteInfoDAO.deleteAll()
     }
 
-    override fun getBusServiceRoute(serviceNo: String, direction: Int): Flow<List<BusRouteInfo>> {
+    override suspend fun getBusServiceRoute(serviceNo: String, direction: Int):
+            List<BusRouteInfoWithBusStopInfo> {
         return busRouteInfoDAO.getBusServiceRoute(serviceNo, direction)
     }
 
-    override fun getBusServiceRouteAfterSpecifiedStop(
-        serviceNo: String, direction: Int, stopSequence: Int): Flow<List<BusRouteInfo>> {
-        return busRouteInfoDAO.getBusServiceRouteAfterSpecifiedStop(serviceNo, direction, stopSequence)
+    override suspend fun getBusServiceRouteAfterSpecifiedStop(
+        serviceNo: String, direction: Int, stopSequence: Int): List<BusRouteInfoWithBusStopInfo> {
+        return busRouteInfoDAO
+            .getBusServiceRouteAfterSpecifiedStop(serviceNo, direction, stopSequence)
     }
 
-    override fun getBusRoutesAtBusStop(busStopCode: String): Flow<List<BusRouteInfo>> {
+    override suspend fun getBusRoutesAtBusStop(busStopCode: String): List<BusRouteInfo> {
         return busRouteInfoDAO.getBusRoutesAtBusStop(busStopCode)
     }
+
+    override suspend fun insertBusStop(busStopInfo: BusStopInfo) {
+        busStopInfoDAO.insert(busStopInfo)
+    }
+
+    override suspend fun updateBusStop(busStopInfo: BusStopInfo) {
+        busStopInfoDAO.update(busStopInfo)
+    }
+
+    override suspend fun deleteBusStop(busStopInfo: BusStopInfo) {
+        busStopInfoDAO.delete(busStopInfo)
+    }
+
+    override suspend fun deleteAllBusStops() {
+        busStopInfoDAO.deleteAll()
+    }
+
+    override suspend fun getBusStop(busStopCode: String): BusStopInfo? {
+        return busStopInfoDAO.getBusStop(busStopCode)
+    }
+
+
 }

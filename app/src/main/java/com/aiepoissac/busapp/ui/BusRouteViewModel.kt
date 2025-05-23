@@ -4,11 +4,12 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.businfo.BusRepository
+import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -42,16 +43,67 @@ class BusRouteViewModel(
     init {
         viewModelScope.launch {
             _uiState.update {
+                val busRoute: List<BusRouteInfoWithBusStopInfo> = busRepository
+                    .getBusServiceRoute(serviceNo = serviceNo, direction = direction)
                 BusRouteUIState(
-                    busRoute = busRepository
-                        .getBusServiceRoute(serviceNo = serviceNo, direction = direction)
-                        .first()
+                    busRoute = busRoute,
+                    originalBusRoute = busRoute,
+                    busServiceInfo = busRepository
+                        .getBusService(serviceNo = serviceNo, direction = direction)
                 )
             }
         }
         Log.d(
             "BusServiceViewModel",
             "BusServiceViewModel created with parameters: $serviceNo, $direction")
+    }
+
+    fun setFirstBusStop(stopSequence: Int) {
+
+        viewModelScope.launch {
+            val truncatedRoute = uiState.value.busRoute
+                .dropWhile { it.busRouteInfo.stopSequence < stopSequence }
+            val distanceOffset = truncatedRoute.first().busRouteInfo.distance
+            val truncatedRouteWithAdjustedInfo = truncatedRoute
+                .map { stop ->
+                    val adjustedSequence = stop.busRouteInfo.stopSequence - stopSequence
+                    val adjustedDistance = stop.busRouteInfo.distance - distanceOffset
+                    stop.copy(busRouteInfo = stop.busRouteInfo.copy(
+                        stopSequence = adjustedSequence,
+                        distance = adjustedDistance)
+                    )
+            }
+            _uiState.update {
+                it.copy(
+                    busRoute = truncatedRouteWithAdjustedInfo,
+                    truncated = true)
+            }
+        }
+    }
+
+    fun setOriginalFirstBusStop() {
+        val busRoute = uiState.value.originalBusRoute
+        _uiState.update {
+            it.copy(
+                busRoute = busRoute,
+                truncated = false
+            )
+        }
+    }
+
+    fun toggleShowFirstLastBusToTrue() {
+        val showFirstLastBus = uiState.value.showFirstLastBus
+        _uiState.update {
+            it.copy(showFirstLastBus = !showFirstLastBus)
+        }
+    }
+
+    fun getShowFirstLastBus(): Boolean {
+        return uiState.value.showFirstLastBus
+    }
+
+    fun isTruncatedRoute(): Boolean {
+        return uiState.value.truncated
     }
 
 }
