@@ -71,6 +71,7 @@ fun BusRouteList(
                 fontSize = 24.sp,
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
+
             if (!busServiceInfo.isLoop()) {
                 Text(
                     text = "Direction: ${busServiceInfo.direction}",
@@ -79,6 +80,18 @@ fun BusRouteList(
             } else {
                 Text(
                     text = "Loop At: ${busServiceInfo.loopDesc}",
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
+
+            if (uiState.truncated) {
+                Text(
+                    text = "Bus Stop ${data.first().busStopInfo.busStopCode} ${data.first().busStopInfo.description}",
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            } else {
+                Text(
+                    text = "Click the left card to view the route from there to the terminus or looping point",
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
             }
@@ -153,12 +166,12 @@ fun BusRouteInformation(
         Card(
             modifier = Modifier.weight(1f),
             onClick = {
-                if (!busRouteViewModel.isTruncatedRoute()) {
+                if (!busRouteViewModel.isTruncatedRoute() || !busRouteViewModel.isLoop()) {
                     busRouteViewModel.setFirstBusStop(data.busRouteInfo.stopSequence)
                 } else {
                     Toast.makeText(
                         BusApplication.instance,
-                        "Revert to full route first", Toast.LENGTH_LONG).show()
+                        "Revert to full route first", Toast.LENGTH_SHORT).show()
                 }
             }
         ) {
