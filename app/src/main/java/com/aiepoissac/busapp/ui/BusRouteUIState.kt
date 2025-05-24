@@ -8,5 +8,6 @@ data class BusRouteUIState (
     val originalBusRoute: List<BusRouteInfoWithBusStopInfo> = listOf(),
     val busServiceInfo: BusServiceInfo? = null,
     val truncated: Boolean = false,
+    val truncatedAfterLoopingPoint: Boolean = false,
     val showFirstLastBus: Boolean = false
 )

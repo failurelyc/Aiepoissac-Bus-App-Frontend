@@ -90,13 +90,28 @@ private fun BusServicesList(
 
     val data: List<BusServiceInfo> = uiState.busServiceList
 
-    LazyVerticalGrid(
-        modifier = Modifier,
-        columns = GridCells.Adaptive(minSize = 320.dp)
-    ) {
-        items(data) { service ->
-            BusServiceInformation(navController = navController, data = service)
+    if (data.isNotEmpty()) {
+        Text(
+            text = "Click on a bus service to view its full route" ,
+            fontSize = 24.sp,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+        )
+
+        LazyVerticalGrid(
+            modifier = Modifier,
+            columns = GridCells.Adaptive(minSize = 320.dp)
+        ) {
+            items(data) { service ->
+                BusServiceInformation(navController = navController, data = service)
+            }
         }
+    } else {
+        Text(
+            text = "No such bus service" ,
+            fontSize = 24.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 
 }

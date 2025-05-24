@@ -41,4 +41,6 @@ interface BusRepository {
     suspend fun deleteAllBusStops()
 
     suspend fun getBusStop(busStopCode: String): BusStopInfo?
+
+    suspend fun getAllBusStops(): List<BusStopInfo>
 }

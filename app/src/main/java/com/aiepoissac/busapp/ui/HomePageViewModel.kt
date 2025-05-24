@@ -1,22 +1,29 @@
 package com.aiepoissac.busapp.ui
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
 import android.icu.util.Calendar
+import android.location.Location
 import android.util.Log
+import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import com.aiepoissac.busapp.BusApplication
+import com.aiepoissac.busapp.data.busarrival.getBusArrival
 import com.aiepoissac.busapp.data.businfo.populateBusRoutes
 import com.aiepoissac.busapp.data.businfo.populateBusServices
 import com.aiepoissac.busapp.data.businfo.populateBusStops
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
-import kotlin.system.exitProcess
 
 class HomePageViewModel : ViewModel() {
 
@@ -41,10 +48,28 @@ class HomePageViewModel : ViewModel() {
         }
     }
 
+    private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(BusApplication.instance)
+
+    var location = mutableStateOf<Location?>(null)
+        private set
+
+    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
+    fun fetchLocation() {
+        if (ActivityCompat.checkSelfPermission(
+                BusApplication.instance,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) return
+
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { loc ->
+                location.value = loc
+            }
+    }
+
     init {
         CoroutineScope(Dispatchers.Default).launch {
             initialiseData()
-            saveLastOpenedTime()
             withContext(Dispatchers.Main) {
                 downloaded = true
             }
@@ -55,17 +80,21 @@ class HomePageViewModel : ViewModel() {
 private suspend fun initialiseData() = withContext(Dispatchers.IO) {
     if (checkIfSundayOrMonday4amPassed()) {
         try {
+            Log.d("BusApplication", "Checking connection with API")
+            getBusArrival("11111")
+            Log.d("BusApplication", "Connection is successful")
             Log.d("BusApplication", "Started Downloading Bus Data")
             populateBusServices(BusApplication.instance.container.busRepository)
             populateBusRoutes(BusApplication.instance.container.busRepository)
             populateBusStops(BusApplication.instance.container.busRepository)
             Log.d("BusApplication", "Downloaded Bus Data")
+            saveLastOpenedTime()
         } catch (e: IOException) {
             Log.e("BusApplication", "Failed to download bus data")
-            exitProcess(1)
         }
     } else {
         Log.d("BusApplication", "Bus Data already downloaded")
+        saveLastOpenedTime()
     }
 }
 
@@ -116,3 +145,4 @@ private fun checkIfSundayOrMonday4amPassed(): Boolean {
     }
     return thisDate.after(lastDate)
 }
+

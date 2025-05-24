@@ -1,7 +1,12 @@
 package com.aiepoissac.busapp.ui
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -9,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -20,14 +26,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -40,7 +49,9 @@ enum class Pages(val route: String, val title: String) {
     HomePage(route = "HomePage", title = "Home"),
     BusArrival(route = "BusArrival/{text}", title = "Bus Arrival Timings"),
     BusServiceInformation(route = "BusServiceInfo/{text}", title = "Bus Service Information"),
-    BusRouteInformation(route = "BusRouteInfo/{text1}/{text2}", title = "Bus Route Information");
+    BusRouteInformation(route = "BusRouteInfo/{text1}/{text2}", title = "Bus Route Information"),
+    BusStopInformation(route = "BusStopInfo/{text}", title = "Bus Stop Information"),
+    NearbyInformation(route = "NearbyInfo/{text1}/{text2}", title = "Nearby Bus Stops");
 
     fun withText(text: String): String {
         return route.replace("{text}", text)
@@ -57,6 +68,7 @@ enum class Pages(val route: String, val title: String) {
                 route.startsWith(BusArrival.route) -> BusArrival
                 route.startsWith(BusServiceInformation.route) -> BusServiceInformation
                 route.startsWith(BusRouteInformation.route) -> BusRouteInformation
+                route.startsWith(NearbyInformation.route) -> NearbyInformation
                 else -> HomePage
             }
         }
@@ -117,21 +129,30 @@ fun BusApp(
                             busServiceInput = text
                         )
                 }
-                composable(route = Pages.BusRouteInformation.route) {
-                    backStackEntry ->
-                        val text1 = backStackEntry.arguments?.getString("text1") ?: ""
-                        val text2 = backStackEntry.arguments?.getString("text2") ?: ""
-                        BusRouteUI(
-                            navController = navController,
-                            serviceNo = text1,
-                            direction = text2.toInt()
-                        )
+                composable(route = Pages.BusRouteInformation.route) { backStackEntry ->
+                    val text1 = backStackEntry.arguments?.getString("text1") ?: ""
+                    val text2 = backStackEntry.arguments?.getString("text2") ?: ""
+                    BusRouteUI(
+                        navController = navController,
+                        serviceNo = text1,
+                        direction = text2.toInt()
+                    )
+                }
+                composable(route = Pages.NearbyInformation.route) { backStackEntry ->
+                    val text1 = backStackEntry.arguments?.getString("text1") ?: ""
+                    val text2 = backStackEntry.arguments?.getString("text2") ?: ""
+                    NearbyUI(
+                        navController = navController,
+                        latitude = text1.toDouble(),
+                        longitude = text2.toDouble()
+                    )
                 }
             }
     }
 
 }
 
+@SuppressLint("MissingPermission")
 @Preview
 @Composable
 private fun HomePageUI(
@@ -139,7 +160,40 @@ private fun HomePageUI(
     navController: NavHostController = rememberNavController()
 ) {
 
+    RequestLocationPermission {
+        homePageViewModel.fetchLocation()
+    }
+
     Column {
+
+        Button(
+            onClick = {
+                val location = homePageViewModel.location.value
+                if (location != null) {
+                    navigateToNearby(
+                        navController = navController,
+                        latitude = location.latitude.toString(),
+                        longitude = location.longitude.toString()
+                    )
+                } else {
+                    Toast.makeText(
+                        BusApplication.instance,
+                        "No location permission",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    navigateToNearby(
+                        navController = navController
+                    )
+                }
+                      },
+            modifier = Modifier.padding(16.dp).fillMaxWidth()
+        ) {
+            Text(
+                text = "Nearby bus stops",
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        }
+
         TextBox(
             title = Pages.BusArrival.title,
             label = "Bus Stop Code",
@@ -159,6 +213,7 @@ private fun HomePageUI(
             }
 
         )
+
         TextBox(
             title = Pages.BusServiceInformation.title,
             label = "Service No.",
@@ -176,7 +231,6 @@ private fun HomePageUI(
                 }
             }
         )
-
 
     }
 }
@@ -262,11 +316,41 @@ fun navigateToBusArrival(
     navController.navigate(Pages.BusArrival.withText(busStopInput))
 }
 
+fun navigateToNearby(
+    navController: NavHostController,
+    latitude: String = "1.290270",
+    longitude: String = "103.851959"
+) {
+    navController.navigate(Pages.NearbyInformation.with2Text(latitude, longitude))
+}
+
 fun navigateToBusServiceInformation(
     navController: NavHostController,
     busServiceInput: String = ""
 ) {
     navController.navigate(Pages.BusServiceInformation.withText(busServiceInput))
+}
+
+@Composable
+fun RequestLocationPermission(onGranted: () -> Unit) {
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) onGranted()
+    }
+
+    LaunchedEffect(Unit) {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        } else {
+            onGranted()
+        }
+    }
 }
 
 

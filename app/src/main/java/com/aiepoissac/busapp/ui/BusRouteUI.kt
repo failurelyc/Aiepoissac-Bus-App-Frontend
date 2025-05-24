@@ -6,15 +6,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -26,6 +27,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun BusRouteUI(
@@ -39,7 +42,23 @@ fun BusRouteUI(
 
     val busRouteUIState by busRouteViewModel.uiState.collectAsState()
 
-    Scaffold { innerPadding ->
+    val gridState = rememberLazyGridState()
+
+    Scaffold (
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    MainScope().launch {
+                        gridState.scrollToItem(0)
+                    }
+                }
+            ) {
+                Text(
+                    text = "Go to top",
+                    modifier = Modifier.padding(horizontal = 4.dp))
+            }
+        }
+    ){ innerPadding ->
         Column(
             modifier = Modifier.padding(innerPadding)
         ) {
@@ -47,17 +66,22 @@ fun BusRouteUI(
                 navController = navController,
                 uiState = busRouteUIState,
                 revertButtonOnClick = { busRouteViewModel.setOriginalFirstBusStop() },
-                showFirstLastBusButtonOnClick = { busRouteViewModel.toggleShowFirstLastBusToTrue()})
+                showFirstLastBusButtonOnClick = { busRouteViewModel.toggleShowFirstLastBusToTrue()},
+                showRouteFromLoopingPointOnClick = { busRouteViewModel.setLoopingPointAsFirstBusStop() },
+                gridState = gridState
+            )
         }
     }
 }
 
 @Composable
-fun BusRouteList(
+private fun BusRouteList(
     navController: NavHostController,
     uiState: BusRouteUIState,
     revertButtonOnClick: () -> Unit,
-    showFirstLastBusButtonOnClick: () -> Unit
+    showFirstLastBusButtonOnClick: () -> Unit,
+    showRouteFromLoopingPointOnClick: () -> Unit,
+    gridState: LazyGridState
 ) {
 
     val data = uiState.busRoute
@@ -97,39 +121,46 @@ fun BusRouteList(
             }
         }
 
-        Row {
+        Button(
+            onClick = showFirstLastBusButtonOnClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
+        ) {
+            Text(
+                text = "${if (uiState.showFirstLastBus) "Hide" else "Show"} timings",
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        }
+
+        if (uiState.truncated || uiState.truncatedAfterLoopingPoint) {
             Button(
-                onClick = showFirstLastBusButtonOnClick,
+                onClick = revertButtonOnClick,
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
-                    .padding(8.dp)
+                    .padding(4.dp)
             ) {
                 Text(
-                    text = "${if (uiState.showFirstLastBus) "Hide" else "Show"} timings",
+                    text = "See full bus route",
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
             }
-            if (uiState.truncated) {
-                Button(
-                    onClick = revertButtonOnClick,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                ) {
-                    Text(
-                        text = "See full bus route",
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                }
-            }
         }
+        if ((uiState.busServiceInfo.isLoop() &&
+                    ((!uiState.truncated && !uiState.truncatedAfterLoopingPoint) ||
+                            uiState.truncated))) {
+            Button(
+                onClick = showRouteFromLoopingPointOnClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp)
+            ) {
+                Text(
+                    text = "See bus route after last looping point",
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
 
-        val gridState = rememberLazyGridState()
-
-        LaunchedEffect(data) {
-            gridState.scrollToItem(0)
         }
 
         LazyVerticalGrid(
@@ -137,8 +168,12 @@ fun BusRouteList(
             state = gridState,
             columns = GridCells.Adaptive(minSize = 320.dp)
         ) {
-            items(data) { route ->
-                BusRouteInformation(navController = navController, data = route)
+            items(data) { busRoute ->
+                BusRouteInformation(
+                    navController = navController,
+                    data = busRoute,
+                    uiState = uiState
+                )
             }
         }
     } else {
@@ -152,9 +187,10 @@ fun BusRouteList(
 }
 
 @Composable
-fun BusRouteInformation(
+private fun BusRouteInformation(
     navController: NavHostController,
-    data: BusRouteInfoWithBusStopInfo
+    data: BusRouteInfoWithBusStopInfo,
+    uiState: BusRouteUIState
 ) {
     val busRouteViewModel: BusRouteViewModel = viewModel()
 
@@ -166,7 +202,7 @@ fun BusRouteInformation(
         Card(
             modifier = Modifier.weight(1f),
             onClick = {
-                if (!busRouteViewModel.isTruncatedRoute() || !busRouteViewModel.isLoop()) {
+                if (!uiState.truncated || uiState.busServiceInfo?.isLoop() == false) {
                     busRouteViewModel.setFirstBusStop(data.busRouteInfo.stopSequence)
                 } else {
                     Toast.makeText(
@@ -177,7 +213,7 @@ fun BusRouteInformation(
         ) {
             Text(
                 text = data.busRouteInfo.stopSequence.toString(),
-                fontSize = if (busRouteViewModel.getShowFirstLastBus()) 24.sp else 18.sp,
+                fontSize = if (uiState.showFirstLastBus) 24.sp else 18.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -210,7 +246,7 @@ fun BusRouteInformation(
                     .padding(horizontal = 4.dp)
             )
 
-            if (busRouteViewModel.getShowFirstLastBus()) {
+            if (uiState.showFirstLastBus) {
                 Text(
                     text = "WEEKDAY: ${data.busRouteInfo.wdFirstBus} to ${data.busRouteInfo.wdLastBus}",
                     textAlign = TextAlign.Left,

@@ -84,5 +84,8 @@ class OfflineBusRepository(
         return busStopInfoDAO.getBusStop(busStopCode)
     }
 
+    override suspend fun getAllBusStops(): List<BusStopInfo> {
+        return busStopInfoDAO.getAllBusStops()
+    }
 
 }

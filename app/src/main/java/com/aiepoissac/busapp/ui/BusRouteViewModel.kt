@@ -42,9 +42,9 @@ class BusRouteViewModel(
 
     init {
         viewModelScope.launch {
+            val busRoute: List<BusRouteInfoWithBusStopInfo> = busRepository
+                .getBusServiceRoute(serviceNo = serviceNo, direction = direction)
             _uiState.update {
-                val busRoute: List<BusRouteInfoWithBusStopInfo> = busRepository
-                    .getBusServiceRoute(serviceNo = serviceNo, direction = direction)
                 BusRouteUIState(
                     busRoute = busRoute,
                     originalBusRoute = busRoute,
@@ -64,50 +64,18 @@ class BusRouteViewModel(
 
             val truncatedRoute = uiState.value.busRoute
                 .dropWhile { it.busRouteInfo.stopSequence < stopSequence }
-            val distanceOffset = truncatedRoute.first().busRouteInfo.distance
-            val truncatedRouteWithAdjustedInfo = truncatedRoute
-                .map { stop ->
-                    val adjustedSequence = stop.busRouteInfo.stopSequence - stopSequence
-                    val adjustedDistance = stop.busRouteInfo.distance - distanceOffset
-                    stop.copy(busRouteInfo = stop.busRouteInfo.copy(
-                        stopSequence = adjustedSequence,
-                        distance = adjustedDistance)
-                    )
-            }
-            if (!isLoop()) {
+
+            val truncatedRouteWithAdjustedInfo = removeStopSequenceOffset(truncatedRoute)
+            if (uiState.value.busServiceInfo?.isLoop() != true) {
                 _uiState.update {
                     it.copy(
                         busRoute = truncatedRouteWithAdjustedInfo,
                         truncated = true)
                 }
             } else {
-                val seenBusStopCodes: HashSet<String> = HashSet()
-                var seen = false
-                val truncatedLoopedRouteWithAdjustedInfo = truncatedRouteWithAdjustedInfo
-                    .takeWhile {
-                        val thisStop = it.busStopInfo.busStopCode
-                        lateinit var oppositeStop: String
-                        if (thisStop.last() == '9') {
-                            oppositeStop = thisStop.substring(0, thisStop.length - 1) + "1"
-                        } else if (thisStop.last() == '1') {
-                            oppositeStop = thisStop.substring(0, thisStop.length - 1) + "9"
-                        } else {
-                            return@takeWhile true
-                        }
-                        if (seenBusStopCodes.contains(oppositeStop)) {
-                            if (seen) {
-                                return@takeWhile false
-                            } else {
-                                seen = true
-                            }
-                        } else {
-                            seen = false
 
-                        }
-                        seenBusStopCodes.add(thisStop)
-                        return@takeWhile true
-                    }
-                    .dropLast(1)
+                val truncatedLoopedRouteWithAdjustedInfo =
+                    truncateLoopRoute(route = truncatedRouteWithAdjustedInfo)
                 _uiState.update {
                     it.copy(
                         busRoute = truncatedLoopedRouteWithAdjustedInfo,
@@ -117,12 +85,67 @@ class BusRouteViewModel(
         }
     }
 
+    private fun removeStopSequenceOffset(truncatedRoute: List<BusRouteInfoWithBusStopInfo>):
+            List<BusRouteInfoWithBusStopInfo> {
+        val distanceOffset = truncatedRoute.first().busRouteInfo.distance
+        val sequenceOffset = truncatedRoute.first().busRouteInfo.stopSequence
+        return truncatedRoute
+            .map { stop ->
+                val adjustedSequence = stop.busRouteInfo.stopSequence - sequenceOffset
+                val adjustedDistance = stop.busRouteInfo.distance - distanceOffset
+                stop.copy(busRouteInfo = stop.busRouteInfo.copy(
+                    stopSequence = adjustedSequence,
+                    distance = adjustedDistance)
+                )
+            }
+    }
+
+    private fun truncateLoopRoute(route: List<BusRouteInfoWithBusStopInfo>):
+            List<BusRouteInfoWithBusStopInfo> {
+        val seenBusStopCodes: HashSet<String> = HashSet()
+        var lastSeen = ""
+        return route
+            .takeWhile {
+                val thisStop = it.busStopInfo.busStopCode
+                lateinit var oppositeStop: String
+                if (thisStop.last() == '9') {
+                    oppositeStop = thisStop.substring(0, thisStop.length - 1) + "1"
+                } else if (thisStop.last() == '1') {
+                    oppositeStop = thisStop.substring(0, thisStop.length - 1) + "9"
+                } else {
+                    return@takeWhile true
+                }
+                if (seenBusStopCodes.contains(oppositeStop) && oppositeStop != lastSeen) {
+                    return@takeWhile false
+                }
+                seenBusStopCodes.add(thisStop)
+                lastSeen = thisStop
+                return@takeWhile true
+            }
+    }
+
+    fun setLoopingPointAsFirstBusStop() {
+        if (uiState.value.busServiceInfo?.isLoop() == true) {
+            val truncatedRoute = truncateLoopRoute(uiState.value.originalBusRoute.reversed())
+                .reversed()
+
+            _uiState.update {
+                it.copy(
+                    busRoute = removeStopSequenceOffset(truncatedRoute),
+                    truncated = false,
+                    truncatedAfterLoopingPoint = true
+                )
+            }
+        }
+    }
+
     fun setOriginalFirstBusStop() {
         val busRoute = uiState.value.originalBusRoute
         _uiState.update {
             it.copy(
                 busRoute = busRoute,
-                truncated = false
+                truncated = false,
+                truncatedAfterLoopingPoint = false
             )
         }
     }
@@ -132,18 +155,6 @@ class BusRouteViewModel(
         _uiState.update {
             it.copy(showFirstLastBus = !showFirstLastBus)
         }
-    }
-
-    fun getShowFirstLastBus(): Boolean {
-        return uiState.value.showFirstLastBus
-    }
-
-    fun isTruncatedRoute(): Boolean {
-        return uiState.value.truncated
-    }
-
-    fun isLoop(): Boolean {
-        return uiState.value.busServiceInfo?.isLoop() ?: false
     }
 
 }
