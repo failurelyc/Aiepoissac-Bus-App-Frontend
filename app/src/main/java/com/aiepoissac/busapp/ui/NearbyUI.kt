@@ -65,31 +65,41 @@ private fun BusStopList(
             modifier = Modifier.padding(8.dp)
         )
 
-        LazyVerticalGrid(
-            modifier = Modifier,
-            columns = GridCells.Adaptive(minSize = 320.dp)
-        ) {
-            items(data) { busStop ->
-                val busStopInfo = busStop.second
-                Card(
-                    onClick = { navigateToBusArrival(
-                        navController = navController,
-                        busStopInput = busStopInfo.busStopCode) },
-                    modifier = Modifier.padding(8.dp)
-                ) {
-                    Text(
-                        text = "${busStopInfo.busStopCode} ${busStopInfo.description}",
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                    Text(
-                        text = "${busStopInfo.roadName} (${busStop.first}m)",
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                }
 
+    }
+
+    LazyVerticalGrid(
+        modifier = Modifier,
+        columns = GridCells.Adaptive(minSize = 320.dp)
+    ) {
+        items(data) { busStop ->
+            val busStopInfo = busStop.second
+            Card(
+                onClick = { navigateToBusArrival(
+                    navController = navController,
+                    busStopInput = busStopInfo.busStopInfo.busStopCode) },
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Text(
+                    text = "${busStopInfo.busStopInfo.busStopCode} ${busStopInfo.busStopInfo.description}",
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+                Text(
+                    text = "${busStopInfo.busStopInfo.roadName} (${busStop.first}m)",
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+                Text(
+                    text = busStopInfo.busRoutesInfo
+                        .map{ it.serviceNo }
+                        .distinct()
+                        .joinToString(", ")
+                    ,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
             }
+
         }
     }
 

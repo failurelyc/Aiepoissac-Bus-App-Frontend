@@ -15,8 +15,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -41,13 +43,14 @@ import androidx.navigation.NavHostController
 import com.aiepoissac.busapp.data.busarrival.Bus
 import com.aiepoissac.busapp.data.busarrival.BusService
 import com.aiepoissac.busapp.data.busarrival.BusStop
+import com.aiepoissac.busapp.data.businfo.BusRouteInfo
 import com.aiepoissac.busapp.data.businfo.BusStopInfo
 
 @Composable
 fun BusArrivalUI(
     navController: NavHostController,
-    busStopCodeInput: String = "") {
-
+    busStopCodeInput: String = ""
+) {
 
     val busArrivalViewModel: BusArrivalViewModel =
         viewModel(factory = BusArrivalViewModelFactory(
@@ -57,8 +60,28 @@ fun BusArrivalUI(
     val configuration = LocalConfiguration.current
 
     Scaffold (
+        floatingActionButton = {
+            if (!busArrivalUIState.showBusArrival) {
+                FloatingActionButton(
+                    onClick = { busArrivalViewModel.switchToOppositeBusStop() }
+                ) {
+                    Text(
+                        text = "Opposite",
+                        modifier = Modifier.padding(horizontal = 4.dp))
+                }
+            } else {
+                FloatingActionButton(
+                    onClick = { busArrivalViewModel.refreshBusArrival() }
+                ) {
+                    Text(
+                        text = "Refresh",
+                        modifier = Modifier.padding(horizontal = 4.dp))
+                }
+            }
+        },
+
         bottomBar = {
-            if (configuration.orientation == 1) {
+            if (configuration.orientation == 1 && busArrivalUIState.showBusArrival) {
                 BottomAppBar(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.primary,
@@ -127,16 +150,29 @@ fun BusArrivalUI(
                 modifier = Modifier.padding(innerPadding)
 
             ) {
-                BusStopCodeForBusArrival(
-                    onBusStopCodeChanged = { busArrivalViewModel.updateBusStopCodeInput(it) },
-                    onKeyBoardDone = { busArrivalViewModel.updateBusStop() },
-                    busStopCodeInput = busArrivalViewModel.busStopCodeInput,
-                    isError = busArrivalUIState.busStopInfo == null
-                )
-                BusArrivalsList(
-                    uiState = busArrivalUIState,
-                    onRefresh = { busArrivalViewModel.refreshBusArrival() },
-                    navController = navController)
+                if (busArrivalUIState.showBusArrival) {
+                    BusArrivalsList(
+                        uiState = busArrivalUIState,
+                        onRefresh = { busArrivalViewModel.refreshBusArrival() },
+                        toggleShowBusArrival = { busArrivalViewModel.toggleShowBusArrival() },
+                        navController = navController)
+                } else {
+                    if (configuration.orientation == 1) {
+                        BusStopCodeForBusArrival(
+                            onBusStopCodeChanged = { busArrivalViewModel.updateBusStopCodeInput(it) },
+                            onKeyBoardDone = { busArrivalViewModel.updateBusStop() },
+                            busStopCodeInput = busArrivalViewModel.busStopCodeInput,
+                            isError = busArrivalUIState.busStopInfo == null
+                        )
+                    }
+
+                    BusStopInformation(
+                        uiState = busArrivalUIState,
+                        toggleShowBusArrival = { busArrivalViewModel.toggleShowBusArrival() },
+                        toggleBusStop = { busArrivalViewModel.switchToOppositeBusStop() } ,
+                        navController = navController
+                    )
+                }
             }
     }
 
@@ -172,11 +208,107 @@ private fun BusStopCodeForBusArrival(
 
 }
 
+@Composable
+private fun BusStopInformation(
+    uiState: BusArrivalUIState,
+    toggleShowBusArrival: () -> Unit,
+    toggleBusStop: () -> Unit,
+    navController: NavHostController
+) {
+
+    val data: List<BusRouteInfo> = uiState.busRoutes
+    val busStopInfo: BusStopInfo? = uiState.busStopInfo
+
+    if (busStopInfo == null) {
+        Text(
+            text = "No such bus stop.",
+            fontSize = 24.sp,
+            modifier = Modifier.padding(8.dp)
+        )
+    } else {
+
+        Button(
+            onClick = toggleShowBusArrival,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
+        ) {
+            Text(
+                text = "See bus arrivals",
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        }
+
+        Button(
+            onClick = { navigateToNearby(
+                navController = navController,
+                latitude = busStopInfo.latitude,
+                longitude = busStopInfo.longitude
+            ) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
+        ) {
+            Text(
+                text = "Bus Stops near this bus stop",
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        }
+
+        Text(
+            fontSize = 24.sp,
+            text = "${busStopInfo.busStopCode} ${busStopInfo.description}",
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
+
+        Text(
+            text = busStopInfo.roadName,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
+
+        LazyVerticalGrid (
+            modifier = Modifier,
+            columns = GridCells.Adaptive(minSize = 80.dp)
+        ) {
+            items(data) { route ->
+                Card(
+                    modifier = Modifier.padding(8.dp),
+                    onClick = { navigateToBusRouteInformation(
+                        navController = navController,
+                        serviceNo = route.serviceNo,
+                        direction = route.direction,
+                        stopSequence = route.stopSequence
+                    ) }
+                ) {
+                    Text(
+                        text = route.serviceNo,
+                        fontSize = 24.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = route.operator,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = "Direction: ${route.direction}",
+                        textAlign = TextAlign.Center,
+                        fontSize = 10.sp,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BusArrivalsList(
     uiState: BusArrivalUIState,
     onRefresh: () -> Unit,
+    toggleShowBusArrival: () -> Unit,
     navController: NavHostController) {
 
     val data: BusStop? = uiState.busArrivalData
@@ -190,11 +322,17 @@ private fun BusArrivalsList(
         )
     } else {
         if (configuration.orientation == 1) {
-            Text(
-                fontSize = 24.sp,
-                text = "${busStopInfo.busStopCode} ${busStopInfo.description}",
-                modifier = Modifier.padding(8.dp)
-            )
+            Button(
+                onClick = toggleShowBusArrival,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp)
+            ) {
+                Text(
+                    text = "See bus stop details",
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
         }
         if (data == null) {
             Text(

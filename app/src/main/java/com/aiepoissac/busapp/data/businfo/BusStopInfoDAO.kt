@@ -27,4 +27,7 @@ interface BusStopInfoDAO {
     @Query("SELECT * FROM Bus_Stops_Table")
     suspend fun getAllBusStops(): List<BusStopInfo>
 
+    @Query("SELECT * FROM Bus_Stops_Table WHERE busStopCode = :busStopCode")
+    suspend fun getBusStopWithBusRoutes(busStopCode: String): BusStopInfoWithBusRoutesInfo
+
 }

@@ -61,33 +61,80 @@ class BusArrivalViewModel(
     }
 
     fun updateBusStop() {
-
         viewModelScope.launch {
-            val busStopInfo = busRepository.getBusStop(busStopCodeInput)
-            try {
-                val busArrivalData = getBusArrival(busStopCodeInput)
-                _uiState.update {
-                    BusArrivalUIState(
-                        busStopCodeInput = busStopCodeInput,
-                        busStopInfo = busStopInfo,
-                        busArrivalData = busArrivalData,
-                    )
+            updateBusStop(busStopCodeInput)
+        }
+    }
+
+    fun switchToOppositeBusStop() {
+        viewModelScope.launch {
+            val busStopInfo = uiState.value.busStopInfo
+            if (busStopInfo != null) {
+                val thisBusStopCode = busStopInfo.busStopCode
+                var oppositeBusStopCode = ""
+                if (thisBusStopCode.last() == '9') {
+                    oppositeBusStopCode = thisBusStopCode.substring(
+                        startIndex = 0,
+                        endIndex = thisBusStopCode.length - 1
+                    ) + "1"
+                } else if (thisBusStopCode.last() == '1') {
+                    oppositeBusStopCode = thisBusStopCode.substring(
+                        startIndex = 0,
+                        endIndex = thisBusStopCode.length - 1
+                    ) + "9"
                 }
-            } catch (e: IOException) {
-                _uiState.update {
-                    BusArrivalUIState(
-                        busStopInfo = busStopInfo,
-                        busStopCodeInput = busStopCodeInput) }
+                if (oppositeBusStopCode.isNotEmpty() &&
+                    busRepository.getBusStop(oppositeBusStopCode) != null) {
+                    updateBusStop(oppositeBusStopCode)
+                }
             }
         }
     }
 
+    private suspend fun updateBusStop(busStopCode: String) {
+        val busStopInfo = busRepository.getBusStop(busStopCode)
+        val busRoutes = busRepository.getBusRoutesAtBusStop(busStopCode)
+
+        try {
+            val busArrivalData = getBusArrival(busStopCode)
+            _uiState.update {
+                it.copy(
+                    busStopInfo = busStopInfo,
+                    busArrivalData = busArrivalData,
+                    busRoutes = busRoutes
+                )
+            }
+        } catch (e: IOException) {
+            _uiState.update {
+                it.copy(
+                    busStopInfo = busStopInfo,
+                    busArrivalData = null,
+                    busRoutes = busRoutes) }
+        }
+    }
+
+
+
     fun refreshBusArrival() {
-        _uiState.value = _uiState.value.copy(isRefreshing = true)
+        _uiState.update {
+            it.copy(isRefreshing = true)
+        }
         viewModelScope.launch {
             delay(16) //to allow time for the loading animation to start
-            busStopCodeInput = uiState.value.busStopCodeInput
-            updateBusStop()
+            try {
+                val busArrivalData = getBusArrival(uiState.value.busStopInfo?.busStopCode ?: "")
+                _uiState.update {
+                    it.copy(
+                        busArrivalData = busArrivalData,
+                        isRefreshing = false
+                    )
+                }
+            } catch (e: IOException) {
+                _uiState.update {
+                    it.copy(
+                        busArrivalData = null,
+                        isRefreshing = false) }
+            }
         }
     }
 
@@ -96,6 +143,12 @@ class BusArrivalViewModel(
             "${bus.getDistanceFrom(uiState.value.busStopInfo)}m"
         } else {
             "-"
+        }
+    }
+
+    fun toggleShowBusArrival() {
+        _uiState.update {
+            it.copy(showBusArrival = !uiState.value.showBusArrival)
         }
     }
 
@@ -135,13 +188,6 @@ class BusArrivalViewModel(
         } else {
             if (!darkMode) Color.White else Color.LightGray //Invalid data
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        Log.d(
-            "BusArrivalViewModel",
-            "BusArrivalViewModel is being destroyed.")
     }
 
     init {

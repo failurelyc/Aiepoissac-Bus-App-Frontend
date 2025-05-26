@@ -16,14 +16,16 @@ import kotlinx.coroutines.launch
 class BusRouteViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
     private val serviceNo: String,
-    private val direction: Int
+    private val direction: Int,
+    private val stopSequence: Int
 ) : ViewModelProvider.Factory {
     override fun<T: ViewModel> create(modelClass: Class<T>): T {
         return if (modelClass.isAssignableFrom(BusRouteViewModel::class.java)) {
             BusRouteViewModel(
                 busRepository = busRepository,
                 serviceNo = serviceNo,
-                direction = direction
+                direction = direction,
+                stopSequence = stopSequence
             ) as T
         } else {
             throw IllegalArgumentException("Unknown View Model Class")
@@ -34,13 +36,21 @@ class BusRouteViewModelFactory(
 class BusRouteViewModel(
     private val busRepository: BusRepository,
     serviceNo: String,
-    direction: Int
+    direction: Int,
+    stopSequence: Int
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BusRouteUIState())
     val uiState: StateFlow<BusRouteUIState> = _uiState.asStateFlow()
 
     init {
+        updateBusService(serviceNo, direction, stopSequence)
+        Log.d(
+            "BusServiceViewModel",
+            "BusServiceViewModel created with parameters: $serviceNo, $direction")
+    }
+
+    private fun updateBusService(serviceNo: String, direction: Int, stopSequence: Int = -1) {
         viewModelScope.launch {
             val busRoute: List<BusRouteInfoWithBusStopInfo> = busRepository
                 .getBusServiceRoute(serviceNo = serviceNo, direction = direction)
@@ -52,10 +62,20 @@ class BusRouteViewModel(
                         .getBusService(serviceNo = serviceNo, direction = direction)
                 )
             }
+            if (stopSequence >= 0) {
+                setFirstBusStop(stopSequence)
+            }
         }
-        Log.d(
-            "BusServiceViewModel",
-            "BusServiceViewModel created with parameters: $serviceNo, $direction")
+    }
+
+    fun toggleDirection() {
+        val busServiceInfo = uiState.value.busServiceInfo
+        if (busServiceInfo != null && !busServiceInfo.isLoop()) {
+            updateBusService(
+                serviceNo = busServiceInfo.serviceNo,
+                direction = if (busServiceInfo.direction == 1) 2 else 1
+            )
+        }
     }
 
     fun setFirstBusStop(stopSequence: Int) {

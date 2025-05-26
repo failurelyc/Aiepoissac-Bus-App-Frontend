@@ -29,7 +29,7 @@ class OfflineBusRepository(
         return busServiceInfoDAO.getBusService(serviceNo)
     }
 
-    override suspend fun getBusService(serviceNo: String, direction: Int): BusServiceInfo {
+    override suspend fun getBusService(serviceNo: String, direction: Int): BusServiceInfo? {
         return busServiceInfoDAO.getBusService(serviceNo, direction)
     }
 
@@ -86,6 +86,11 @@ class OfflineBusRepository(
 
     override suspend fun getAllBusStops(): List<BusStopInfo> {
         return busStopInfoDAO.getAllBusStops()
+    }
+
+    override suspend fun getBusStopWithBusRoutes(busStopCode: String):
+            BusStopInfoWithBusRoutesInfo {
+        return busStopInfoDAO.getBusStopWithBusRoutes(busStopCode)
     }
 
 }

@@ -48,6 +48,7 @@ class NearbyViewModel(
                         .map { Pair(it.distanceFromInMetres(point), it) }
                         .filter { it.first < uiState.value.distanceThreshold }
                         .sortedBy { it.first }
+                        .map { Pair(it.first, busRepository.getBusStopWithBusRoutes(it.second.busStopCode)) }
                 )
             }
         }

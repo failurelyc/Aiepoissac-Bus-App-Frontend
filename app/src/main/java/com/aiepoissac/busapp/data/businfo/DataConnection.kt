@@ -15,16 +15,16 @@ enum class BusDataType {
     BusStops
 }
 
-suspend fun getData(dataType: BusDataType, count: Int): String = withContext(Dispatchers.IO) {
-    var url: URL? = null
+private suspend fun getData(dataType: BusDataType, count: Int): String = withContext(Dispatchers.IO) {
+    val url: URL?
     if (dataType == BusDataType.BusStops) {
         url = URL("https://datamall2.mytransport.sg/ltaodataservice/BusStops?\$skip=$count")
     } else if (dataType == BusDataType.BusRoutes) {
         url = URL("https://datamall2.mytransport.sg/ltaodataservice/BusRoutes?\$skip=$count")
     } else if (dataType == BusDataType.BusServices) {
         url = URL("https://datamall2.mytransport.sg/ltaodataservice/BusServices?\$skip=$count")
-    }
-    val connection = url!!.openConnection() as HttpURLConnection
+    } else throw IllegalArgumentException()
+    val connection = url.openConnection() as HttpURLConnection
     connection.requestMethod = "GET"
     connection.setRequestProperty("AccountKey", "***REMOVED***")
     connection.setRequestProperty("accept", "application/json")

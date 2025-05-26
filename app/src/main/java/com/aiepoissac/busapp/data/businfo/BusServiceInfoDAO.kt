@@ -31,6 +31,6 @@ interface BusServiceInfoDAO {
 
     @Query("SELECT * from Bus_Services_Table " +
             "WHERE serviceNo = :serviceNo AND direction = :direction")
-    suspend fun getBusService(serviceNo: String, direction: Int): BusServiceInfo
+    suspend fun getBusService(serviceNo: String, direction: Int): BusServiceInfo?
 
 }

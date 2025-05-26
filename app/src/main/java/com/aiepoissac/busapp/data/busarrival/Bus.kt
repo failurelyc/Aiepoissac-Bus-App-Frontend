@@ -37,11 +37,8 @@ data class Bus (
     }
 
     fun getDuration() : Int {
-        return if (this.isValid()) {
-            Duration.between(LocalDateTime.now(), this.estimatedArrival).toMinutes().toInt() + 1
-        } else {
-            -1
-        }
+        val duration: Int = Duration.between(LocalDateTime.now(), this.estimatedArrival).toMinutes().toInt()
+        return if (this.isValid()) (if (duration >= 0) duration else 0) else -1
     }
 
     fun getDistanceFrom(busStopInfo: BusStopInfo?): Int {

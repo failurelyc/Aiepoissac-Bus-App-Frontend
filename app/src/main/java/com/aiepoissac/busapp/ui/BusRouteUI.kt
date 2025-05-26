@@ -34,11 +34,18 @@ import kotlinx.coroutines.launch
 fun BusRouteUI(
     navController: NavHostController,
     serviceNo: String,
-    direction: Int
+    direction: Int,
+    stopSequence: Int
 ) {
 
     val busRouteViewModel: BusRouteViewModel =
-        viewModel(factory = BusRouteViewModelFactory(serviceNo = serviceNo, direction = direction))
+        viewModel(
+            factory = BusRouteViewModelFactory(
+                serviceNo = serviceNo,
+                direction = direction,
+                stopSequence = stopSequence
+            )
+        )
 
     val busRouteUIState by busRouteViewModel.uiState.collectAsState()
 
@@ -65,9 +72,20 @@ fun BusRouteUI(
             BusRouteList(
                 navController = navController,
                 uiState = busRouteUIState,
-                revertButtonOnClick = { busRouteViewModel.setOriginalFirstBusStop() },
+                revertButtonOnClick = {
+                    busRouteViewModel.setOriginalFirstBusStop()
+                    MainScope().launch {
+                        gridState.scrollToItem(0)
+                    }
+                                      },
                 showFirstLastBusButtonOnClick = { busRouteViewModel.toggleShowFirstLastBusToTrue()},
-                showRouteFromLoopingPointOnClick = { busRouteViewModel.setLoopingPointAsFirstBusStop() },
+                showRouteFromLoopingPointOnClick = {
+                    busRouteViewModel.setLoopingPointAsFirstBusStop()
+                    MainScope().launch {
+                        gridState.scrollToItem(0)
+                    }
+                                                   },
+                switchDirection = { busRouteViewModel.toggleDirection() },
                 gridState = gridState
             )
         }
@@ -81,6 +99,7 @@ private fun BusRouteList(
     revertButtonOnClick: () -> Unit,
     showFirstLastBusButtonOnClick: () -> Unit,
     showRouteFromLoopingPointOnClick: () -> Unit,
+    switchDirection: () -> Unit,
     gridState: LazyGridState
 ) {
 
@@ -146,6 +165,7 @@ private fun BusRouteList(
                 )
             }
         }
+
         if ((uiState.busServiceInfo.isLoop() &&
                     ((!uiState.truncated && !uiState.truncatedAfterLoopingPoint) ||
                             uiState.truncated))) {
@@ -163,6 +183,20 @@ private fun BusRouteList(
 
         }
 
+        if (!uiState.busServiceInfo.isLoop()) {
+            Button(
+                onClick = switchDirection,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp)
+            ) {
+                Text(
+                    text = "Switch direction",
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
+        }
+
         LazyVerticalGrid(
             modifier = Modifier,
             state = gridState,
@@ -172,7 +206,8 @@ private fun BusRouteList(
                 BusRouteInformation(
                     navController = navController,
                     data = busRoute,
-                    uiState = uiState
+                    uiState = uiState,
+                    gridState = gridState
                 )
             }
         }
@@ -190,7 +225,8 @@ private fun BusRouteList(
 private fun BusRouteInformation(
     navController: NavHostController,
     data: BusRouteInfoWithBusStopInfo,
-    uiState: BusRouteUIState
+    uiState: BusRouteUIState,
+    gridState: LazyGridState
 ) {
     val busRouteViewModel: BusRouteViewModel = viewModel()
 
@@ -202,12 +238,17 @@ private fun BusRouteInformation(
         Card(
             modifier = Modifier.weight(1f),
             onClick = {
+
                 if (!uiState.truncated || uiState.busServiceInfo?.isLoop() == false) {
                     busRouteViewModel.setFirstBusStop(data.busRouteInfo.stopSequence)
                 } else {
                     Toast.makeText(
                         BusApplication.instance,
                         "Revert to full route first", Toast.LENGTH_SHORT).show()
+                }
+
+                MainScope().launch {
+                    gridState.scrollToItem(0)
                 }
             }
         ) {

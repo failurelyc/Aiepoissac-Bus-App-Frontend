@@ -2,7 +2,6 @@ package com.aiepoissac.busapp.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -10,12 +9,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,11 +29,13 @@ import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,10 +50,9 @@ import com.aiepoissac.busapp.BusApplication
 
 enum class Pages(val route: String, val title: String) {
     HomePage(route = "HomePage", title = "Home"),
-    BusArrival(route = "BusArrival/{text}", title = "Bus Arrival Timings"),
+    BusArrival(route = "BusArrival/{text}", title = "Bus Stop Information"),
     BusServiceInformation(route = "BusServiceInfo/{text}", title = "Bus Service Information"),
-    BusRouteInformation(route = "BusRouteInfo/{text1}/{text2}", title = "Bus Route Information"),
-    BusStopInformation(route = "BusStopInfo/{text}", title = "Bus Stop Information"),
+    BusRouteInformation(route = "BusRouteInfo/{text1}/{text2}/{text3}", title = "Bus Route Information"),
     NearbyInformation(route = "NearbyInfo/{text1}/{text2}", title = "Nearby Bus Stops");
 
     fun withText(text: String): String {
@@ -60,6 +62,12 @@ enum class Pages(val route: String, val title: String) {
     fun with2Text(text1: String, text2: String): String {
         return route.replace("{text1}", text1)
             .replace("{text2}", text2)
+    }
+
+    fun with3Text(text1: String, text2: String, text3: String): String {
+        return route.replace("{text1}", text1)
+            .replace("{text2}", text2)
+            .replace("{text3}", text3)
     }
 
     companion object {
@@ -132,10 +140,12 @@ fun BusApp(
                 composable(route = Pages.BusRouteInformation.route) { backStackEntry ->
                     val text1 = backStackEntry.arguments?.getString("text1") ?: ""
                     val text2 = backStackEntry.arguments?.getString("text2") ?: ""
+                    val text3 = backStackEntry.arguments?.getString("text3") ?: ""
                     BusRouteUI(
                         navController = navController,
                         serviceNo = text1,
-                        direction = text2.toInt()
+                        direction = text2.toInt(),
+                        stopSequence = text3.toInt()
                     )
                 }
                 composable(route = Pages.NearbyInformation.route) { backStackEntry ->
@@ -159,84 +169,111 @@ private fun HomePageUI(
     homePageViewModel: HomePageViewModel = viewModel(),
     navController: NavHostController = rememberNavController()
 ) {
-
-    RequestLocationPermission {
-        homePageViewModel.fetchLocation()
-    }
-
-    Column {
-
-        Button(
-            onClick = {
-                val location = homePageViewModel.location.value
-                if (location != null) {
-                    navigateToNearby(
-                        navController = navController,
-                        latitude = location.latitude.toString(),
-                        longitude = location.longitude.toString()
-                    )
-                } else {
-                    Toast.makeText(
-                        BusApplication.instance,
-                        "No location permission",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    navigateToNearby(
-                        navController = navController
-                    )
-                }
-                      },
-            modifier = Modifier.padding(16.dp).fillMaxWidth()
-        ) {
-            Text(
-                text = "Nearby bus stops",
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
+    if (homePageViewModel.downloaded) {
+        RequestLocationPermission {
+            homePageViewModel.fetchLocation()
         }
 
-        TextBox(
-            title = Pages.BusArrival.title,
-            label = "Bus Stop Code",
-            text = homePageViewModel.busArrivalBusStopCodeInput,
-            onValueChange = { homePageViewModel.updateBusArrivalBusStopCodeInput(it) },
-            keyboardType = KeyboardType.Number,
-            onDone = {
-                if (homePageViewModel.downloaded) {
+        Column {
+
+            Button(
+                onClick = {
+                    val location = homePageViewModel.location.value
+                    if (location != null) {
+                        navigateToNearby(
+                            navController = navController,
+                            latitude = location.latitude,
+                            longitude = location.longitude
+                        )
+                    } else {
+                        Toast.makeText(
+                            BusApplication.instance,
+                            "No location permission",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        navigateToNearby(
+                            navController = navController
+                        )
+                    }
+                },
+                modifier = Modifier.padding(16.dp).fillMaxWidth()
+            ) {
+                Text(
+                    text = "Nearby bus stops",
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
+
+            TextBox(
+                title = Pages.BusArrival.title,
+                label = "Bus Stop Code",
+                text = homePageViewModel.busArrivalBusStopCodeInput,
+                onValueChange = { homePageViewModel.updateBusArrivalBusStopCodeInput(it) },
+                keyboardType = KeyboardType.Number,
+                onDone = {
                     navigateToBusArrival(
                         navController = navController,
                         busStopInput = homePageViewModel.busArrivalBusStopCodeInput
                     )
                     homePageViewModel.updateBusArrivalBusStopCodeInput(input = "")
-                } else {
-                    displayNotDownloadToast(context = BusApplication.instance)
                 }
-            }
 
-        )
+            )
 
-        TextBox(
-            title = Pages.BusServiceInformation.title,
-            label = "Service No.",
-            text = homePageViewModel.busServiceNoInput,
-            onValueChange = { homePageViewModel.updateBusServiceNoInput(it) },
-            onDone = {
-                if (homePageViewModel.downloaded) {
+            TextBox(
+                title = Pages.BusServiceInformation.title,
+                label = "Service No.",
+                text = homePageViewModel.busServiceNoInput,
+                onValueChange = { homePageViewModel.updateBusServiceNoInput(it) },
+                onDone = {
                     navigateToBusServiceInformation(
                         navController = navController,
                         busServiceInput = homePageViewModel.busServiceNoInput
                     )
                     homePageViewModel.updateBusServiceNoInput(input = "")
-                } else {
-                    displayNotDownloadToast(context = BusApplication.instance)
                 }
+            )
+
+        }
+    } else if (!homePageViewModel.failedDownload) {
+        Column {
+            Text(
+                text = "Downloading data",
+                textAlign = TextAlign.Center,
+                fontSize = 24.sp,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
+            )
+            CircularProgressIndicator(
+                modifier = Modifier.width(64.dp)
+                    .align(Alignment.CenterHorizontally),
+                color = MaterialTheme.colorScheme.secondary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            )
+        }
+    } else {
+        Column {
+            Text(
+                text = "Download Failed",
+                textAlign = TextAlign.Center,
+                fontSize = 24.sp,
+                modifier = Modifier.padding(16.dp)
+            )
+            Button(
+                onClick = {
+                    homePageViewModel.reInitialiseData()
+                },
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
+            ) {
+                Text(
+                    text = "Retry",
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(8.dp)
+                )
             }
-        )
-
+        }
     }
-}
-
-private fun displayNotDownloadToast(context: Context) {
-    Toast.makeText(context, "Data still downloading", Toast.LENGTH_LONG).show()
 }
 
 @Composable
@@ -318,10 +355,13 @@ fun navigateToBusArrival(
 
 fun navigateToNearby(
     navController: NavHostController,
-    latitude: String = "1.290270",
-    longitude: String = "103.851959"
+    latitude: Double = 1.290270,
+    longitude: Double = 103.851959
 ) {
-    navController.navigate(Pages.NearbyInformation.with2Text(latitude, longitude))
+    navController.navigate(Pages.NearbyInformation.with2Text(
+        text1 = latitude.toString(),
+        text2 = longitude.toString())
+    )
 }
 
 fun navigateToBusServiceInformation(
