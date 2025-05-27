@@ -24,8 +24,8 @@ interface MRTStationDAO {
     @Query("SELECT COUNT(*) FROM MRT_Stations_Table")
     suspend fun getMRTStationCount(): Int
 
-    @Query("SELECT * FROM MRT_Stations_Table WHERE stationName = :stationName")
-    suspend fun getMRTStation(stationName: String): List<MRTStation>
+    @Query("SELECT * FROM MRT_Stations_Table WHERE stationCode = :stationCode")
+    suspend fun getMRTStation(stationCode: String): MRTStation
 
     @Query("SELECT * FROM MRT_Stations_Table")
     suspend fun getAllMRTStations(): List<MRTStation>

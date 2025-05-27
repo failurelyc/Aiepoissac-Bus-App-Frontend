@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,13 +39,14 @@ fun NearbyUI(
             modifier = Modifier.padding(innerPadding)
         ) {
             MRTStationList(
+                navController = navController,
                 uiState = nearbyUIState,
                 modifier = Modifier.weight(1f)
             )
             BusStopList(
                 navController = navController,
                 uiState = nearbyUIState,
-                modifier = Modifier.weight(3f)
+                modifier = Modifier.weight(2f)
             )
         }
     }
@@ -54,6 +54,7 @@ fun NearbyUI(
 
 @Composable
 private fun MRTStationList(
+    navController: NavHostController,
     uiState: NearbyUIState,
     modifier: Modifier
 ) {
@@ -73,7 +74,15 @@ private fun MRTStationList(
         ) {
             items(data) { mrtStation ->
                 Card(
-                    modifier = Modifier.padding(8.dp)
+                    modifier = Modifier.padding(8.dp),
+                    onClick = {
+                        navigateToBusToMRTStations(
+                            navController = navController,
+                            latitude = uiState.point.first,
+                            longitude = uiState.point.second,
+                            stationCode = mrtStation.second.stationCode
+                        )
+                    }
                 ) {
                     Text(
                         text = "${mrtStation.second.stationCode} ${mrtStation.second.stationName} (${mrtStation.first}m)",
@@ -105,7 +114,6 @@ private fun BusStopList(
             fontSize = 24.sp,
             modifier = Modifier.padding(8.dp)
         )
-
 
         LazyVerticalGrid(
             modifier = modifier,
@@ -149,4 +157,19 @@ private fun BusStopList(
         )
     }
 
+}
+
+private fun navigateToBusToMRTStations(
+    navController: NavHostController,
+    latitude: Double = 1.290270,
+    longitude: Double = 103.851959,
+    stationCode: String,
+) {
+    navController.navigate(
+        Pages.BusesToMRTStation.with3Text(
+            text1 = latitude.toString(),
+            text2 = longitude.toString(),
+            text3 = stationCode
+        )
+    )
 }

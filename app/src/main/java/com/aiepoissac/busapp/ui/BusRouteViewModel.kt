@@ -7,6 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
+import com.aiepoissac.busapp.data.businfo.removeStopSequenceOffset
+import com.aiepoissac.busapp.data.businfo.truncateLoopRoute
+import com.aiepoissac.busapp.data.businfo.truncateTillBusStop
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -81,72 +84,22 @@ class BusRouteViewModel(
     fun setFirstBusStop(stopSequence: Int) {
 
         viewModelScope.launch {
-
-            val truncatedRoute = uiState.value.busRoute
-                .dropWhile { it.busRouteInfo.stopSequence < stopSequence }
-
-            val truncatedRouteWithAdjustedInfo = removeStopSequenceOffset(truncatedRoute)
-            if (uiState.value.busServiceInfo?.isLoop() != true) {
-                _uiState.update {
-                    it.copy(
-                        busRoute = truncatedRouteWithAdjustedInfo,
-                        truncated = true)
-                }
-            } else {
-
-                val truncatedLoopedRouteWithAdjustedInfo =
-                    truncateLoopRoute(route = truncatedRouteWithAdjustedInfo)
-                _uiState.update {
-                    it.copy(
-                        busRoute = truncatedLoopedRouteWithAdjustedInfo,
-                        truncated = true)
-                }
+            val truncatedRoute = truncateTillBusStop(
+                route = uiState.value.busRoute,
+                stopSequence = stopSequence,
+                truncateLoop = uiState.value.busServiceInfo?.isLoop() ?: false
+            )
+            _uiState.update {
+                it.copy(
+                    busRoute = truncatedRoute,
+                    truncated = true)
             }
         }
     }
 
-    private fun removeStopSequenceOffset(truncatedRoute: List<BusRouteInfoWithBusStopInfo>):
-            List<BusRouteInfoWithBusStopInfo> {
-        val distanceOffset = truncatedRoute.first().busRouteInfo.distance
-        val sequenceOffset = truncatedRoute.first().busRouteInfo.stopSequence
-        return truncatedRoute
-            .map { stop ->
-                val adjustedSequence = stop.busRouteInfo.stopSequence - sequenceOffset
-                val adjustedDistance = stop.busRouteInfo.distance - distanceOffset
-                stop.copy(busRouteInfo = stop.busRouteInfo.copy(
-                    stopSequence = adjustedSequence,
-                    distance = adjustedDistance)
-                )
-            }
-    }
-
-    private fun truncateLoopRoute(route: List<BusRouteInfoWithBusStopInfo>):
-            List<BusRouteInfoWithBusStopInfo> {
-        val seenBusStopCodes: HashSet<String> = HashSet()
-        var lastSeen = ""
-        return route
-            .takeWhile {
-                val thisStop = it.busStopInfo.busStopCode
-                lateinit var oppositeStop: String
-                if (thisStop.last() == '9') {
-                    oppositeStop = thisStop.substring(0, thisStop.length - 1) + "1"
-                } else if (thisStop.last() == '1') {
-                    oppositeStop = thisStop.substring(0, thisStop.length - 1) + "9"
-                } else {
-                    return@takeWhile true
-                }
-                if (seenBusStopCodes.contains(oppositeStop) && oppositeStop != lastSeen) {
-                    return@takeWhile false
-                }
-                seenBusStopCodes.add(thisStop)
-                lastSeen = thisStop
-                return@takeWhile true
-            }
-    }
-
     fun setLoopingPointAsFirstBusStop() {
         if (uiState.value.busServiceInfo?.isLoop() == true) {
-            val truncatedRoute = truncateLoopRoute(uiState.value.originalBusRoute.reversed())
+            val truncatedRoute = truncateLoopRoute(route = uiState.value.originalBusRoute.reversed())
                 .reversed()
 
             _uiState.update {

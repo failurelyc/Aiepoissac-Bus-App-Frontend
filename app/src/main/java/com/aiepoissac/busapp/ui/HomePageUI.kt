@@ -53,7 +53,8 @@ enum class Pages(val route: String, val title: String) {
     BusArrival(route = "BusArrival/{text}", title = "Bus Stop Information"),
     BusServiceInformation(route = "BusServiceInfo/{text}", title = "Bus Service Information"),
     BusRouteInformation(route = "BusRouteInfo/{text1}/{text2}/{text3}", title = "Bus Route Information"),
-    NearbyInformation(route = "NearbyInfo/{text1}/{text2}", title = "Nearby Bus Stops");
+    NearbyInformation(route = "NearbyInfo/{text1}/{text2}", title = "Nearby Bus Stops"),
+    BusesToMRTStation(route = "BusesToMRTStation/{text1}/{text2}/{text3}", title = "Bus Service to MRT station");
 
     fun withText(text: String): String {
         return route.replace("{text}", text)
@@ -77,6 +78,7 @@ enum class Pages(val route: String, val title: String) {
                 route.startsWith(BusServiceInformation.route) -> BusServiceInformation
                 route.startsWith(BusRouteInformation.route) -> BusRouteInformation
                 route.startsWith(NearbyInformation.route) -> NearbyInformation
+                route.startsWith(BusesToMRTStation.route) -> BusesToMRTStation
                 else -> HomePage
             }
         }
@@ -157,6 +159,17 @@ fun BusApp(
                         longitude = text2.toDouble()
                     )
                 }
+                composable(route = Pages.BusesToMRTStation.route) { backStackEntry ->
+                    val text1 = backStackEntry.arguments?.getString("text1") ?: ""
+                    val text2 = backStackEntry.arguments?.getString("text2") ?: ""
+                    val text3 = backStackEntry.arguments?.getString("text3") ?: ""
+                    BusToMRTStationsUI(
+                        navController = navController,
+                        latitude = text1.toDouble(),
+                        longitude = text2.toDouble(),
+                        stationCode = text3
+                    )
+                }
             }
     }
 
@@ -199,7 +212,7 @@ private fun HomePageUI(
                 modifier = Modifier.padding(16.dp).fillMaxWidth()
             ) {
                 Text(
-                    text = "Nearby bus stops",
+                    text = "Nearby bus stops and MRT stations",
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
             }

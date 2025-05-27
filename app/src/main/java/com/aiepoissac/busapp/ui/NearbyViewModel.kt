@@ -36,7 +36,12 @@ class NearbyViewModel(
     distanceThreshold: Int
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(NearbyUIState(distanceThreshold = distanceThreshold))
+    private val _uiState = MutableStateFlow(
+        NearbyUIState(
+            distanceThreshold = distanceThreshold,
+            point = point
+        )
+    )
     val uiState: StateFlow<NearbyUIState> = _uiState.asStateFlow()
 
     init {
@@ -55,7 +60,6 @@ class NearbyViewModel(
                     mrtStationList = busRepository
                         .getAllMRTStations()
                         .map { Pair(it.distanceFromInMetres(point), it) }
-                        .filter { it.first < uiState.value.distanceThreshold }
                         .sortedBy { it.first }
                 )
             }

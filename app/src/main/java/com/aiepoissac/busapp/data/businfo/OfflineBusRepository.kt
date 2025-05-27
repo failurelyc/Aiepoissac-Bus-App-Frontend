@@ -114,8 +114,8 @@ class OfflineBusRepository(
         return mrtStationDAO.getMRTStationCount()
     }
 
-    override suspend fun getMRTStation(stationName: String): List<MRTStation> {
-        return mrtStationDAO.getMRTStation(stationName)
+    override suspend fun getMRTStation(stationCode: String): MRTStation {
+        return mrtStationDAO.getMRTStation(stationCode)
     }
 
     override suspend fun getAllMRTStations(): List<MRTStation> {

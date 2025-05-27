@@ -56,7 +56,7 @@ interface BusRepository {
 
     suspend fun getMRTStationCount(): Int
 
-    suspend fun getMRTStation(stationName: String): List<MRTStation>
+    suspend fun getMRTStation(stationCode: String): MRTStation
 
     suspend fun getAllMRTStations(): List<MRTStation>
 

@@ -248,7 +248,7 @@ private fun BusStopInformation(
                 .padding(4.dp)
         ) {
             Text(
-                text = "Bus Stops near this bus stop",
+                text = "Bus Stops and MRT stations nearby",
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
         }
