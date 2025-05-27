@@ -46,4 +46,18 @@ interface BusRepository {
 
     suspend fun getBusStopWithBusRoutes(busStopCode: String): BusStopInfoWithBusRoutesInfo
 
+    suspend fun insertMRTStation(mrtStation: MRTStation)
+
+    suspend fun updateMRTStation(mrtStation: MRTStation)
+
+    suspend fun deleteMRTStation(mrtStation: MRTStation)
+
+    suspend fun deleteAllMRTStations()
+
+    suspend fun getMRTStationCount(): Int
+
+    suspend fun getMRTStation(stationName: String): List<MRTStation>
+
+    suspend fun getAllMRTStations(): List<MRTStation>
+
 }

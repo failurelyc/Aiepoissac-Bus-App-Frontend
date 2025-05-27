@@ -169,7 +169,6 @@ fun BusArrivalUI(
                     BusStopInformation(
                         uiState = busArrivalUIState,
                         toggleShowBusArrival = { busArrivalViewModel.toggleShowBusArrival() },
-                        toggleBusStop = { busArrivalViewModel.switchToOppositeBusStop() } ,
                         navController = navController
                     )
                 }
@@ -212,7 +211,6 @@ private fun BusStopCodeForBusArrival(
 private fun BusStopInformation(
     uiState: BusArrivalUIState,
     toggleShowBusArrival: () -> Unit,
-    toggleBusStop: () -> Unit,
     navController: NavHostController
 ) {
 
@@ -434,12 +432,6 @@ private fun BusArrivalLayout(data: Bus, modifier: Modifier = Modifier) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-//            Text(
-//                text = data.type,
-//                color = Color.Black,
-//                fontSize = 24.sp,
-//                modifier = Modifier.padding(4.dp)
-//            )
 
             Image(
                 painter = painterResource(id = busArrivalViewModel.busTypeToPicture(data)),

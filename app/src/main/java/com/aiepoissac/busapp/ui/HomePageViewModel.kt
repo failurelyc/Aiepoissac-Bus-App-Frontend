@@ -18,8 +18,8 @@ import com.aiepoissac.busapp.data.busarrival.getBusArrival
 import com.aiepoissac.busapp.data.businfo.populateBusRoutes
 import com.aiepoissac.busapp.data.businfo.populateBusServices
 import com.aiepoissac.busapp.data.businfo.populateBusStops
+import com.aiepoissac.busapp.data.businfo.populateMRTStations
 import com.google.android.gms.location.LocationServices
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -78,12 +78,18 @@ class HomePageViewModel : ViewModel() {
         failedDownload = false
         downloaded = false
         viewModelScope.launch {
-            initialiseData()
+            initialiseOfflineData()
+            initialiseOnlineData()
         }
     }
 
-    private suspend fun initialiseData() = withContext(Dispatchers.IO) {
+    private suspend fun initialiseOfflineData() = withContext(Dispatchers.IO) {
+        if (BusApplication.instance.container.busRepository.getMRTStationCount() == 0) {
+            populateMRTStations(BusApplication.instance.container.busRepository)
+        }
+    }
 
+    private suspend fun initialiseOnlineData() = withContext(Dispatchers.IO) {
         if (checkIfSundayOrMonday4amPassed()) {
             try {
                 Log.d("BusApplication", "Checking connection with API")

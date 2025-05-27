@@ -1,5 +1,6 @@
 package com.aiepoissac.busapp.data.businfo
 
+import com.aiepoissac.busapp.BusApplication
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -9,7 +10,7 @@ import java.net.URL
 import java.util.Scanner
 
 
-enum class BusDataType {
+private enum class BusDataType {
     BusServices,
     BusRoutes,
     BusStops
@@ -98,4 +99,22 @@ suspend fun populateBusStops(busRepository: BusRepository) {
         }
         i++
     }
+}
+
+suspend fun populateMRTStations(busRepository: BusRepository) = withContext(Dispatchers.IO) {
+    busRepository.deleteAllMRTStations()
+    val inputStream = BusApplication.instance.assets.open("MRT Stations.csv")
+    val scanner = Scanner(inputStream)
+    scanner.useDelimiter("[,\\n]")
+    while (scanner.hasNext()) {
+        val type = scanner.next()
+        val stationCode = scanner.next()
+        val stationName = scanner.next()
+        val latitude = scanner.next().toDouble()
+        val longitude = scanner.next().toDouble()
+        val mrtStation = MRTStation(type, stationCode, stationName, latitude, longitude)
+        busRepository.insertMRTStation(mrtStation)
+    }
+    scanner.close()
+    inputStream.close()
 }

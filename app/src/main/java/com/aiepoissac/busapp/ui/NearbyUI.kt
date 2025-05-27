@@ -39,12 +39,52 @@ fun NearbyUI(
         Column(
             modifier = Modifier.padding(innerPadding)
         ) {
+            MRTStationList(
+                uiState = nearbyUIState,
+                modifier = Modifier.weight(1f)
+            )
             BusStopList(
                 navController = navController,
-                uiState = nearbyUIState
+                uiState = nearbyUIState,
+                modifier = Modifier.weight(3f)
             )
         }
+    }
+}
 
+@Composable
+private fun MRTStationList(
+    uiState: NearbyUIState,
+    modifier: Modifier
+) {
+
+    val data = uiState.mrtStationList
+
+    if (data.isNotEmpty()) {
+        Text(
+            text = "Nearby MRT Stations",
+            fontSize = 24.sp,
+            modifier = Modifier.padding(8.dp)
+        )
+
+        LazyVerticalGrid(
+            modifier = modifier,
+            columns = GridCells.Adaptive(minSize = 160.dp)
+        ) {
+            items(data) { mrtStation ->
+                Card(
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    Text(
+                        text = "${mrtStation.second.stationCode} ${mrtStation.second.stationName} (${mrtStation.first}m)",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+
+                }
+
+            }
+        }
     }
 
 }
@@ -52,13 +92,14 @@ fun NearbyUI(
 @Composable
 private fun BusStopList(
     navController: NavHostController,
-    uiState: NearbyUIState
+    uiState: NearbyUIState,
+    modifier: Modifier
 ) {
 
-    val configuration = LocalConfiguration.current
     val data = uiState.busStopList
 
-    if (configuration.orientation == 1) {
+
+    if (data.isNotEmpty()) {
         Text(
             text = "Nearby Bus Stops",
             fontSize = 24.sp,
@@ -66,41 +107,46 @@ private fun BusStopList(
         )
 
 
-    }
+        LazyVerticalGrid(
+            modifier = modifier,
+            columns = GridCells.Adaptive(minSize = 320.dp)
+        ) {
+            items(data) { busStop ->
+                val busStopInfo = busStop.second
+                Card(
+                    onClick = { navigateToBusArrival(
+                        navController = navController,
+                        busStopInput = busStopInfo.busStopInfo.busStopCode) },
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    Text(
+                        text = "${busStopInfo.busStopInfo.busStopCode} ${busStopInfo.busStopInfo.description}",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    Text(
+                        text = "${busStopInfo.busStopInfo.roadName} (${busStop.first}m)",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    Text(
+                        text = busStopInfo.busRoutesInfo
+                            .map{ it.serviceNo }
+                            .distinct()
+                            .joinToString(", ")
+                        ,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                }
 
-    LazyVerticalGrid(
-        modifier = Modifier,
-        columns = GridCells.Adaptive(minSize = 320.dp)
-    ) {
-        items(data) { busStop ->
-            val busStopInfo = busStop.second
-            Card(
-                onClick = { navigateToBusArrival(
-                    navController = navController,
-                    busStopInput = busStopInfo.busStopInfo.busStopCode) },
-                modifier = Modifier.padding(8.dp)
-            ) {
-                Text(
-                    text = "${busStopInfo.busStopInfo.busStopCode} ${busStopInfo.busStopInfo.description}",
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-                Text(
-                    text = "${busStopInfo.busStopInfo.roadName} (${busStop.first}m)",
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-                Text(
-                    text = busStopInfo.busRoutesInfo
-                        .map{ it.serviceNo }
-                        .distinct()
-                        .joinToString(", ")
-                    ,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
             }
-
         }
+    } else {
+        Text(
+            text = "No nearby Bus Stops",
+            fontSize = 24.sp,
+            modifier = Modifier.padding(8.dp)
+        )
     }
 
 }

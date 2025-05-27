@@ -14,7 +14,8 @@ class AppDataContainer(private val context: Context): AppContainer {
         OfflineBusRepository(
             busServiceInfoDAO = BusDatabase.getDatabase(context).busServiceInfoDao(),
             busRouteInfoDAO = BusDatabase.getDatabase(context).busRouteInfoDAO(),
-            busStopInfoDAO = BusDatabase.getDatabase(context).busStopInfoDAO()
+            busStopInfoDAO = BusDatabase.getDatabase(context).busStopInfoDAO(),
+            mrtStationDAO = BusDatabase.getDatabase(context).mrtStationDAO()
         )
     }
 }

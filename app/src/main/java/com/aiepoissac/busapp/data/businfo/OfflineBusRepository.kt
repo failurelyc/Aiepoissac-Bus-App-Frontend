@@ -3,7 +3,8 @@ package com.aiepoissac.busapp.data.businfo
 class OfflineBusRepository(
     private val busServiceInfoDAO: BusServiceInfoDAO,
     private val busRouteInfoDAO: BusRouteInfoDAO,
-    private val busStopInfoDAO: BusStopInfoDAO): BusRepository {
+    private val busStopInfoDAO: BusStopInfoDAO,
+    private val mrtStationDAO: MRTStationDAO): BusRepository {
 
     override suspend fun insertBusService(busServiceInfo: BusServiceInfo) {
         busServiceInfoDAO.insert(busServiceInfo = busServiceInfo)
@@ -91,6 +92,34 @@ class OfflineBusRepository(
     override suspend fun getBusStopWithBusRoutes(busStopCode: String):
             BusStopInfoWithBusRoutesInfo {
         return busStopInfoDAO.getBusStopWithBusRoutes(busStopCode)
+    }
+
+    override suspend fun insertMRTStation(mrtStation: MRTStation) {
+        mrtStationDAO.insert(mrtStation)
+    }
+
+    override suspend fun updateMRTStation(mrtStation: MRTStation) {
+        mrtStationDAO.update(mrtStation)
+    }
+
+    override suspend fun deleteMRTStation(mrtStation: MRTStation) {
+        mrtStationDAO.delete(mrtStation)
+    }
+
+    override suspend fun deleteAllMRTStations() {
+        mrtStationDAO.deleteAll()
+    }
+
+    override suspend fun getMRTStationCount(): Int {
+        return mrtStationDAO.getMRTStationCount()
+    }
+
+    override suspend fun getMRTStation(stationName: String): List<MRTStation> {
+        return mrtStationDAO.getMRTStation(stationName)
+    }
+
+    override suspend fun getAllMRTStations(): List<MRTStation> {
+        return mrtStationDAO.getAllMRTStations()
     }
 
 }
