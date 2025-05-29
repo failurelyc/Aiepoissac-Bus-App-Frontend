@@ -28,30 +28,56 @@ data class BusRouteInfo (
     @SerialName("SAT_LastBus") val satLastBus: String,
     @SerialName("SUN_FirstBus") val sunFirstBus: String,
     @SerialName("SUN_LastBus") val sunLastBus: String
-
 )
+
+fun isLoop(route: List<BusRouteInfoWithBusStopInfo>): Boolean {
+    return route.first().busStopInfo.description == route.last().busStopInfo.description
+}
 
 fun truncateTillBusStop(
     route: List<BusRouteInfoWithBusStopInfo>,
     stopSequence: Int,
-    truncateLoop: Boolean,
     adjustStopSequence: Boolean = true
 ): List<BusRouteInfoWithBusStopInfo> {
+    var visitedFirstStopAgain = -1
+
     var truncatedRoute = route
-        .dropWhile { it.busRouteInfo.stopSequence < stopSequence }
+        .dropWhile {
+            if (it.busStopInfo.description == route.first().busStopInfo.description &&
+                visitedFirstStopAgain == -1 &&
+                it != route.first() && it != route.last())
+                visitedFirstStopAgain = it.busRouteInfo.stopSequence
+            return@dropWhile it.busRouteInfo.stopSequence < stopSequence }
+
+    if (visitedFirstStopAgain >= 0) { //bus service is a dual loop
+        truncatedRoute = truncatedRoute +
+                addStopSequenceOffset(route, truncatedRoute.last())
+    }
 
     if (adjustStopSequence) {
         truncatedRoute = removeStopSequenceOffset(truncatedRoute)
     }
 
-    if (!truncateLoop) {
+    if (!isLoop(route)) {
         return truncatedRoute
     } else {
         return truncateLoopRoute(route = truncatedRoute)
     }
 }
 
-fun removeStopSequenceOffset(truncatedRoute: List<BusRouteInfoWithBusStopInfo>):
+private fun addStopSequenceOffset(
+    route: List<BusRouteInfoWithBusStopInfo>,
+    firstStop: BusRouteInfoWithBusStopInfo
+): List<BusRouteInfoWithBusStopInfo> {
+    return route.map { stop ->
+        stop.copy(busRouteInfo = stop.busRouteInfo.copy(
+            stopSequence = stop.busRouteInfo.stopSequence + firstStop.busRouteInfo.stopSequence,
+            distance = stop.busRouteInfo.distance + firstStop.busRouteInfo.distance)
+        )
+    }
+}
+
+private fun removeStopSequenceOffset(truncatedRoute: List<BusRouteInfoWithBusStopInfo>):
         List<BusRouteInfoWithBusStopInfo> {
     val distanceOffset = truncatedRoute.first().busRouteInfo.distance
     val sequenceOffset = truncatedRoute.first().busRouteInfo.stopSequence
@@ -66,26 +92,47 @@ fun removeStopSequenceOffset(truncatedRoute: List<BusRouteInfoWithBusStopInfo>):
         }
 }
 
-fun truncateLoopRoute(route: List<BusRouteInfoWithBusStopInfo>):
-        List<BusRouteInfoWithBusStopInfo> {
-    val seenBusStopCodes: HashSet<String> = HashSet()
+fun truncateLoopRoute(
+    route: List<BusRouteInfoWithBusStopInfo>,
+    after: Boolean = false
+): List<BusRouteInfoWithBusStopInfo> {
+    val seenBusStopCodes: HashMap<String, Int> = HashMap()
     var lastSeen = ""
-    return route
+    val truncatedRoute = route
         .takeWhile {
             val thisStop = it.busStopInfo.busStopCode
-            lateinit var oppositeStop: String
-            if (thisStop.last() == '9') {
-                oppositeStop = thisStop.substring(0, thisStop.length - 1) + "1"
-            } else if (thisStop.last() == '1') {
-                oppositeStop = thisStop.substring(0, thisStop.length - 1) + "9"
-            } else {
+            println(lastSeen)
+            val oppositeStop: String = oppositeBusStopCode(thisStop)
+            if (oppositeStop == thisStop) {
                 return@takeWhile true
             }
+
             if (seenBusStopCodes.contains(oppositeStop) && oppositeStop != lastSeen) {
+                lastSeen = oppositeStop
                 return@takeWhile false
             }
-            seenBusStopCodes.add(thisStop)
+            seenBusStopCodes.put(thisStop, it.busRouteInfo.stopSequence)
             lastSeen = thisStop
             return@takeWhile true
         }
+    if (!after) {
+        return truncatedRoute
+    } else {
+        return truncateTillBusStop(
+            route = route,
+            stopSequence = (seenBusStopCodes.get(lastSeen)?: 0) + 1
+        )
+    }
 }
+
+private fun oppositeBusStopCode(busStopCode: String): String {
+    return if (busStopCode.last() == '9') {
+        busStopCode.substring(0, busStopCode.length - 1) + '1'
+    } else if (busStopCode.last() == '1') {
+        busStopCode.substring(0, busStopCode.length - 1) + '9'
+    } else {
+        busStopCode
+    }
+}
+
+

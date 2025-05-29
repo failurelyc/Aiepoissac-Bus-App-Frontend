@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
-import com.aiepoissac.busapp.data.businfo.removeStopSequenceOffset
+import com.aiepoissac.busapp.data.businfo.isLoop
 import com.aiepoissac.busapp.data.businfo.truncateLoopRoute
 import com.aiepoissac.busapp.data.businfo.truncateTillBusStop
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,7 +73,7 @@ class BusRouteViewModel(
 
     fun toggleDirection() {
         val busServiceInfo = uiState.value.busServiceInfo
-        if (busServiceInfo != null && !busServiceInfo.isLoop()) {
+        if (!isLoop(uiState.value.originalBusRoute) && busServiceInfo != null) {
             updateBusService(
                 serviceNo = busServiceInfo.serviceNo,
                 direction = if (busServiceInfo.direction == 1) 2 else 1
@@ -82,12 +82,10 @@ class BusRouteViewModel(
     }
 
     fun setFirstBusStop(stopSequence: Int) {
-
         viewModelScope.launch {
             val truncatedRoute = truncateTillBusStop(
                 route = uiState.value.busRoute,
-                stopSequence = stopSequence,
-                truncateLoop = uiState.value.busServiceInfo?.isLoop() ?: false
+                stopSequence = stopSequence
             )
             _uiState.update {
                 it.copy(
@@ -98,17 +96,15 @@ class BusRouteViewModel(
     }
 
     fun setLoopingPointAsFirstBusStop() {
-        if (uiState.value.busServiceInfo?.isLoop() == true) {
-            val truncatedRoute = truncateLoopRoute(route = uiState.value.originalBusRoute.reversed())
-                .reversed()
-
-            _uiState.update {
-                it.copy(
-                    busRoute = removeStopSequenceOffset(truncatedRoute),
-                    truncated = false,
-                    truncatedAfterLoopingPoint = true
-                )
-            }
+        _uiState.update {
+            it.copy(
+                busRoute = truncateLoopRoute(
+                    route = uiState.value.originalBusRoute,
+                    after = true
+                ),
+                truncated = false,
+                truncatedAfterLoopingPoint = true
+            )
         }
     }
 

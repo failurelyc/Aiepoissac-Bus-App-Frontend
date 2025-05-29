@@ -80,7 +80,6 @@ class BusToMRTStationsViewModel (
                     val routeFromThisStop = truncateTillBusStop(
                         route = fullBusRoute,
                         stopSequence = busRouteInfo.stopSequence,
-                        truncateLoop = true,
                         adjustStopSequence = false
                     )
                     var destination: Pair<Int, BusRouteInfoWithBusStopInfo>? = null

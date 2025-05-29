@@ -78,8 +78,8 @@ private fun MRTStationList(
                     onClick = {
                         navigateToBusToMRTStations(
                             navController = navController,
-                            latitude = uiState.point.first,
-                            longitude = uiState.point.second,
+                            latitude = uiState.point.getCoordinates().first,
+                            longitude = uiState.point.getCoordinates().second,
                             stationCode = mrtStation.second.stationCode
                         )
                     }

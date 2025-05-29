@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.businfo.BusRepository
+import com.aiepoissac.busapp.data.businfo.LatLong
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +22,7 @@ class NearbyViewModelFactory(
         return if (modelClass.isAssignableFrom(NearbyViewModel::class.java)) {
             NearbyViewModel(
                 busRepository = busRepository,
-                point = Pair(latitude, longitude),
+                point = LatLong(latitude, longitude),
                 distanceThreshold = distanceThreshold,
             ) as T
         } else {
@@ -32,7 +33,7 @@ class NearbyViewModelFactory(
 
 class NearbyViewModel(
     private val busRepository: BusRepository,
-    point: Pair<Double, Double>,
+    point: LatLong,
     distanceThreshold: Int
 ) : ViewModel() {
 

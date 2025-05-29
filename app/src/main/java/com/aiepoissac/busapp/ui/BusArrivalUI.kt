@@ -373,7 +373,7 @@ private fun BusArrivalsLayout(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(8.dp)
     ) {
         Card(
             modifier = Modifier
@@ -409,7 +409,7 @@ private fun BusArrivalsLayout(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(8.dp)
                 ) {
                 BusArrivalLayout(data = data.nextBus, modifier = Modifier.weight(1f))
                 BusArrivalLayout(data = data.nextBus2, modifier = Modifier.weight(1f))

@@ -27,6 +27,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
+import com.aiepoissac.busapp.data.businfo.isLoop
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
@@ -166,7 +167,7 @@ private fun BusRouteList(
             }
         }
 
-        if ((uiState.busServiceInfo.isLoop() &&
+        if ((isLoop(uiState.originalBusRoute) &&
                     ((!uiState.truncated && !uiState.truncatedAfterLoopingPoint) ||
                             uiState.truncated))) {
             Button(
@@ -176,14 +177,14 @@ private fun BusRouteList(
                     .padding(4.dp)
             ) {
                 Text(
-                    text = "See bus route after last looping point",
+                    text = "See bus route after looping point",
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
             }
 
         }
 
-        if (!uiState.busServiceInfo.isLoop()) {
+        if (!isLoop(uiState.originalBusRoute)) {
             Button(
                 onClick = switchDirection,
                 modifier = Modifier
@@ -239,17 +240,18 @@ private fun BusRouteInformation(
             modifier = Modifier.weight(1f),
             onClick = {
 
-                if (!uiState.truncated || uiState.busServiceInfo?.isLoop() == false) {
+                if ((!uiState.truncated && !uiState.truncatedAfterLoopingPoint) ||
+                    uiState.busServiceInfo?.isLoop() == false) {
                     busRouteViewModel.setFirstBusStop(data.busRouteInfo.stopSequence)
+                    MainScope().launch {
+                        gridState.scrollToItem(0)
+                    }
                 } else {
                     Toast.makeText(
                         BusApplication.instance,
                         "Revert to full route first", Toast.LENGTH_SHORT).show()
                 }
 
-                MainScope().launch {
-                    gridState.scrollToItem(0)
-                }
             }
         ) {
             Text(
