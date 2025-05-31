@@ -55,6 +55,7 @@ class BusRouteViewModel(
 
     private fun updateBusService(serviceNo: String, direction: Int, stopSequence: Int = -1) {
         viewModelScope.launch {
+
             val busRoute: List<BusRouteInfoWithBusStopInfo> = busRepository
                 .getBusServiceRoute(serviceNo = serviceNo, direction = direction)
             _uiState.update {
@@ -83,27 +84,35 @@ class BusRouteViewModel(
 
     fun setFirstBusStop(stopSequence: Int) {
         viewModelScope.launch {
-            val truncatedRoute = truncateTillBusStop(
-                route = uiState.value.busRoute,
-                stopSequence = stopSequence
-            )
-            _uiState.update {
-                it.copy(
-                    busRoute = truncatedRoute,
-                    truncated = true)
+            if (uiState.value.busRoute.size > 1) {
+                val truncatedRoute = truncateTillBusStop(
+                    route = uiState.value.originalBusRoute,
+                    stopSequence = stopSequence + uiState.value.busStopSequenceOffset
+                )
+                _uiState.update {
+                    it.copy(
+                        busRoute = truncatedRoute,
+                        truncated = true,
+                        busStopSequenceOffset = (stopSequence + uiState.value.busStopSequenceOffset)
+                                % (uiState.value.originalBusRoute.size - 1))
+                }
+            } else {
+                setOriginalFirstBusStop()
             }
         }
     }
 
     fun setLoopingPointAsFirstBusStop() {
         _uiState.update {
+            val truncatedRoute = truncateLoopRoute(
+                route = uiState.value.originalBusRoute,
+                after = true
+            )
             it.copy(
-                busRoute = truncateLoopRoute(
-                    route = uiState.value.originalBusRoute,
-                    after = true
-                ),
+                busRoute = truncatedRoute.second,
                 truncated = false,
-                truncatedAfterLoopingPoint = true
+                truncatedAfterLoopingPoint = true,
+                busStopSequenceOffset = truncatedRoute.first
             )
         }
     }
@@ -114,7 +123,8 @@ class BusRouteViewModel(
             it.copy(
                 busRoute = busRoute,
                 truncated = false,
-                truncatedAfterLoopingPoint = false
+                truncatedAfterLoopingPoint = false,
+                busStopSequenceOffset = 0
             )
         }
     }

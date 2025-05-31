@@ -5,6 +5,7 @@ import com.aiepoissac.busapp.data.businfo.BusServiceInfo
 
 data class BusRouteUIState (
     val busRoute: List<BusRouteInfoWithBusStopInfo> = listOf(),
+    val busStopSequenceOffset: Int = 0,
     val originalBusRoute: List<BusRouteInfoWithBusStopInfo> = listOf(),
     val busServiceInfo: BusServiceInfo? = null,
     val truncated: Boolean = false,

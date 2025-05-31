@@ -31,7 +31,8 @@ data class BusRouteInfo (
 )
 
 fun isLoop(route: List<BusRouteInfoWithBusStopInfo>): Boolean {
-    return route.first().busStopInfo.description == route.last().busStopInfo.description
+    return route.first().busStopInfo.description == route.last().busStopInfo.description ||
+            oppositeBusStopCode(route.first().busStopInfo.busStopCode) == route.last().busStopInfo.busStopCode
 }
 
 fun truncateTillBusStop(
@@ -43,7 +44,8 @@ fun truncateTillBusStop(
 
     var truncatedRoute = route
         .dropWhile {
-            if (it.busStopInfo.description == route.first().busStopInfo.description &&
+            if ((it.busStopInfo.description == route.first().busStopInfo.description ||
+                    it.busStopInfo.busStopCode == oppositeBusStopCode(route.first().busStopInfo.busStopCode)) &&
                 visitedFirstStopAgain == -1 &&
                 it != route.first() && it != route.last())
                 visitedFirstStopAgain = it.busRouteInfo.stopSequence
@@ -61,7 +63,7 @@ fun truncateTillBusStop(
     if (!isLoop(route)) {
         return truncatedRoute
     } else {
-        return truncateLoopRoute(route = truncatedRoute)
+        return truncateLoopRoute(route = truncatedRoute).second
     }
 }
 
@@ -95,13 +97,12 @@ private fun removeStopSequenceOffset(truncatedRoute: List<BusRouteInfoWithBusSto
 fun truncateLoopRoute(
     route: List<BusRouteInfoWithBusStopInfo>,
     after: Boolean = false
-): List<BusRouteInfoWithBusStopInfo> {
+): Pair<Int, List<BusRouteInfoWithBusStopInfo>> {
     val seenBusStopCodes: HashMap<String, Int> = HashMap()
     var lastSeen = ""
     val truncatedRoute = route
         .takeWhile {
             val thisStop = it.busStopInfo.busStopCode
-            println(lastSeen)
             val oppositeStop: String = oppositeBusStopCode(thisStop)
             if (oppositeStop == thisStop) {
                 return@takeWhile true
@@ -116,11 +117,15 @@ fun truncateLoopRoute(
             return@takeWhile true
         }
     if (!after) {
-        return truncatedRoute
+        return Pair(0, truncatedRoute)
     } else {
-        return truncateTillBusStop(
-            route = route,
-            stopSequence = (seenBusStopCodes.get(lastSeen)?: 0) + 1
+        val stopSequenceOffset = (seenBusStopCodes.get(lastSeen)?: 0) + 1
+        return Pair(
+            first = stopSequenceOffset,
+            second = truncateTillBusStop(
+                route = route,
+                stopSequence = stopSequenceOffset
+            )
         )
     }
 }

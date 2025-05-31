@@ -66,6 +66,7 @@ suspend fun populateBusServices(busRepository: BusRepository) {
 suspend fun populateBusRoutes(busRepository: BusRepository) {
     busRepository.deleteAllBusRoutes()
     var i = 0
+    var previous: BusRouteInfo? = null
     while (true) {
         val json = withContext(Dispatchers.IO) {
             getData(dataType = BusDataType.BusRoutes, count = i * 500)
@@ -75,7 +76,17 @@ suspend fun populateBusRoutes(busRepository: BusRepository) {
             break
         } else {
             for (busRouteInfo in busRoutesInfo.value) {
-                busRepository.insertBusRoute(busRouteInfo)
+                val busRouteInfoWithCorrectStopSequence = busRouteInfo.copy(
+                    stopSequence = if (previous != null &&
+                        previous.serviceNo == busRouteInfo.serviceNo &&
+                        previous.direction == busRouteInfo.direction
+                    ) previous.stopSequence + 1 else 0
+                )
+                busRepository.insertBusRoute(
+                    busRouteInfoWithCorrectStopSequence
+                )
+                previous = busRouteInfoWithCorrectStopSequence
+
             }
         }
         i++

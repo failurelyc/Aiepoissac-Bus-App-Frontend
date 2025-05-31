@@ -239,19 +239,10 @@ private fun BusRouteInformation(
         Card(
             modifier = Modifier.weight(1f),
             onClick = {
-
-                if ((!uiState.truncated && !uiState.truncatedAfterLoopingPoint) ||
-                    uiState.busServiceInfo?.isLoop() == false) {
-                    busRouteViewModel.setFirstBusStop(data.busRouteInfo.stopSequence)
-                    MainScope().launch {
-                        gridState.scrollToItem(0)
-                    }
-                } else {
-                    Toast.makeText(
-                        BusApplication.instance,
-                        "Revert to full route first", Toast.LENGTH_SHORT).show()
+                busRouteViewModel.setFirstBusStop(data.busRouteInfo.stopSequence)
+                MainScope().launch {
+                    gridState.scrollToItem(0)
                 }
-
             }
         ) {
             Text(

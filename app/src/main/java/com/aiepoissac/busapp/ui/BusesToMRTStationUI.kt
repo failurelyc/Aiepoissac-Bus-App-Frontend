@@ -56,40 +56,49 @@ fun BusToMRTStationsUI(
                     modifier = Modifier.padding(16.dp)
                 )
 
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 320.dp)
-                ) {
-                    items(busToMRTStationsUIState.routes) { route ->
-                        val start = route.first.second
-                        val end = route.second.second
+                if (busToMRTStationsUIState.routes.isNotEmpty()) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 320.dp)
+                    ) {
+                        items(busToMRTStationsUIState.routes) { route ->
+                            val start = route.first.second
+                            val end = route.second.second
 
-                        Card(
-                            modifier = Modifier.padding(8.dp),
-                            onClick = { navigateToBusRouteInformation(
-                                navController = navController,
-                                serviceNo = start.busRouteInfo.serviceNo,
-                                direction = start.busRouteInfo.direction,
-                                stopSequence = start.busRouteInfo.stopSequence
-                            ) }
-                        ) {
+                            Card(
+                                modifier = Modifier.padding(8.dp),
+                                onClick = { navigateToBusRouteInformation(
+                                    navController = navController,
+                                    serviceNo = start.busRouteInfo.serviceNo,
+                                    direction = start.busRouteInfo.direction,
+                                    stopSequence = start.busRouteInfo.stopSequence
+                                ) }
+                            ) {
 
-
-                            Text(
-                                text = "${start.busRouteInfo.serviceNo} ${end.busRouteInfo.stopSequence - start.busRouteInfo.stopSequence} stops",
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth()
-                            )
-                            Text(
-                                text = "${start.busStopInfo.busStopCode} ${start.busStopInfo.description} (${route.first.first}m)",
-                                modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth()
-                            )
-                            Text(
-                                text = "${end.busStopInfo.busStopCode} ${end.busStopInfo.description} (${route.second.first}m)",
-                                modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth()
-                            )
+                                Text(
+                                    text = "${start.busRouteInfo.serviceNo} ${end.busRouteInfo.stopSequence - start.busRouteInfo.stopSequence} stops",
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth()
+                                )
+                                Text(
+                                    text = "${start.busStopInfo.busStopCode} ${start.busStopInfo.description} (${route.first.first}m)",
+                                    modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth()
+                                )
+                                Text(
+                                    text = "${end.busStopInfo.busStopCode} ${end.busStopInfo.description} (${route.second.first}m)",
+                                    modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth()
+                                )
+                            }
                         }
                     }
+                } else {
+                    Text(
+                        text = "No bus services nearby to this station" ,
+                        fontSize = 24.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
+
             } else {
                 Text(
                     text = "Loading",
