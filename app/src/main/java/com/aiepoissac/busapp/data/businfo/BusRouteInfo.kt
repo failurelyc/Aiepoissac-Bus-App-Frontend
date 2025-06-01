@@ -1,6 +1,7 @@
 package com.aiepoissac.busapp.data.businfo
 
 import androidx.room.Entity
+import com.aiepoissac.busapp.data.HasCoordinates
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -138,6 +139,148 @@ private fun oppositeBusStopCode(busStopCode: String): String {
     } else {
         busStopCode
     }
+}
+
+suspend fun findBusServiceTo(
+    origin: HasCoordinates,
+    target: HasCoordinates,
+    distanceThreshold: Int,
+    busRepository: BusRepository
+): List<Pair<Pair<Int, BusRouteInfoWithBusStopInfo>, Pair<Int, BusRouteInfoWithBusStopInfo>>> {
+
+    val distanceToTarget = target.distanceFromInMetres(origin)
+    val busRoutesNearby: List<Pair<Int, BusRouteInfoWithBusStopInfo>> = findNearbyBusStops(
+        point = origin,
+        distanceThreshold = distanceThreshold,
+        busRepository = busRepository
+    )
+        .flatMap { distanceAndBusStop ->
+            busRepository
+                .getBusRoutesAtBusStop(distanceAndBusStop.second.busStopCode)
+                .map { busRoute ->
+                    Pair(
+                        first = distanceAndBusStop.first,
+                        second = BusRouteInfoWithBusStopInfo(
+                            busRouteInfo = busRoute,
+                            busStopInfo = distanceAndBusStop.second
+                        )
+                    )
+                }
+        }
+
+    val seenBusRoutes: HashSet<BusRouteInfoWithBusStopInfo> = HashSet()
+    val routes: MutableList<Pair<Pair<Int, BusRouteInfoWithBusStopInfo>, Pair<Int, BusRouteInfoWithBusStopInfo>>> =
+        mutableListOf()
+
+    for (busRouteNearby in busRoutesNearby) {
+        if (!seenBusRoutes.contains(busRouteNearby.second)) {
+            val remainingDistanceThreshold = distanceThreshold - busRouteNearby.first
+            val busRouteInfo = busRouteNearby.second.busRouteInfo
+            val fullBusRoute = busRepository.getBusServiceRoute(
+                serviceNo = busRouteInfo.serviceNo,
+                direction = busRouteInfo.direction
+            )
+            val routeFromThisStop = truncateTillBusStop(
+                route = fullBusRoute,
+                stopSequence = busRouteInfo.stopSequence,
+                adjustStopSequence = false
+            )
+            var destination: Pair<Int, BusRouteInfoWithBusStopInfo>? = null
+            var alternativeDestination: Pair<Int, BusRouteInfoWithBusStopInfo>? = null
+            var alternativeOrigin: Pair<Int, BusRouteInfoWithBusStopInfo>? = null
+            var readyToSetAlternativeOrigin = false
+            var previousDistanceToOrigin: Int = busRouteNearby.first
+            var destinationFixed = false
+
+            for (stop in routeFromThisStop) {
+                if (!seenBusRoutes.contains(stop)) {
+                    seenBusRoutes.add(stop)
+                    val distance = stop.busStopInfo.distanceFromInMetres(target)
+                    val distanceToOrigin = origin.distanceFromInMetres(stop.busStopInfo)
+
+                    if (distanceToOrigin < previousDistanceToOrigin) {
+                        readyToSetAlternativeOrigin = true
+                    }
+                    previousDistanceToOrigin = distanceToOrigin
+
+                    if (readyToSetAlternativeOrigin &&
+                        distanceToOrigin < distanceThreshold &&
+                        (alternativeOrigin == null
+                                || alternativeOrigin.first > distanceToOrigin)
+                    ) {
+                        alternativeOrigin = Pair(distanceToOrigin, stop)
+                    }
+
+                    if (distance <= remainingDistanceThreshold) {
+
+                        if (!destinationFixed) {
+                            if (destination == null || destination.first > distance) {
+                                destination = Pair(distance, stop)
+                            } else {
+                                destinationFixed = true
+                            }
+                        } else {
+                            if (distance < destination!!.first &&
+                                (alternativeDestination == null
+                                        || alternativeDestination.first > distance)
+                            ) {
+                                alternativeDestination = Pair(distance, stop)
+                            } else if (alternativeDestination != null) {
+                                break
+                            }
+                        }
+
+                    } else if (destination != null) {
+                        destinationFixed = true
+                        continue
+                    }
+                } else {
+                    break
+                }
+            }
+            if (checkProposedRoute(
+                    origin = busRouteNearby,
+                    destination = destination,
+                    distanceFromOriginToDestination = distanceToTarget)
+                ) {
+                routes.add(Pair(busRouteNearby, destination!!))
+                if (checkProposedRoute(
+                        origin = alternativeOrigin,
+                        destination = destination,
+                        distanceFromOriginToDestination = distanceToTarget)
+                ) {
+                    routes.add(Pair(alternativeOrigin!!, destination))
+                }
+
+                if (checkProposedRoute(
+                        origin = busRouteNearby,
+                        destination = alternativeDestination,
+                        distanceFromOriginToDestination = distanceToTarget)
+                ) {
+                    routes.add(Pair(busRouteNearby, alternativeDestination!!))
+                    if (checkProposedRoute(
+                            origin = alternativeOrigin,
+                            destination = alternativeDestination,
+                            distanceFromOriginToDestination = distanceToTarget)
+                    ) {
+                        routes.add(Pair(alternativeOrigin!!, alternativeDestination))
+                    }
+                }
+            }
+        }
+    }
+    return routes
+}
+
+private fun checkProposedRoute(
+    origin: Pair<Int, BusRouteInfoWithBusStopInfo>?,
+    destination: Pair<Int, BusRouteInfoWithBusStopInfo>?,
+    distanceFromOriginToDestination: Int
+): Boolean {
+    return origin != null &&
+            destination != null &&
+            origin.first + destination.first <= distanceFromOriginToDestination &&
+            destination.second.busRouteInfo.stopSequence - origin.second.busRouteInfo.stopSequence > 0
 }
 
 

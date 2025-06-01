@@ -1,6 +1,5 @@
 package com.aiepoissac.busapp.ui
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
 import com.aiepoissac.busapp.data.businfo.isLoop
 import kotlinx.coroutines.MainScope

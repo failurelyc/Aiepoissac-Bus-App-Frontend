@@ -8,7 +8,8 @@ import androidx.room.RoomDatabase
 @Database(
     entities = [BusServiceInfo::class, BusRouteInfo::class, BusStopInfo::class, MRTStation::class],
     version = 1,
-    exportSchema = false)
+    exportSchema = false
+)
 abstract class BusDatabase: RoomDatabase() {
 
     abstract fun busServiceInfoDao(): BusServiceInfoDAO

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.LatLong
+import com.aiepoissac.busapp.data.businfo.findNearbyBusStops
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,11 +50,11 @@ class NearbyViewModel(
         viewModelScope.launch {
             _uiState.update { nearbyUiState ->
                 nearbyUiState.copy(
-                    busStopList = busRepository
-                        .getAllBusStops()
-                        .map { Pair(it.distanceFromInMetres(point), it) }
-                        .filter { it.first < uiState.value.distanceThreshold }
-                        .sortedBy { it.first }
+                    busStopList = findNearbyBusStops(
+                        point = point,
+                        distanceThreshold = distanceThreshold,
+                        busRepository = busRepository
+                    )
                         .map { Pair(
                             first = it.first,
                             second = busRepository.getBusStopWithBusRoutes(it.second.busStopCode))
