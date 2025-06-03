@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
+import com.aiepoissac.busapp.LocationManager
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
 import com.aiepoissac.busapp.data.businfo.LatLong
@@ -48,6 +49,7 @@ class BusToMRTStationsViewModel (
     val uiState: StateFlow<BusesToMRTStationUIState> = _uiState.asStateFlow()
 
     init {
+        LocationManager.stopFetchingLocation()
         viewModelScope.launch {
             val mrtStation = busRepository.getMRTStation(stationCode)
 

@@ -283,4 +283,9 @@ private fun checkProposedRoute(
             destination.second.busRouteInfo.stopSequence - origin.second.busRouteInfo.stopSequence > 0
 }
 
+fun attachDistanceFromPoint(point: LatLong, route: List<BusRouteInfoWithBusStopInfo>)
+: List<Pair<Int, BusRouteInfoWithBusStopInfo>> {
+    return route.map { Pair(it.busStopInfo.distanceFromInMetres(point), it) }
+}
+
 

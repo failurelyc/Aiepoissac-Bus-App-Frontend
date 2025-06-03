@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
+import com.aiepoissac.busapp.LocationManager
 import com.aiepoissac.busapp.R
 import com.aiepoissac.busapp.data.busarrival.Bus
 import com.aiepoissac.busapp.data.busarrival.getBusArrival
@@ -191,6 +192,7 @@ class BusArrivalViewModel(
     }
 
     init {
+        LocationManager.stopFetchingLocation()
         this.updateBusStopCodeInput(initialBusStopCodeInput)
         this.updateBusStop()
         Log.d(

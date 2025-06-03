@@ -1,18 +1,26 @@
 package com.aiepoissac.busapp.ui
 
 import android.util.Log
+import android.widget.Toast
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
+import com.aiepoissac.busapp.LocationManager
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
+import com.aiepoissac.busapp.data.businfo.LatLong
+import com.aiepoissac.busapp.data.businfo.attachDistanceFromPoint
 import com.aiepoissac.busapp.data.businfo.isLoop
 import com.aiepoissac.busapp.data.businfo.truncateLoopRoute
 import com.aiepoissac.busapp.data.businfo.truncateTillBusStop
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -58,9 +66,10 @@ class BusRouteViewModel(
 
             val busRoute: List<BusRouteInfoWithBusStopInfo> = busRepository
                 .getBusServiceRoute(serviceNo = serviceNo, direction = direction)
+
             _uiState.update {
                 BusRouteUIState(
-                    busRoute = busRoute,
+                    busRoute = attachDistanceFromCurrentLocation(busRoute),
                     originalBusRoute = busRoute,
                     busServiceInfo = busRepository
                         .getBusService(serviceNo = serviceNo, direction = direction)
@@ -91,7 +100,7 @@ class BusRouteViewModel(
                 )
                 _uiState.update {
                     it.copy(
-                        busRoute = truncatedRoute,
+                        busRoute = attachDistanceFromCurrentLocation(truncatedRoute),
                         truncated = true,
                         busStopSequenceOffset = (stopSequence + uiState.value.busStopSequenceOffset)
                                 % (uiState.value.originalBusRoute.size - 1))
@@ -109,7 +118,7 @@ class BusRouteViewModel(
                 after = true
             )
             it.copy(
-                busRoute = truncatedRoute.second,
+                busRoute = attachDistanceFromCurrentLocation(truncatedRoute.second),
                 truncated = false,
                 truncatedAfterLoopingPoint = true,
                 busStopSequenceOffset = truncatedRoute.first
@@ -121,7 +130,7 @@ class BusRouteViewModel(
         val busRoute = uiState.value.originalBusRoute
         _uiState.update {
             it.copy(
-                busRoute = busRoute,
+                busRoute = attachDistanceFromCurrentLocation(busRoute),
                 truncated = false,
                 truncatedAfterLoopingPoint = false,
                 busStopSequenceOffset = 0
@@ -133,6 +142,36 @@ class BusRouteViewModel(
         val showFirstLastBus = uiState.value.showFirstLastBus
         _uiState.update {
             it.copy(showFirstLastBus = !showFirstLastBus)
+        }
+    }
+
+    fun updateLiveLocation() {
+        viewModelScope.launch {
+            LocationManager.startFetchingLocation()
+            snapshotFlow { LocationManager.currentLocation.value }
+                .filterNotNull()
+                .distinctUntilChanged()
+                .collectLatest { location ->
+                    updateLocation(LatLong(location.latitude, location.longitude))
+                    Toast.makeText(BusApplication.instance, "Location refreshed", Toast.LENGTH_SHORT).show()
+                }
+        }
+    }
+
+    private fun updateLocation(point: LatLong) {
+        _uiState.update {
+            it.copy(busRoute = uiState.value.busRoute
+                .map { Pair(it.second.busStopInfo.distanceFromInMetres(point), it.second) } )
+        }
+    }
+
+    private fun attachDistanceFromCurrentLocation(route: List<BusRouteInfoWithBusStopInfo>)
+    : List<Pair<Int, BusRouteInfoWithBusStopInfo>> {
+        val location = LocationManager.currentLocation.value
+        if (location != null) {
+            return attachDistanceFromPoint(LatLong(location.latitude, location.longitude), route)
+        } else {
+            return route.map { Pair(0, it) }
         }
     }
 

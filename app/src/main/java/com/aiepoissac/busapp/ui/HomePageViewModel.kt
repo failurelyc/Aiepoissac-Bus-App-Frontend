@@ -1,16 +1,11 @@
 package com.aiepoissac.busapp.ui
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.icu.util.Calendar
-import android.location.Location
 import android.util.Log
-import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
@@ -19,7 +14,6 @@ import com.aiepoissac.busapp.data.businfo.populateBusRoutes
 import com.aiepoissac.busapp.data.businfo.populateBusServices
 import com.aiepoissac.busapp.data.businfo.populateBusStops
 import com.aiepoissac.busapp.data.businfo.populateMRTStations
-import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -49,25 +43,6 @@ class HomePageViewModel : ViewModel() {
         if (input.length <= 4) {
             this.busServiceNoInput = input
         }
-    }
-
-    private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(BusApplication.instance)
-
-    var location = mutableStateOf<Location?>(null)
-        private set
-
-    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
-    fun fetchLocation() {
-        if (ActivityCompat.checkSelfPermission(
-                BusApplication.instance,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) return
-
-        fusedLocationClient.lastLocation
-            .addOnSuccessListener { loc ->
-                location.value = loc
-            }
     }
 
     init {

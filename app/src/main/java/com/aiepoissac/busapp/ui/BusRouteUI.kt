@@ -50,6 +50,10 @@ fun BusRouteUI(
 
     val gridState = rememberLazyGridState()
 
+    RequestLocationPermission {
+        busRouteViewModel.updateLiveLocation()
+    }
+
     Scaffold (
         floatingActionButton = {
             FloatingActionButton(
@@ -128,7 +132,7 @@ private fun BusRouteList(
 
             if (uiState.truncated) {
                 Text(
-                    text = "Bus Stop ${data.first().busStopInfo.busStopCode} ${data.first().busStopInfo.description}",
+                    text = "Bus Stop ${data.first().second.busStopInfo.busStopCode} ${data.first().second.busStopInfo.description}",
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
             } else {
@@ -223,7 +227,7 @@ private fun BusRouteList(
 @Composable
 private fun BusRouteInformation(
     navController: NavHostController,
-    data: BusRouteInfoWithBusStopInfo,
+    data: Pair<Int, BusRouteInfoWithBusStopInfo>,
     uiState: BusRouteUIState,
     gridState: LazyGridState
 ) {
@@ -237,21 +241,21 @@ private fun BusRouteInformation(
         Card(
             modifier = Modifier.weight(1f),
             onClick = {
-                busRouteViewModel.setFirstBusStop(data.busRouteInfo.stopSequence)
+                busRouteViewModel.setFirstBusStop(data.second.busRouteInfo.stopSequence)
                 MainScope().launch {
                     gridState.scrollToItem(0)
                 }
             }
         ) {
             Text(
-                text = data.busRouteInfo.stopSequence.toString(),
+                text = data.second.busRouteInfo.stopSequence.toString(),
                 fontSize = if (uiState.showFirstLastBus) 24.sp else 18.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
 
             Text(
-                text = String.format("%.1f km", data.busRouteInfo.distance),
+                text = String.format("%.1f km", data.second.busRouteInfo.distance),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -260,19 +264,22 @@ private fun BusRouteInformation(
             modifier = Modifier.weight(4f),
             onClick = { navigateToBusArrival(
                 navController = navController,
-                busStopInput = data.busRouteInfo.busStopCode
+                busStopInput = data.second.busRouteInfo.busStopCode
             ) }
         ) {
 
+            val busRouteInfo = data.second.busRouteInfo
+            val busStopInfo = data.second.busStopInfo
+
             Text(
-                text = "${data.busRouteInfo.busStopCode} ${data.busStopInfo.description}",
+                text = "${busRouteInfo.busStopCode} ${busStopInfo.description}",
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
                     .padding(horizontal = 4.dp)
             )
 
             Text(
-                text = data.busStopInfo.roadName,
+                text = "${busStopInfo.roadName} (${data.first}m)",
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
                     .padding(horizontal = 4.dp)
@@ -280,19 +287,19 @@ private fun BusRouteInformation(
 
             if (uiState.showFirstLastBus) {
                 Text(
-                    text = "WEEKDAY: ${data.busRouteInfo.wdFirstBus} to ${data.busRouteInfo.wdLastBus}",
+                    text = "WEEKDAY: ${busRouteInfo.wdFirstBus} to ${busRouteInfo.wdLastBus}",
                     textAlign = TextAlign.Left,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
 
                 Text(
-                    text = "SATURDAY: ${data.busRouteInfo.satFirstBus} to ${data.busRouteInfo.satLastBus}",
+                    text = "SATURDAY: ${busRouteInfo.satFirstBus} to ${busRouteInfo.satLastBus}",
                     textAlign = TextAlign.Left,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
 
                 Text(
-                    text = "SUNDAY: ${data.busRouteInfo.sunFirstBus} to ${data.busRouteInfo.sunLastBus}",
+                    text = "SUNDAY: ${busRouteInfo.sunFirstBus} to ${busRouteInfo.sunLastBus}",
                     textAlign = TextAlign.Left,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
