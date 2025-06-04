@@ -61,6 +61,11 @@ class BusRouteViewModel(
             "BusServiceViewModel created with parameters: $serviceNo, $direction")
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        LocationManager.stopFetchingLocation()
+    }
+
     private fun updateBusService(serviceNo: String, direction: Int, stopSequence: Int = -1) {
         viewModelScope.launch {
 

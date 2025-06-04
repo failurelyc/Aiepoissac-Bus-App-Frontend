@@ -18,7 +18,7 @@ object LocationManager {
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(BusApplication.instance)
 
     private val locationRequest = LocationRequest.Builder(
-        Priority.PRIORITY_HIGH_ACCURACY, 20000)
+        Priority.PRIORITY_HIGH_ACCURACY, 10000)
         .build()
 
     private var locationCallback: LocationCallback = object : LocationCallback() {

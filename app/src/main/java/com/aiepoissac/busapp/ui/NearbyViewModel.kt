@@ -51,7 +51,8 @@ class NearbyViewModel(
     private val _uiState = MutableStateFlow(
         NearbyUIState(
             distanceThreshold = distanceThreshold,
-            point = point
+            point = point,
+            isLiveLocation = isLiveLocation
         )
     )
     val uiState: StateFlow<NearbyUIState> = _uiState.asStateFlow()
@@ -70,15 +71,29 @@ class NearbyViewModel(
         LocationManager.stopFetchingLocation()
     }
 
+    fun toggleFreezeLocation() {
+        if (uiState.value.isLiveLocation) {
+            LocationManager.stopFetchingLocation()
+            _uiState.update { it.copy(isLiveLocation = false) }
+        } else {
+            LocationManager.startFetchingLocation()
+            _uiState.update { it.copy(isLiveLocation = true) }
+        }
+    }
+
     fun updateLiveLocation() {
         viewModelScope.launch {
-            LocationManager.startFetchingLocation()
+            if (uiState.value.isLiveLocation) {
+                LocationManager.startFetchingLocation()
+            }
             snapshotFlow { LocationManager.currentLocation.value }
                 .filterNotNull()
                 .distinctUntilChanged()
                 .collectLatest { location ->
-                    updateLocation(LatLong(location.latitude, location.longitude))
-                    Toast.makeText(BusApplication.instance, "Location refreshed", Toast.LENGTH_SHORT).show()
+                    if (uiState.value.isLiveLocation) {
+                        updateLocation(LatLong(location.latitude, location.longitude))
+                        Toast.makeText(BusApplication.instance, "Location refreshed", Toast.LENGTH_SHORT).show()
+                    }
                 }
         }
     }

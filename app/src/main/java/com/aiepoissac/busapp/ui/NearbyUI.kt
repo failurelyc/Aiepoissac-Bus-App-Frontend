@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -48,13 +49,24 @@ fun NearbyUI(
 
     val nearbyUIState by nearbyViewModel.uiState.collectAsState()
 
-    if (isLiveLocation) {
-        RequestLocationPermission {
-            nearbyViewModel.updateLiveLocation()
-        }
+    RequestLocationPermission {
+        nearbyViewModel.updateLiveLocation()
     }
 
-    Scaffold { innerPadding ->
+    Scaffold (
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    nearbyViewModel.toggleFreezeLocation()
+                }
+            ) {
+                Text(
+                    text = if (nearbyUIState.isLiveLocation) "Freeze"
+                            else "Unfreeze",
+                    modifier = Modifier.padding(horizontal = 4.dp))
+            }
+        }
+    ) { innerPadding ->
         Column(
             modifier = Modifier.padding(innerPadding)
         ) {

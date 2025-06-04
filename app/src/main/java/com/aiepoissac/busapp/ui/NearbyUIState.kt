@@ -8,5 +8,6 @@ data class NearbyUIState(
     val busStopList: List<Pair<Int, BusStopInfoWithBusRoutesInfo>> = listOf(),
     val mrtStationList: List<Pair<Int, MRTStation>> = listOf(),
     val point: HasCoordinates,
-    val distanceThreshold: Int
+    val distanceThreshold: Int,
+    val isLiveLocation: Boolean
 )

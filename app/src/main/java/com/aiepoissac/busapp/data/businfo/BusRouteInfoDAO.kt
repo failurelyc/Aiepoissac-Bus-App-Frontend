@@ -22,6 +22,9 @@ interface BusRouteInfoDAO {
     @Query("DELETE FROM Bus_Routes_Table")
     suspend fun deleteAll()
 
+    @Query("SELECT COUNT(*) FROM Bus_Routes_Table")
+    suspend fun getBusRoutesCount(): Int
+
     @Transaction
     @Query("SELECT * from Bus_Routes_Table WHERE serviceNo = :serviceNo AND direction = :direction")
     suspend fun getBusServiceRoute(serviceNo: String, direction: Int):

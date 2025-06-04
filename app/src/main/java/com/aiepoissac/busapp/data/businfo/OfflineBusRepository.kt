@@ -50,6 +50,10 @@ class OfflineBusRepository(
         busRouteInfoDAO.deleteAll()
     }
 
+    override suspend fun getBusRoutesCount(): Int {
+        return busRouteInfoDAO.getBusRoutesCount()
+    }
+
     override suspend fun getBusServiceRoute(serviceNo: String, direction: Int):
             List<BusRouteInfoWithBusStopInfo> {
         return busRouteInfoDAO.getBusServiceRoute(serviceNo, direction)
@@ -79,6 +83,10 @@ class OfflineBusRepository(
 
     override suspend fun deleteAllBusStops() {
         busStopInfoDAO.deleteAll()
+    }
+
+    override suspend fun getBusStopsCount(): Int {
+        return busStopInfoDAO.getBusStopsCount()
     }
 
     override suspend fun getBusStop(busStopCode: String): BusStopInfo? {

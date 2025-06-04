@@ -22,6 +22,9 @@ interface BusStopInfoDAO {
     @Query("DELETE FROM Bus_Stops_Table")
     suspend fun deleteAll()
 
+    @Query("SELECT COUNT(*) FROM Bus_Stops_Table")
+    suspend fun getBusStopsCount(): Int
+
     @Query("SELECT * FROM Bus_Stops_Table WHERE busStopCode = :busStopCode")
     suspend fun getBusStop(busStopCode: String): BusStopInfo?
 

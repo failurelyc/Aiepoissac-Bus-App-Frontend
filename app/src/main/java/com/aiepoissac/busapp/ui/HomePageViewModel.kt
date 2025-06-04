@@ -67,18 +67,25 @@ class HomePageViewModel : ViewModel() {
     private suspend fun initialiseOnlineData() = withContext(Dispatchers.IO) {
         if (checkIfSundayOrMonday4amPassed()) {
             try {
+                val busRepository = BusApplication.instance.container.busRepository
                 Log.d("BusApplication", "Checking connection with API")
                 getBusArrival("11111")
                 Log.d("BusApplication", "Connection is successful")
                 Log.d("BusApplication", "Started Downloading Bus Data")
-                populateBusServices(BusApplication.instance.container.busRepository)
-                populateBusRoutes(BusApplication.instance.container.busRepository)
-                populateBusStops(BusApplication.instance.container.busRepository)
+                populateBusServices(busRepository)
+                populateBusRoutes(busRepository)
+                populateBusStops(busRepository)
                 Log.d("BusApplication", "Downloaded Bus Data")
-                withContext(Dispatchers.Main) {
-                    downloaded = true
+                if (busRepository.getBusServicesCount() != 0 &&
+                    busRepository.getBusRoutesCount() != 0 &&
+                    busRepository.getBusStopsCount() != 0) {
+                    withContext(Dispatchers.Main) {
+                        downloaded = true
+                    }
+                    saveLastOpenedTime()
+                } else {
+                    throw IOException("Nothing was downloaded")
                 }
-                saveLastOpenedTime()
             } catch (e: IOException) {
                 Log.e("BusApplication", "Failed to download bus data")
                 withContext(Dispatchers.Main) {
