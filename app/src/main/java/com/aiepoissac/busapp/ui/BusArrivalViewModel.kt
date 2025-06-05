@@ -2,6 +2,7 @@ package com.aiepoissac.busapp.ui
 
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -15,6 +16,7 @@ import com.aiepoissac.busapp.R
 import com.aiepoissac.busapp.data.busarrival.Bus
 import com.aiepoissac.busapp.data.busarrival.getBusArrival
 import com.aiepoissac.busapp.data.businfo.BusRepository
+import com.aiepoissac.busapp.data.businfo.BusRouteInfo
 import com.aiepoissac.busapp.ui.theme.GreenDark
 import com.aiepoissac.busapp.ui.theme.GreenLight
 import com.aiepoissac.busapp.ui.theme.RedDark
@@ -28,6 +30,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.IOException
+import java.time.Duration
+import java.time.LocalDateTime
 
 
 class BusArrivalViewModelFactory(
@@ -54,6 +58,8 @@ class BusArrivalViewModel(
 
     var busStopCodeInput by mutableStateOf(initialBusStopCodeInput)
         private set
+
+    private var lastTimeRefreshPressed: LocalDateTime by mutableStateOf(LocalDateTime.now())
 
     fun updateBusStopCodeInput(busStopCodeInput: String) {
         if (busStopCodeInput.length <= 5 || this.busStopCodeInput.length > 5) {
@@ -114,28 +120,38 @@ class BusArrivalViewModel(
         }
     }
 
-
-
     fun refreshBusArrival() {
-        _uiState.update {
-            it.copy(isRefreshing = true)
-        }
-        viewModelScope.launch {
-            delay(16) //to allow time for the loading animation to start
-            try {
-                val busArrivalData = getBusArrival(uiState.value.busStopInfo?.busStopCode ?: "")
-                _uiState.update {
-                    it.copy(
-                        busArrivalData = busArrivalData,
-                        isRefreshing = false
-                    )
-                }
-            } catch (e: IOException) {
-                _uiState.update {
-                    it.copy(
-                        busArrivalData = null,
-                        isRefreshing = false) }
+        val threshold = 20
+        val currentTime = LocalDateTime.now()
+        val difference = Duration.between(lastTimeRefreshPressed, currentTime).seconds
+        if (difference > threshold) {
+            lastTimeRefreshPressed = currentTime
+            _uiState.update {
+                it.copy(isRefreshing = true)
             }
+            viewModelScope.launch {
+                delay(16) //to allow time for the loading animation to start
+                try {
+                    val busArrivalData = getBusArrival(uiState.value.busStopInfo?.busStopCode ?: "")
+                    _uiState.update {
+                        it.copy(
+                            busArrivalData = busArrivalData,
+                            isRefreshing = false
+                        )
+                    }
+                } catch (e: IOException) {
+                    _uiState.update {
+                        it.copy(
+                            busArrivalData = null,
+                            isRefreshing = false) }
+                }
+            }
+        } else {
+            Toast.makeText(
+                BusApplication.instance,
+                "Try again in ${threshold - difference}s",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
@@ -189,6 +205,20 @@ class BusArrivalViewModel(
         } else {
             if (!darkMode) Color.White else Color.LightGray //Invalid data
         }
+    }
+
+    fun getBusRoute(serviceNo: String): BusRouteInfo? {
+        val busRoutes = uiState.value.busRoutes
+            .filter { it.serviceNo == serviceNo }
+        if (busRoutes.size == 1) { //bus service stops here only once, no ambiguity
+            return busRoutes[0]
+        } else if (busRoutes.map {it.direction} .distinct().size == 1 ) {
+            //bus stops here more than once in the same direction
+            return busRoutes.minBy { it.stopSequence } //returns the first stop along the route
+        } else { //bus stops here more than once in different directions
+            return null //cannot resolve the ambiguity
+        }
+
     }
 
     init {

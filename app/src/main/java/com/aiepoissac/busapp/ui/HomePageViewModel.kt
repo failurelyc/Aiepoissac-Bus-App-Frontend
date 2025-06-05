@@ -68,14 +68,14 @@ class HomePageViewModel : ViewModel() {
         if (checkIfSundayOrMonday4amPassed()) {
             try {
                 val busRepository = BusApplication.instance.container.busRepository
-                Log.d("BusApplication", "Checking connection with API")
+                Log.d(Pages.HomePage.title, "Checking connection with API")
                 getBusArrival("11111")
-                Log.d("BusApplication", "Connection is successful")
-                Log.d("BusApplication", "Started Downloading Bus Data")
+                Log.d(Pages.HomePage.title, "Connection is successful")
+                Log.d(Pages.HomePage.title, "Started Downloading Bus Data")
                 populateBusServices(busRepository)
                 populateBusRoutes(busRepository)
                 populateBusStops(busRepository)
-                Log.d("BusApplication", "Downloaded Bus Data")
+                Log.d(Pages.HomePage.title, "Downloaded Bus Data")
                 if (busRepository.getBusServicesCount() != 0 &&
                     busRepository.getBusRoutesCount() != 0 &&
                     busRepository.getBusStopsCount() != 0) {
@@ -87,13 +87,13 @@ class HomePageViewModel : ViewModel() {
                     throw IOException("Nothing was downloaded")
                 }
             } catch (e: IOException) {
-                Log.e("BusApplication", "Failed to download bus data")
+                Log.e(Pages.HomePage.title, "Failed to download bus data")
                 withContext(Dispatchers.Main) {
                     failedDownload = true
                 }
             }
         } else {
-            Log.d("BusApplication", "Bus Data already downloaded")
+            Log.d(Pages.HomePage.title, "Bus Data already downloaded")
             withContext(Dispatchers.Main) {
                 downloaded = true
             }

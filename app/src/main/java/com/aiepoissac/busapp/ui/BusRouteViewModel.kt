@@ -158,7 +158,6 @@ class BusRouteViewModel(
                 .distinctUntilChanged()
                 .collectLatest { location ->
                     updateLocation(LatLong(location.latitude, location.longitude))
-                    Toast.makeText(BusApplication.instance, "Location refreshed", Toast.LENGTH_SHORT).show()
                 }
         }
     }

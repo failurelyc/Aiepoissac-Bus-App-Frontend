@@ -1,11 +1,8 @@
 package com.aiepoissac.busapp
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.location.Location
 import android.os.Looper
-import android.widget.Toast
-import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.mutableStateOf
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest

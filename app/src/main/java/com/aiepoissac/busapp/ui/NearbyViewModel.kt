@@ -2,6 +2,9 @@ package com.aiepoissac.busapp.ui
 
 import android.annotation.SuppressLint
 import android.widget.Toast
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -11,6 +14,8 @@ import com.aiepoissac.busapp.LocationManager
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.LatLong
 import com.aiepoissac.busapp.data.businfo.findNearbyBusStops
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +24,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.Duration
+import java.time.LocalDateTime
 
 class NearbyViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
@@ -57,6 +65,8 @@ class NearbyViewModel(
     )
     val uiState: StateFlow<NearbyUIState> = _uiState.asStateFlow()
 
+    private var lastTimeToggleLocationPressed: LocalDateTime by mutableStateOf(LocalDateTime.now())
+
     init {
         viewModelScope.launch {
             if (!isLiveLocation) {
@@ -72,13 +82,26 @@ class NearbyViewModel(
     }
 
     fun toggleFreezeLocation() {
+
         if (uiState.value.isLiveLocation) {
             LocationManager.stopFetchingLocation()
             _uiState.update { it.copy(isLiveLocation = false) }
         } else {
-            LocationManager.startFetchingLocation()
-            _uiState.update { it.copy(isLiveLocation = true) }
+            val threshold = 10
+            val currentTime = LocalDateTime.now()
+            val difference = Duration.between(lastTimeToggleLocationPressed, currentTime).seconds
+            if (difference > threshold) {
+                LocationManager.startFetchingLocation()
+                _uiState.update { it.copy(isLiveLocation = true) }
+            } else {
+                Toast.makeText(
+                    BusApplication.instance,
+                    "Try again in ${threshold - difference}s",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
+
     }
 
     fun updateLiveLocation() {
@@ -91,14 +114,17 @@ class NearbyViewModel(
                 .distinctUntilChanged()
                 .collectLatest { location ->
                     if (uiState.value.isLiveLocation) {
+                        withContext(Dispatchers.Main) {
+                            lastTimeToggleLocationPressed = LocalDateTime.now()
+                        }
                         updateLocation(LatLong(location.latitude, location.longitude))
-                        Toast.makeText(BusApplication.instance, "Location refreshed", Toast.LENGTH_SHORT).show()
                     }
                 }
         }
     }
 
     private suspend fun updateLocation(point: LatLong) {
+
         _uiState.update { nearbyUiState ->
             nearbyUiState.copy(
                 busStopList = findNearbyBusStops(

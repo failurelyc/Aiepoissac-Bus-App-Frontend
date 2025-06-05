@@ -2,6 +2,7 @@ package com.aiepoissac.busapp.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -11,9 +12,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.aiepoissac.busapp.BusApplication
 
 @Composable
 fun NearbyUI(
@@ -60,10 +67,10 @@ fun NearbyUI(
                     nearbyViewModel.toggleFreezeLocation()
                 }
             ) {
-                Text(
-                    text = if (nearbyUIState.isLiveLocation) "Freeze"
-                            else "Unfreeze",
-                    modifier = Modifier.padding(horizontal = 4.dp))
+                Icon(
+                    if (nearbyUIState.isLiveLocation) Icons.Filled.LocationOn else Icons.Outlined.LocationOn,
+                    contentDescription = "Toggle live location button"
+                )
             }
         }
     ) { innerPadding ->

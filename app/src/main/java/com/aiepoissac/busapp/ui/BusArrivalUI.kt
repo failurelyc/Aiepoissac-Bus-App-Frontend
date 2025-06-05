@@ -1,5 +1,6 @@
 package com.aiepoissac.busapp.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -14,11 +15,14 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -40,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.busarrival.Bus
 import com.aiepoissac.busapp.data.busarrival.BusService
 import com.aiepoissac.busapp.data.busarrival.BusStop
@@ -73,9 +78,7 @@ fun BusArrivalUI(
                 FloatingActionButton(
                     onClick = { busArrivalViewModel.refreshBusArrival() }
                 ) {
-                    Text(
-                        text = "Refresh",
-                        modifier = Modifier.padding(horizontal = 4.dp))
+                    Icon(Icons.Filled.Refresh, contentDescription = "Refresh Button")
                 }
             }
         },
@@ -370,19 +373,32 @@ private fun BusArrivalsLayout(
     navController: NavHostController,
     data: BusService) {
 
+    val busArrivalViewModel: BusArrivalViewModel = viewModel()
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
     ) {
         Card(
-            modifier = Modifier
-            .weight(1f)
-            .clickable {
-                navigateToBusServiceInformation(
-                    navController = navController,
-                    busServiceInput = data.serviceNo
-                )
+            modifier = Modifier.weight(1f),
+            onClick = {
+                val busRoute = busArrivalViewModel.getBusRoute(data.serviceNo)
+                if (busRoute != null) {
+                    navigateToBusRouteInformation(
+                        navController = navController,
+                        serviceNo = busRoute.serviceNo,
+                        direction = busRoute.direction,
+                        stopSequence = busRoute.stopSequence
+                    )
+                } else {
+                    Toast.makeText(
+                        BusApplication.instance,
+                        "View the bus route from bus stop details section",
+                        Toast.LENGTH_SHORT
+                    )
+                        .show()
+                }
             }
         ) {
 
