@@ -1,5 +1,6 @@
 package com.aiepoissac.busapp.data.busarrival
 
+import com.aiepoissac.busapp.APIKeyManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
@@ -76,7 +77,7 @@ private suspend fun getBusArrivalData(busStopCode: String): String = withContext
     val url = URL("https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival?BusStopCode=$busStopCode")
     val connection = url.openConnection() as HttpURLConnection
     connection.requestMethod = "GET"
-    connection.setRequestProperty("AccountKey", "***REMOVED***")
+    connection.setRequestProperty("AccountKey", APIKeyManager.LTA)
     connection.setRequestProperty("accept", "application/json")
     connection.connect()
 

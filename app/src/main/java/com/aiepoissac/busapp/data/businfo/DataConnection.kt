@@ -1,5 +1,6 @@
 package com.aiepoissac.busapp.data.businfo
 
+import com.aiepoissac.busapp.APIKeyManager
 import com.aiepoissac.busapp.BusApplication
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -27,7 +28,7 @@ private suspend fun getData(dataType: BusDataType, count: Int): String = withCon
     } else throw IllegalArgumentException()
     val connection = url.openConnection() as HttpURLConnection
     connection.requestMethod = "GET"
-    connection.setRequestProperty("AccountKey", "***REMOVED***")
+    connection.setRequestProperty("AccountKey", APIKeyManager.LTA)
     connection.setRequestProperty("accept", "application/json")
     connection.connect()
     if (connection.responseCode != 200) {
