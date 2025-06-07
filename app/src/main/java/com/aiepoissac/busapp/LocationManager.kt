@@ -12,11 +12,18 @@ import com.google.android.gms.location.Priority
 
 object LocationManager {
 
+    const val REFRESH_INTERVAL_IN_SECONDS = 5
+
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(BusApplication.instance)
 
     private val locationRequest = LocationRequest.Builder(
-        Priority.PRIORITY_HIGH_ACCURACY, 10000)
+        Priority.PRIORITY_HIGH_ACCURACY,
+        REFRESH_INTERVAL_IN_SECONDS * 1000L
+    )
         .build()
+
+    var currentLocation = mutableStateOf<Location?>(null)
+        private set
 
     private var locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
@@ -25,9 +32,6 @@ object LocationManager {
             }
         }
     }
-
-    var currentLocation = mutableStateOf<Location?>(null)
-        private set
 
     @SuppressLint("MissingPermission")
     fun startFetchingLocation() {

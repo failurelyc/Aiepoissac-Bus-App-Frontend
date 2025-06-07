@@ -56,28 +56,48 @@ class BusArrivalViewModel(
     private val _uiState = MutableStateFlow(BusArrivalUIState())
     val uiState: StateFlow<BusArrivalUIState> = _uiState.asStateFlow()
 
-    var busStopCodeInput by mutableStateOf(initialBusStopCodeInput)
-        private set
-
     private var lastTimeRefreshPressed: LocalDateTime by mutableStateOf(LocalDateTime.now())
 
     fun updateBusStopCodeInput(busStopCodeInput: String) {
-        if (busStopCodeInput.length <= 5 || this.busStopCodeInput.length > 5) {
-            this.busStopCodeInput = busStopCodeInput
+        _uiState.update {
+            it.copy(
+                busStopCodeInput = busStopCodeInput
+            )
         }
+        viewModelScope.launch {
+            if (busStopCodeInput.length > 3) {
+                _uiState.update {
+                    it.copy(
+                        searchResult = busRepository.getBusStopContaining(busStopCodeInput),
+                        expanded = true
+                    )
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        searchResult = listOf(),
+                        expanded = false
+                    )
+                }
+            }
+        }
+    }
+
+    fun setExpanded(expanded: Boolean) {
+        _uiState.update { it.copy(expanded = expanded) }
     }
 
     fun updateBusStop() {
         viewModelScope.launch {
-            updateBusStop(busStopCodeInput)
+            updateBusStop(uiState.value.busStopCodeInput)
         }
     }
 
     fun switchToOppositeBusStop() {
         viewModelScope.launch {
             val busStopInfo = uiState.value.busStopInfo
-            if (busStopInfo != null) {
-                val thisBusStopCode = busStopInfo.busStopCode
+
+                val thisBusStopCode = busStopInfo?.busStopCode ?: uiState.value.busStopCodeInput
                 var oppositeBusStopCode = ""
                 if (thisBusStopCode.last() == '9') {
                     oppositeBusStopCode = thisBusStopCode.substring(
@@ -90,68 +110,92 @@ class BusArrivalViewModel(
                         endIndex = thisBusStopCode.length - 1
                     ) + "9"
                 }
-                if (oppositeBusStopCode.isNotEmpty() &&
-                    busRepository.getBusStop(oppositeBusStopCode) != null) {
+                if (oppositeBusStopCode.isNotEmpty()) {
                     updateBusStop(oppositeBusStopCode)
+                } else {
+                    Toast.makeText(BusApplication.instance, "No opposite bus stop", Toast.LENGTH_SHORT).show()
                 }
-            }
+
         }
     }
 
     private suspend fun updateBusStop(busStopCode: String) {
+
         val busStopInfo = busRepository.getBusStop(busStopCode)
         val busRoutes = busRepository.getBusRoutesAtBusStop(busStopCode)
 
-        try {
-            val busArrivalData = getBusArrival(busStopCode)
+        if (busStopInfo != null) {
+            try {
+                val busArrivalData = getBusArrival(busStopCode)
+                _uiState.update {
+                    it.copy(
+                        busStopInfo = busStopInfo,
+                        busArrivalData = busArrivalData,
+                        busRoutes = busRoutes,
+                        busStopCodeInput = busStopCode,
+                        expanded = false
+                    )
+                }
+            } catch (e: IOException) {
+                _uiState.update {
+                    it.copy(
+                        busStopInfo = busStopInfo,
+                        busArrivalData = null,
+                        busRoutes = busRoutes,
+                        busStopCodeInput = busStopCode,
+                        expanded = false
+                    )
+                }
+            }
+        } else {
             _uiState.update {
                 it.copy(
-                    busStopInfo = busStopInfo,
-                    busArrivalData = busArrivalData,
-                    busRoutes = busRoutes
+                    busStopInfo = null,
+                    busArrivalData = null,
+                    busRoutes = busRoutes,
+                    busStopCodeInput = busStopCode,
+                    showBusArrival = false,
+                    expanded = false
                 )
             }
-        } catch (e: IOException) {
-            _uiState.update {
-                it.copy(
-                    busStopInfo = busStopInfo,
-                    busArrivalData = null,
-                    busRoutes = busRoutes) }
         }
     }
 
     fun refreshBusArrival() {
-        val threshold = 20
-        val currentTime = LocalDateTime.now()
-        val difference = Duration.between(lastTimeRefreshPressed, currentTime).seconds
-        if (difference > threshold) {
-            lastTimeRefreshPressed = currentTime
-            _uiState.update {
-                it.copy(isRefreshing = true)
-            }
-            viewModelScope.launch {
-                delay(16) //to allow time for the loading animation to start
-                try {
-                    val busArrivalData = getBusArrival(uiState.value.busStopInfo?.busStopCode ?: "")
-                    _uiState.update {
-                        it.copy(
-                            busArrivalData = busArrivalData,
-                            isRefreshing = false
-                        )
-                    }
-                } catch (e: IOException) {
-                    _uiState.update {
-                        it.copy(
-                            busArrivalData = null,
-                            isRefreshing = false) }
+        val busStopInfo = uiState.value.busStopInfo
+        if (busStopInfo != null) {
+            val threshold = 20
+            val currentTime = LocalDateTime.now()
+            val difference = Duration.between(lastTimeRefreshPressed, currentTime).seconds
+            if (difference > threshold) {
+                lastTimeRefreshPressed = currentTime
+                _uiState.update {
+                    it.copy(isRefreshing = true)
                 }
+                viewModelScope.launch {
+                    delay(16) //to allow time for the loading animation to start
+                    try {
+                        val busArrivalData = getBusArrival(busStopInfo.busStopCode)
+                        _uiState.update {
+                            it.copy(
+                                busArrivalData = busArrivalData,
+                                isRefreshing = false
+                            )
+                        }
+                    } catch (e: IOException) {
+                        _uiState.update {
+                            it.copy(
+                                busArrivalData = null,
+                                isRefreshing = false) }
+                    }
+                }
+            } else {
+                Toast.makeText(
+                    BusApplication.instance,
+                    "Try again in ${threshold - difference}s",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
-        } else {
-            Toast.makeText(
-                BusApplication.instance,
-                "Try again in ${threshold - difference}s",
-                Toast.LENGTH_SHORT
-            ).show()
         }
     }
 

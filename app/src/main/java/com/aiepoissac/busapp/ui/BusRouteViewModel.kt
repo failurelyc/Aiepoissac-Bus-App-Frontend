@@ -1,7 +1,11 @@
 package com.aiepoissac.busapp.ui
 
+import android.location.Location
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -15,6 +19,7 @@ import com.aiepoissac.busapp.data.businfo.attachDistanceFromPoint
 import com.aiepoissac.busapp.data.businfo.isLoop
 import com.aiepoissac.busapp.data.businfo.truncateLoopRoute
 import com.aiepoissac.busapp.data.businfo.truncateTillBusStop
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +28,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.Duration
+import java.time.LocalDateTime
 
 class BusRouteViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
@@ -73,11 +81,14 @@ class BusRouteViewModel(
                 .getBusServiceRoute(serviceNo = serviceNo, direction = direction)
 
             _uiState.update {
-                BusRouteUIState(
+                it.copy(
                     busRoute = attachDistanceFromCurrentLocation(busRoute),
+                    busStopSequenceOffset = 0,
                     originalBusRoute = busRoute,
                     busServiceInfo = busRepository
-                        .getBusService(serviceNo = serviceNo, direction = direction)
+                        .getBusService(serviceNo = serviceNo, direction = direction),
+                    truncated = false,
+                    truncatedAfterLoopingPoint = false
                 )
             }
             if (stopSequence >= 0) {
@@ -150,22 +161,61 @@ class BusRouteViewModel(
         }
     }
 
+    fun toggleFreezeLocation() {
+
+        if (uiState.value.isLiveLocation) {
+            LocationManager.stopFetchingLocation()
+            _uiState.update { it.copy(isLiveLocation = false) }
+        } else {
+            val threshold = LocationManager.REFRESH_INTERVAL_IN_SECONDS
+            val currentTime = LocalDateTime.now()
+            val difference = Duration.between(uiState.value.lastTimeLocationUpdated, currentTime).seconds
+            if (difference > threshold) {
+                LocationManager.startFetchingLocation()
+                _uiState.update { it.copy(isLiveLocation = true) }
+            } else {
+                Toast.makeText(
+                    BusApplication.instance,
+                    "Try again in ${threshold - difference}s",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+    }
+
     fun updateLiveLocation() {
         viewModelScope.launch {
-            LocationManager.startFetchingLocation()
+            if (uiState.value.isLiveLocation) {
+                LocationManager.startFetchingLocation()
+            }
             snapshotFlow { LocationManager.currentLocation.value }
                 .filterNotNull()
                 .distinctUntilChanged()
                 .collectLatest { location ->
-                    updateLocation(LatLong(location.latitude, location.longitude))
+                    if (uiState.value.isLiveLocation) {
+                        val timeNow = LocalDateTime.now()
+                        updateLocation(
+                            location = location,
+                            time = timeNow
+                        )
+                    }
                 }
         }
     }
 
-    private fun updateLocation(point: LatLong) {
+    private fun updateLocation(location: Location, time: LocalDateTime) {
         _uiState.update {
-            it.copy(busRoute = uiState.value.busRoute
-                .map { Pair(it.second.busStopInfo.distanceFromInMetres(point), it.second) } )
+            it.copy(
+                busRoute = uiState.value.busRoute
+                    .map { Pair(
+                        first = it.second.busStopInfo
+                            .distanceFromInMetres(LatLong(location.latitude, location.longitude)),
+                        second = it.second
+                    ) },
+                lastTimeLocationUpdated = time,
+                currentSpeed = if (location.hasSpeed()) (location.speed * 3.6).toInt() else 0
+            )
         }
     }
 
@@ -178,5 +228,7 @@ class BusRouteViewModel(
             return route.map { Pair(0, it) }
         }
     }
+
+
 
 }

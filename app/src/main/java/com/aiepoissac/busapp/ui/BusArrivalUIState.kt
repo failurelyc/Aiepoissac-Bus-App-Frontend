@@ -9,5 +9,8 @@ data class BusArrivalUIState(
     val busStopInfo: BusStopInfo? = null,
     val busRoutes: List<BusRouteInfo> = listOf(),
     val isRefreshing: Boolean = false,
-    val showBusArrival: Boolean = true
+    val showBusArrival: Boolean = true,
+    val busStopCodeInput: String = "",
+    val expanded: Boolean = false,
+    val searchResult: List<BusStopInfo> = listOf()
 )

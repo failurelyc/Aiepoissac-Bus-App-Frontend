@@ -14,10 +14,10 @@ interface HasCoordinates {
         return distanceBetweenInMetres(point1, point2)
     }
 
-    fun distanceFromInMetres(point2: Pair<Double, Double>): Int {
-        val point1 = this.getCoordinates()
-        return distanceBetweenInMetres(point1, point2)
-    }
+//    fun distanceFromInMetres(point2: Pair<Double, Double>): Int {
+//        val point1 = this.getCoordinates()
+//        return distanceBetweenInMetres(point1, point2)
+//    }
 }
 
 private fun distanceBetweenInMetres(point1: Pair<Double, Double>, point2: Pair<Double, Double>): Int {

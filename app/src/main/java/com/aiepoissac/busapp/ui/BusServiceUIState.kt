@@ -1,9 +1,8 @@
 package com.aiepoissac.busapp.ui
 
-
-import com.aiepoissac.busapp.data.businfo.BusServiceInfo
+import com.aiepoissac.busapp.data.businfo.BusServiceInfoWithBusStopInfo
 
 data class BusServiceUIState (
-    val busServiceList: List<BusServiceInfo> = listOf(),
+    val busServiceList: List<BusServiceInfoWithBusStopInfo> = listOf(),
     val busServiceNoInput: String = ""
 )

@@ -12,7 +12,7 @@ interface BusRepository {
 
     suspend fun getBusServicesCount(): Int
 
-    suspend fun getBusService(serviceNo: String): List<BusServiceInfo>
+    suspend fun getBusService(serviceNo: String): List<BusServiceInfoWithBusStopInfo>
 
     suspend fun getBusService(serviceNo: String, direction: Int): BusServiceInfo?
 
@@ -47,6 +47,8 @@ interface BusRepository {
     suspend fun getBusStop(busStopCode: String): BusStopInfo?
 
     suspend fun getAllBusStops(): List<BusStopInfo>
+
+    suspend fun getBusStopContaining(partialDescription: String): List<BusStopInfo>
 
     suspend fun getBusStopWithBusRoutes(busStopCode: String): BusStopInfoWithBusRoutesInfo
 

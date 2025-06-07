@@ -15,17 +15,19 @@ import com.aiepoissac.busapp.data.businfo.populateBusServices
 import com.aiepoissac.busapp.data.businfo.populateBusStops
 import com.aiepoissac.busapp.data.businfo.populateMRTStations
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
 
 class HomePageViewModel : ViewModel() {
 
-    var busArrivalBusStopCodeInput by mutableStateOf("")
-        private set
+    private val _uiState = MutableStateFlow(HomePageUIState())
+    val uiState = _uiState.asStateFlow()
 
-    var busServiceNoInput by mutableStateOf("")
-        private set
+    private val busRepository = BusApplication.instance.container.busRepository
 
     var downloaded by mutableStateOf(false)
         private set
@@ -33,16 +35,54 @@ class HomePageViewModel : ViewModel() {
     var failedDownload by mutableStateOf(false)
         private set
 
-    fun updateBusArrivalBusStopCodeInput(input: String) {
-        if (input.length <= 5) {
-            this.busArrivalBusStopCodeInput = input
+    fun updateBusStopCodeInput(busStopCodeInput: String) {
+        _uiState.update {
+            it.copy(
+                busStopCodeInput = busStopCodeInput
+            )
+        }
+        viewModelScope.launch {
+            if (busStopCodeInput.length > 3) {
+                _uiState.update {
+                    it.copy(
+                        busStopSearchResult = busRepository.getBusStopContaining(busStopCodeInput),
+                        busStopSearchBarExpanded = true
+                    )
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        busStopSearchResult = listOf(),
+                        busStopSearchBarExpanded = false
+                    )
+                }
+            }
         }
     }
 
-    fun updateBusServiceNoInput(input: String) {
-        if (input.length <= 4) {
-            this.busServiceNoInput = input
+    fun updateBusServiceInput(busServiceInput: String) {
+        _uiState.update {
+            it.copy(
+                busServiceInput = busServiceInput
+            )
         }
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    busServiceSearchResult = busRepository.getBusService(busServiceInput),
+                    busServiceSearchBarExpanded = true
+                )
+            }
+        }
+    }
+
+    fun setBusStopSearchBarExpanded(expanded: Boolean) {
+        _uiState.update { it.copy(busStopSearchBarExpanded = expanded) }
+    }
+
+    fun setBusServiceSearchBarExpanded(expanded: Boolean) {
+        _uiState.update { it.copy(busServiceSearchBarExpanded = expanded) }
     }
 
     init {
@@ -67,7 +107,7 @@ class HomePageViewModel : ViewModel() {
     private suspend fun initialiseOnlineData() = withContext(Dispatchers.IO) {
         if (checkIfSundayOrMonday4amPassed()) {
             try {
-                val busRepository = BusApplication.instance.container.busRepository
+
                 Log.d(Pages.HomePage.title, "Checking connection with API")
                 getBusArrival("11111")
                 Log.d(Pages.HomePage.title, "Connection is successful")

@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.aiepoissac.busapp.data.businfo.BusServiceInfo
+import com.aiepoissac.busapp.data.businfo.BusServiceInfoWithBusStopInfo
 
 @Composable
 fun BusServiceUI(
@@ -88,7 +88,7 @@ private fun BusServicesList(
     uiState: BusServiceUIState
 ) {
 
-    val data: List<BusServiceInfo> = uiState.busServiceList
+    val data = uiState.busServiceList
 
     if (data.isNotEmpty()) {
         Text(
@@ -102,7 +102,7 @@ private fun BusServicesList(
             columns = GridCells.Adaptive(minSize = 320.dp)
         ) {
             items(data) { service ->
-                BusServiceInformation(navController = navController, data = service)
+                BusServiceInformation(navController = navController, busService = service)
             }
         }
     } else {
@@ -119,73 +119,65 @@ private fun BusServicesList(
 @Composable
 private fun BusServiceInformation(
     navController: NavHostController,
-    data: BusServiceInfo
+    busService: BusServiceInfoWithBusStopInfo
 ) {
+    val busServiceInfo = busService.busServiceInfo
+
     Card(
         modifier = Modifier.padding(16.dp),
         onClick = { navigateToBusRouteInformation(
             navController = navController,
-            serviceNo = data.serviceNo,
-            direction = data.direction) }
+            serviceNo = busServiceInfo.serviceNo,
+            direction = busServiceInfo.direction) }
     ) {
 
         Text(
-            text = "${data.operator} ${data.category} ${data.serviceNo}" ,
+            text = "${busServiceInfo.operator} ${busServiceInfo.category} ${busServiceInfo.serviceNo}" ,
             fontSize = 36.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
 
-        if (!data.isLoop()) {
-            Text(
-                text = "Direction ${data.direction}" ,
-                fontSize = 36.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
         Text(
-            text = "${data.originCode} to ${data.destinationCode}" ,
+            text = "From ${busService.originBusStopInfo.description} to ${busService.destinationBusStopInfo.description}" ,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
-
-        if (data.isLoop()) {
+        if (busServiceInfo.isLoop()) {
             Text(
-                text = "Loop at: ${data.loopDesc}" ,
+                text = "Loop at: ${busServiceInfo.loopDesc}" ,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
         }
 
-        if (data.hasAMPeakFrequency()) {
+        if (busServiceInfo.hasAMPeakFrequency()) {
             Text(
-                text = "0630H - 0830H: ${data.amPeakFreq} minutes",
+                text = "0630H - 0830H: ${busServiceInfo.amPeakFreq} minutes",
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
         }
 
-        if (data.hasAMOffPeakFrequency()) {
+        if (busServiceInfo.hasAMOffPeakFrequency()) {
             Text(
-                text = "0831H - 1659H: ${data.amOffPeakFreq} minutes",
+                text = "0831H - 1659H: ${busServiceInfo.amOffPeakFreq} minutes",
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
         }
 
-        if (data.hasPMPeakFrequency()) {
+        if (busServiceInfo.hasPMPeakFrequency()) {
             Text(
-                text = "1700H - 1900H: ${data.pmPeakFreq} minutes",
+                text = "1700H - 1900H: ${busServiceInfo.pmPeakFreq} minutes",
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
         }
 
-        if (data.hasPMOffPeakFrequency()) {
+        if (busServiceInfo.hasPMOffPeakFrequency()) {
             Text(
-                text = "After 1900H: ${data.pmOffPeakFreq} minutes",
+                text = "After 1900H: ${busServiceInfo.pmOffPeakFreq} minutes",
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )

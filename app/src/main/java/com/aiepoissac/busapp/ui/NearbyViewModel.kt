@@ -1,6 +1,5 @@
 package com.aiepoissac.busapp.ui
 
-import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,7 +14,6 @@ import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.LatLong
 import com.aiepoissac.busapp.data.businfo.findNearbyBusStops
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -65,7 +63,7 @@ class NearbyViewModel(
     )
     val uiState: StateFlow<NearbyUIState> = _uiState.asStateFlow()
 
-    private var lastTimeToggleLocationPressed: LocalDateTime by mutableStateOf(LocalDateTime.now())
+    private var lastTimeToggleLocationPressed: LocalDateTime by mutableStateOf(LocalDateTime.MIN)
 
     init {
         viewModelScope.launch {
@@ -87,7 +85,7 @@ class NearbyViewModel(
             LocationManager.stopFetchingLocation()
             _uiState.update { it.copy(isLiveLocation = false) }
         } else {
-            val threshold = 10
+            val threshold = LocationManager.REFRESH_INTERVAL_IN_SECONDS
             val currentTime = LocalDateTime.now()
             val difference = Duration.between(lastTimeToggleLocationPressed, currentTime).seconds
             if (difference > threshold) {

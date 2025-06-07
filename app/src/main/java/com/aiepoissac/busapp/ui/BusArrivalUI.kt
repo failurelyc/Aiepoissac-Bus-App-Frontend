@@ -2,10 +2,10 @@ package com.aiepoissac.busapp.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -13,10 +13,14 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DepartureBoard
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MobiledataOff
+import androidx.compose.material.icons.filled.NearMe
+import androidx.compose.material.icons.filled.NoTransfer
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -24,8 +28,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -35,10 +40,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,9 +74,10 @@ fun BusArrivalUI(
                 FloatingActionButton(
                     onClick = { busArrivalViewModel.switchToOppositeBusStop() }
                 ) {
-                    Text(
-                        text = "Opposite",
-                        modifier = Modifier.padding(horizontal = 4.dp))
+                    Icon(
+                        Icons.Filled.SwapVert,
+                        contentDescription = "Opposite bus stop"
+                    )
                 }
             } else {
                 FloatingActionButton(
@@ -95,7 +100,8 @@ fun BusArrivalUI(
                         Surface(
                             color = busArrivalViewModel.getBusArrivalColor(
                                 s = "SEA",
-                                darkMode = isSystemInDarkTheme()),
+                                darkMode = isSystemInDarkTheme()
+                            ),
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
@@ -108,7 +114,8 @@ fun BusArrivalUI(
                         Surface(
                             color = busArrivalViewModel.getBusArrivalColor(
                                 s = "SDA",
-                                darkMode = isSystemInDarkTheme()),
+                                darkMode = isSystemInDarkTheme()
+                            ),
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
@@ -121,7 +128,8 @@ fun BusArrivalUI(
                         Surface(
                             color = busArrivalViewModel.getBusArrivalColor(
                                 s = "LSD",
-                                darkMode = isSystemInDarkTheme()),
+                                darkMode = isSystemInDarkTheme()
+                            ),
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
@@ -133,7 +141,8 @@ fun BusArrivalUI(
                         }
                         Surface(
                             color = busArrivalViewModel.getBusArrivalColor(
-                                darkMode = isSystemInDarkTheme()),
+                                darkMode = isSystemInDarkTheme()
+                            ),
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
@@ -156,16 +165,26 @@ fun BusArrivalUI(
                 if (busArrivalUIState.showBusArrival) {
                     BusArrivalsList(
                         uiState = busArrivalUIState,
-                        onRefresh = { busArrivalViewModel.refreshBusArrival() },
-                        toggleShowBusArrival = { busArrivalViewModel.toggleShowBusArrival() },
+                        onRefresh = busArrivalViewModel::refreshBusArrival,
+                        toggleShowBusArrival = busArrivalViewModel::toggleShowBusArrival,
                         navController = navController)
                 } else {
                     if (configuration.orientation == 1) {
-                        BusStopCodeForBusArrival(
-                            onBusStopCodeChanged = { busArrivalViewModel.updateBusStopCodeInput(it) },
-                            onKeyBoardDone = { busArrivalViewModel.updateBusStop() },
-                            busStopCodeInput = busArrivalViewModel.busStopCodeInput,
-                            isError = busArrivalUIState.busStopInfo == null
+                        SearchBarWithSuggestions(
+                            onQueryChange = busArrivalViewModel::updateBusStopCodeInput,
+                            onSearch = { busArrivalViewModel.updateBusStop() },
+                            query = busArrivalUIState.busStopCodeInput,
+                            placeholder = "Bus stop code or name",
+                            expanded = busArrivalUIState.expanded,
+                            onExpandedChange = busArrivalViewModel::setExpanded,
+                            searchResults = busArrivalUIState.searchResult,
+                            onItemClick = { busStop ->
+                                busArrivalViewModel.updateBusStopCodeInput(busStop.busStopCode)
+                                busArrivalViewModel.updateBusStop()
+                            },
+                            itemContent = { busStop ->
+                                Text("${busStop.busStopCode} ${busStop.description}", modifier = Modifier.padding(8.dp))
+                            }
                         )
                     }
 
@@ -177,37 +196,6 @@ fun BusArrivalUI(
                 }
             }
     }
-
-}
-
-@Composable
-private fun BusStopCodeForBusArrival(
-    onBusStopCodeChanged: (String) -> Unit,
-    onKeyBoardDone: () -> Unit,
-    busStopCodeInput: String,
-    isError: Boolean
-) {
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-
-        OutlinedTextField(
-            value = busStopCodeInput,
-            singleLine = true,
-            onValueChange = onBusStopCodeChanged,
-            label = { Text("Bus Stop Code") },
-            isError = isError,
-            keyboardOptions = KeyboardOptions.Default.copy(
-                imeAction = ImeAction.Done,
-                keyboardType = KeyboardType.Number),
-            keyboardActions = KeyboardActions(onDone = {onKeyBoardDone()}),
-            modifier = Modifier.padding(16.dp).fillMaxWidth()
-        )
-    }
-
 }
 
 @Composable
@@ -221,39 +209,48 @@ private fun BusStopInformation(
     val busStopInfo: BusStopInfo? = uiState.busStopInfo
 
     if (busStopInfo == null) {
-        Text(
-            text = "No such bus stop.",
-            fontSize = 24.sp,
-            modifier = Modifier.padding(8.dp)
+        ErrorMessage(
+            text = "No such bus stop!",
+            icon = Icons.Filled.NoTransfer
         )
     } else {
 
-        Button(
-            onClick = toggleShowBusArrival,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp)
+        Row(
+            modifier = Modifier.padding(4.dp)
         ) {
-            Text(
-                text = "See bus arrivals",
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
-        }
+            Button(
+                onClick = { navigateToHomePage(navController) },
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    Icons.Filled.Home,
+                    contentDescription = "Bus Arrival Timings"
+                )
+            }
 
-        Button(
-            onClick = { navigateToNearby(
-                navController = navController,
-                latitude = busStopInfo.latitude,
-                longitude = busStopInfo.longitude
-            ) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp)
-        ) {
-            Text(
-                text = "Bus Stops and MRT stations nearby",
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
+            Button(
+                onClick = toggleShowBusArrival,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    Icons.Filled.DepartureBoard,
+                    contentDescription = "Bus Arrival Timings"
+                )
+            }
+
+            Button(
+                onClick = { navigateToNearby(
+                    navController = navController,
+                    latitude = busStopInfo.latitude,
+                    longitude = busStopInfo.longitude
+                ) },
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    Icons.Filled.NearMe,
+                    contentDescription = "Nearby bus and MRT stations"
+                )
+            }
         }
 
         Text(
@@ -315,31 +312,31 @@ private fun BusArrivalsList(
     val data: BusStop? = uiState.busArrivalData
     val busStopInfo: BusStopInfo? = uiState.busStopInfo
     val configuration = LocalConfiguration.current
+
+    if (configuration.orientation == 1) {
+        Button(
+            onClick = toggleShowBusArrival,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
+        ) {
+            Text(
+                text = "See bus stop details",
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        }
+    }
+
     if (busStopInfo == null) {
-        Text(
-            text = "No such bus stop.",
-            fontSize = 24.sp,
-            modifier = Modifier.padding(8.dp)
+        ErrorMessage(
+            text = "No such bus stop!",
+            icon = Icons.Filled.NoTransfer
         )
     } else {
-        if (configuration.orientation == 1) {
-            Button(
-                onClick = toggleShowBusArrival,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp)
-            ) {
-                Text(
-                    text = "See bus stop details",
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-            }
-        }
         if (data == null) {
-            Text(
-                text = "Error in getting data. \nCheck your internet connection!",
-                fontSize = 24.sp,
-                modifier = Modifier.padding(8.dp)
+            ErrorMessage(
+                text = "Data is currently unavailable.",
+                icon = Icons.Filled.MobiledataOff
             )
         } else if (data.services.isNotEmpty()){
             PullToRefreshBox(
@@ -359,10 +356,9 @@ private fun BusArrivalsList(
                 }
             }
         } else {
-            Text(
-                text = "All Bus Services have Ended",
-                fontSize = 24.sp,
-                modifier = Modifier.padding(8.dp)
+            ErrorMessage(
+                text = "No bus services operating now",
+                icon = Icons.Filled.NoTransfer
             )
         }
     }
@@ -487,5 +483,24 @@ private fun BusArrivalLayout(data: Bus, modifier: Modifier = Modifier) {
 
         }
     }
+}
+
+@Composable
+private fun ErrorMessage(
+    text: String,
+    icon: ImageVector
+) {
+    Text(
+        text = text,
+        textAlign = TextAlign.Center,
+        fontSize = 24.sp,
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    Icon(
+        imageVector = icon,
+        contentDescription = text,
+        modifier = Modifier.fillMaxSize()
+    )
 }
 

@@ -26,7 +26,7 @@ class OfflineBusRepository(
         return busServiceInfoDAO.getBusServicesCount()
     }
 
-    override suspend fun getBusService(serviceNo: String): List<BusServiceInfo> {
+    override suspend fun getBusService(serviceNo: String): List<BusServiceInfoWithBusStopInfo> {
         return busServiceInfoDAO.getBusService(serviceNo)
     }
 
@@ -95,6 +95,10 @@ class OfflineBusRepository(
 
     override suspend fun getAllBusStops(): List<BusStopInfo> {
         return busStopInfoDAO.getAllBusStops()
+    }
+
+    override suspend fun getBusStopContaining(partialDescription: String): List<BusStopInfo> {
+        return busStopInfoDAO.getBusStopContaining(partialDescription)
     }
 
     override suspend fun getBusStopWithBusRoutes(busStopCode: String):

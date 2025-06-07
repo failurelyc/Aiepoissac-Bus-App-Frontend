@@ -9,14 +9,24 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.LocationOff
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
@@ -63,12 +73,13 @@ fun BusRouteUI(
                     }
                 }
             ) {
-                Text(
-                    text = "Go to top",
-                    modifier = Modifier.padding(horizontal = 4.dp))
+                Icon(
+                    Icons.Filled.VerticalAlignTop,
+                    contentDescription = "Speed"
+                )
             }
         }
-    ){ innerPadding ->
+    ) { innerPadding ->
         Column(
             modifier = Modifier.padding(innerPadding)
         ) {
@@ -81,13 +92,15 @@ fun BusRouteUI(
                         gridState.scrollToItem(0)
                     }
                                       },
-                showFirstLastBusButtonOnClick = { busRouteViewModel.toggleShowFirstLastBusToTrue()},
+                toggleLiveLocationOnClick = busRouteViewModel::toggleFreezeLocation,
+                showFirstLastBusButtonOnClick = busRouteViewModel::toggleShowFirstLastBusToTrue,
                 showRouteFromLoopingPointOnClick = {
                     busRouteViewModel.setLoopingPointAsFirstBusStop()
                     MainScope().launch {
                         gridState.scrollToItem(0)
                     }
                                                    },
+                setFirstBusStop = busRouteViewModel::setFirstBusStop,
                 switchDirection = { busRouteViewModel.toggleDirection() },
                 gridState = gridState
             )
@@ -100,8 +113,10 @@ private fun BusRouteList(
     navController: NavHostController,
     uiState: BusRouteUIState,
     revertButtonOnClick: () -> Unit,
+    toggleLiveLocationOnClick: () -> Unit,
     showFirstLastBusButtonOnClick: () -> Unit,
     showRouteFromLoopingPointOnClick: () -> Unit,
+    setFirstBusStop: (Int) -> Unit,
     switchDirection: () -> Unit,
     gridState: LazyGridState
 ) {
@@ -112,6 +127,7 @@ private fun BusRouteList(
 
     if (busServiceInfo != null) {
         if (configuration.orientation == 1) {
+
             Text(
                 text = "${busServiceInfo.operator} ${busServiceInfo.category} ${busServiceInfo.serviceNo}",
                 fontSize = 24.sp,
@@ -130,6 +146,53 @@ private fun BusRouteList(
                 )
             }
 
+            Row (
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    if (uiState.isLiveLocation) Icons.Filled.LocationOn else Icons.Filled.LocationOff,
+                    contentDescription = "location status",
+                    modifier = Modifier.weight(0.5f)
+                )
+
+                Switch(
+                    checked = uiState.isLiveLocation,
+                    onCheckedChange = { toggleLiveLocationOnClick() },
+                    modifier = Modifier.weight(1f)
+                )
+
+                Icon(
+                    Icons.Filled.AccessTime,
+                    contentDescription = "First/Last bus timing",
+                    modifier = Modifier.weight(0.5f)
+                )
+
+                Switch(
+                    checked = uiState.showFirstLastBus,
+                    onCheckedChange = { showFirstLastBusButtonOnClick() },
+                    modifier = Modifier.weight(1f)
+                )
+
+                Icon(
+                    Icons.Filled.Speed,
+                    contentDescription = "Speed",
+                    modifier = Modifier.weight(0.5f)
+                )
+
+                if (uiState.isLiveLocation) {
+                    Text(
+                        text = "${uiState.currentSpeed}km/h",
+                        modifier = Modifier.weight(1f)
+                    )
+                } else {
+                    Text(
+                        text = "-km/h",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+            }
+
             if (uiState.truncated) {
                 Text(
                     text = "Bus Stop ${data.first().second.busStopInfo.busStopCode} ${data.first().second.busStopInfo.description}",
@@ -143,60 +206,47 @@ private fun BusRouteList(
             }
         }
 
-        Button(
-            onClick = showFirstLastBusButtonOnClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp)
+        Row (
+            modifier = Modifier.padding(4.dp)
         ) {
-            Text(
-                text = "${if (uiState.showFirstLastBus) "Hide" else "Show"} timings",
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
-        }
-
-        if (uiState.truncated || uiState.truncatedAfterLoopingPoint) {
-            Button(
-                onClick = revertButtonOnClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp)
-            ) {
-                Text(
-                    text = "See full bus route",
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-            }
-        }
-
-        if ((isLoop(uiState.originalBusRoute) &&
-                    ((!uiState.truncated && !uiState.truncatedAfterLoopingPoint) ||
-                            uiState.truncated))) {
-            Button(
-                onClick = showRouteFromLoopingPointOnClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp)
-            ) {
-                Text(
-                    text = "See bus route after looping point",
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
+            if (uiState.truncated || uiState.truncatedAfterLoopingPoint) {
+                Button(
+                    onClick = revertButtonOnClick,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "Full route",
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                }
             }
 
-        }
+            if ((isLoop(uiState.originalBusRoute) &&
+                        ((!uiState.truncated && !uiState.truncatedAfterLoopingPoint) ||
+                                uiState.truncated))) {
+                Button(
+                    onClick = showRouteFromLoopingPointOnClick,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "After loop",
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                }
 
-        if (!isLoop(uiState.originalBusRoute)) {
-            Button(
-                onClick = switchDirection,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp)
-            ) {
-                Text(
-                    text = "Switch direction",
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
+            }
+
+            if (!isLoop(uiState.originalBusRoute)) {
+                Button(
+                    onClick = switchDirection,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        Icons.Filled.SwapHoriz,
+                        contentDescription = "Speed",
+                        modifier = Modifier.weight(0.5f)
+                    )
+                }
             }
         }
 
@@ -210,7 +260,8 @@ private fun BusRouteList(
                     navController = navController,
                     data = busRoute,
                     uiState = uiState,
-                    gridState = gridState
+                    gridState = gridState,
+                    setFirstBusStop = setFirstBusStop
                 )
             }
         }
@@ -229,10 +280,10 @@ private fun BusRouteInformation(
     navController: NavHostController,
     data: Pair<Int, BusRouteInfoWithBusStopInfo>,
     uiState: BusRouteUIState,
-    gridState: LazyGridState
-) {
-    val busRouteViewModel: BusRouteViewModel = viewModel()
+    gridState: LazyGridState,
+    setFirstBusStop: (Int) -> Unit,
 
+) {
     Row (
         modifier = Modifier
             .fillMaxWidth()
@@ -241,7 +292,7 @@ private fun BusRouteInformation(
         Card(
             modifier = Modifier.weight(1f),
             onClick = {
-                busRouteViewModel.setFirstBusStop(data.second.busRouteInfo.stopSequence)
+                setFirstBusStop(data.second.busRouteInfo.stopSequence)
                 MainScope().launch {
                     gridState.scrollToItem(0)
                 }
@@ -279,7 +330,7 @@ private fun BusRouteInformation(
             )
 
             Text(
-                text = "${busStopInfo.roadName} (${data.first}m)",
+                text = "${busStopInfo.roadName} (${if (uiState.isLiveLocation) data.first else "-"}m)",
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
                     .padding(horizontal = 4.dp)
