@@ -9,15 +9,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DepartureBoard
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.NearMe
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Subway
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -188,8 +188,12 @@ private fun HomePageUI(
     if (homePageViewModel.downloaded) {
 
         Column {
-            if (!(homePageUIState.busStopSearchBarExpanded ||
-                    homePageUIState.busServiceSearchBarExpanded)) {
+            if (!homePageUIState.busStopSearchBarExpanded &&
+                    !homePageUIState.busServiceSearchBarExpanded &&
+                    !homePageUIState.busStopRoadSearchBarExpanded &&
+                    !homePageUIState.mrtStationSearchBarExpanded
+
+                ) {
                 Button(
                     onClick = {
                         navigateToNearby(
@@ -203,7 +207,7 @@ private fun HomePageUI(
                 ) {
                     Row {
                         Icon(
-                            Icons.Filled.LocationOn,
+                            Icons.Filled.NearMe,
                             contentDescription = "Nearby bus/MRT"
                         )
 
@@ -215,7 +219,8 @@ private fun HomePageUI(
                 }
             }
 
-            if (!homePageUIState.busServiceSearchBarExpanded) {
+            if (!homePageUIState.busServiceSearchBarExpanded &&
+                !homePageUIState.mrtStationSearchBarExpanded) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -232,7 +237,6 @@ private fun HomePageUI(
                     SearchBarWithSuggestions(
                         onQueryChange = homePageViewModel::updateBusStopCodeInput,
                         onSearch = {
-                            homePageViewModel.setBusStopSearchBarExpanded(false)
                             navigateToBusArrival(
                                 navController = navController,
                                 busStopInput = homePageUIState.busStopCodeInput
@@ -240,6 +244,15 @@ private fun HomePageUI(
                         },
                         query = homePageUIState.busStopCodeInput,
                         placeholder = "Bus stop code or name",
+                        trailingIcon = {
+                            Icon(
+                                Icons.Filled.Clear,
+                                contentDescription = "Clear input",
+                                modifier = Modifier.clickable {
+                                    homePageViewModel.updateBusStopCodeInput(busStopCodeInput = "")
+                                }
+                            )
+                                       },
                         expanded = homePageUIState.busStopSearchBarExpanded,
                         onExpandedChange = homePageViewModel::setBusStopSearchBarExpanded,
                         searchResults = homePageUIState.busStopSearchResult,
@@ -256,10 +269,45 @@ private fun HomePageUI(
                             )
                         }
                     )
+
+                    SearchBarWithSuggestions(
+                        onQueryChange = homePageViewModel::updateBusStopRoadInput,
+                        onSearch = {
+
+                        },
+                        query = homePageUIState.busStopRoadInput,
+                        placeholder = "Bus road name",
+                        trailingIcon = {
+                            Icon(
+                                Icons.Filled.Clear,
+                                contentDescription = "Clear input",
+                                modifier = Modifier.clickable {
+                                    homePageViewModel.updateBusStopRoadInput(busStopRoadInput = "")
+                                }
+                            )
+                        },
+                        expanded = homePageUIState.busStopRoadSearchBarExpanded,
+                        onExpandedChange = homePageViewModel::setBusStopRoadSearchBarExpanded,
+                        searchResults = homePageUIState.busStopRoadSearchResult,
+                        onItemClick = { busStop ->
+                            navigateToBusArrival(
+                                navController = navController,
+                                busStopInput = busStop.busStopCode
+                            )
+                        },
+                        itemContent = { busStop ->
+                            Text(
+                                text = "${busStop.description} (${busStop.roadName})",
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+                    )
                 }
             }
 
-            if (!homePageUIState.busStopSearchBarExpanded) {
+            if (!homePageUIState.busStopSearchBarExpanded &&
+                !homePageUIState.busStopRoadSearchBarExpanded &&
+                !homePageUIState.mrtStationSearchBarExpanded) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -276,7 +324,6 @@ private fun HomePageUI(
                     SearchBarWithSuggestions(
                         onQueryChange = homePageViewModel::updateBusServiceInput,
                         onSearch = {
-                            homePageViewModel.setBusServiceSearchBarExpanded(false)
                             navigateToBusServiceInformation(
                                 navController = navController,
                                 busServiceInput = homePageUIState.busServiceInput
@@ -312,7 +359,7 @@ private fun HomePageUI(
 
                                 if (!busServiceInfo.isLoop()) {
                                     Text(
-                                        text = "From ${busService.originBusStopInfo.description} to ${busService.destinationBusStopInfo.description}"
+                                        text = "${busService.originBusStopInfo.description} to ${busService.destinationBusStopInfo.description}"
                                     )
                                 } else {
                                     Text(
@@ -320,6 +367,58 @@ private fun HomePageUI(
                                     )
                                 }
                             }
+                        }
+                    )
+                }
+            }
+
+            if (!homePageUIState.busStopSearchBarExpanded &&
+                !homePageUIState.busStopRoadSearchBarExpanded &&
+                !homePageUIState.busServiceSearchBarExpanded) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.Subway,
+                        contentDescription = Pages.NearbyInformation.title,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .align(Alignment.CenterHorizontally)
+                    )
+
+                    SearchBarWithSuggestions(
+                        onQueryChange = homePageViewModel::updateMRTStationInput,
+                        onSearch = {
+
+                        },
+                        query = homePageUIState.mrtStationInput,
+                        placeholder = "MRT Station name",
+                        trailingIcon = {
+                            Icon(
+                                Icons.Filled.Clear,
+                                contentDescription = "Clear input",
+                                modifier = Modifier.clickable {
+                                    homePageViewModel.updateMRTStationInput(mrtStationInput = "")
+                                }
+                            )
+                        },
+                        expanded = homePageUIState.mrtStationSearchBarExpanded,
+                        onExpandedChange = homePageViewModel::setMRTStationSearchBarExpanded,
+                        searchResults = homePageUIState.mrtStationSearchResult,
+                        onItemClick = { mrtStation ->
+                            navigateToNearby(
+                                navController = navController,
+                                latitude = mrtStation.latitude,
+                                longitude = mrtStation.longitude
+                            )
+                        },
+                        itemContent = { mrtStation ->
+                            Text(
+                                text = "${mrtStation.stationCode} ${mrtStation.stationName}",
+                                modifier = Modifier.padding(8.dp)
+                            )
                         }
                     )
                 }
@@ -380,6 +479,8 @@ fun <T> SearchBarWithSuggestions(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     searchResults: List<T>,
+    leadingIcon: @Composable (() -> Unit)? = { Icon(Icons.Filled.Search, contentDescription = "Search") },
+    trailingIcon: @Composable (() -> Unit)? = null,
     itemContent: @Composable (T) -> Unit,
     onItemClick: (T) -> Unit
 ) {
@@ -394,7 +495,9 @@ fun <T> SearchBarWithSuggestions(
                 onSearch = onSearch,
                 expanded = false,
                 onExpandedChange = onExpandedChange,
-                placeholder = { Text(placeholder) }
+                placeholder = { Text(placeholder) },
+                leadingIcon = leadingIcon,
+                trailingIcon = trailingIcon
             )
         },
         expanded = expanded,
@@ -459,13 +562,6 @@ fun navigateToBusArrival(
     busStopInput: String = ""
 ) {
     navController.navigate(Pages.BusArrival.withText(busStopInput))
-}
-
-private fun navigateToBusArrival(
-    navController: NavHostController,
-    busStopProducer: () -> String
-) {
-    navController.navigate(Pages.BusArrival.withText(busStopProducer()))
 }
 
 fun navigateToNearby(

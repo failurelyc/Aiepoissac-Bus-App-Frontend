@@ -3,9 +3,6 @@ package com.aiepoissac.busapp.ui
 import android.location.Location
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -19,7 +16,6 @@ import com.aiepoissac.busapp.data.businfo.attachDistanceFromPoint
 import com.aiepoissac.busapp.data.businfo.isLoop
 import com.aiepoissac.busapp.data.businfo.truncateLoopRoute
 import com.aiepoissac.busapp.data.businfo.truncateTillBusStop
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,7 +24,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.time.LocalDateTime
 
@@ -167,11 +162,11 @@ class BusRouteViewModel(
             LocationManager.stopFetchingLocation()
             _uiState.update { it.copy(isLiveLocation = false) }
         } else {
-            val threshold = LocationManager.REFRESH_INTERVAL_IN_SECONDS
+            val threshold = LocationManager.FAST_REFRESH_INTERVAL_IN_SECONDS
             val currentTime = LocalDateTime.now()
             val difference = Duration.between(uiState.value.lastTimeLocationUpdated, currentTime).seconds
             if (difference > threshold) {
-                LocationManager.startFetchingLocation()
+                LocationManager.startFetchingLocation(fastRefresh = true)
                 _uiState.update { it.copy(isLiveLocation = true) }
             } else {
                 Toast.makeText(
@@ -187,7 +182,7 @@ class BusRouteViewModel(
     fun updateLiveLocation() {
         viewModelScope.launch {
             if (uiState.value.isLiveLocation) {
-                LocationManager.startFetchingLocation()
+                LocationManager.startFetchingLocation(fastRefresh = true)
             }
             snapshotFlow { LocationManager.currentLocation.value }
                 .filterNotNull()
@@ -228,7 +223,5 @@ class BusRouteViewModel(
             return route.map { Pair(0, it) }
         }
     }
-
-
 
 }

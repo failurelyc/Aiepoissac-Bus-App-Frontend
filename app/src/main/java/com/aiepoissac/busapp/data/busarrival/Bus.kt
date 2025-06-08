@@ -1,6 +1,7 @@
 package com.aiepoissac.busapp.data.busarrival
 
 import com.aiepoissac.busapp.data.HasCoordinates
+import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusStopInfo
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -28,12 +29,25 @@ data class Bus (
     @SerialName("Feature") val feature: String,
     @SerialName("Type") val type: String
 ): HasCoordinates {
+
+    suspend fun getDestinationBusStopInfo(busRepository: BusRepository): BusStopInfo? {
+        return busRepository.getBusStop(destinationCode)
+    }
+
+    suspend fun getOriginBusStopInfo(busRepository: BusRepository): BusStopInfo? {
+        return busRepository.getBusStop(originCode)
+    }
+
     fun isValid(): Boolean {
         return this.estimatedArrival != LocalDateTime.MIN
     }
 
     fun isLive(): Boolean {
         return this.isValid() && this.monitored == 1
+    }
+
+    fun isLoop(): Boolean {
+        return this.isValid() && this.originCode == this.destinationCode
     }
 
     fun getDuration() : Int {

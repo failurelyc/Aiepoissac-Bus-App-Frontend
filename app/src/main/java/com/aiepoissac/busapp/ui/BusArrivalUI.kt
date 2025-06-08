@@ -2,6 +2,7 @@ package com.aiepoissac.busapp.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,8 +15,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DepartureBoard
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.MobiledataOff
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.NoTransfer
@@ -29,9 +31,8 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SearchBar
-import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -51,7 +52,6 @@ import androidx.navigation.NavHostController
 import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.busarrival.Bus
 import com.aiepoissac.busapp.data.busarrival.BusService
-import com.aiepoissac.busapp.data.busarrival.BusStop
 import com.aiepoissac.busapp.data.businfo.BusRouteInfo
 import com.aiepoissac.busapp.data.businfo.BusStopInfo
 
@@ -158,16 +158,66 @@ fun BusArrivalUI(
         }
     ) {
         innerPadding ->
-            Column (
+            Column(
                 modifier = Modifier.padding(innerPadding)
-
             ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(4.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.DepartureBoard,
+                        contentDescription = "Bus Arrival Timings",
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Switch(
+                        checked = busArrivalUIState.showBusArrival,
+                        onCheckedChange = { busArrivalViewModel.toggleShowBusArrival() }
+                    )
+
+                    Icon(
+                        if (busArrivalUIState.hideBusType) Icons.Filled.NoTransfer else Icons.Filled.DirectionsBus,
+                        contentDescription = "Toggle show bus type",
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Switch(
+                        checked = !busArrivalUIState.hideBusType,
+                        onCheckedChange = { busArrivalViewModel.toggleHideBusType() }
+                    )
+
+                }
+
+                if (busArrivalUIState.busStopInfo != null) {
+                    Button(
+                        onClick = { navigateToNearby(
+                            navController = navController,
+                            latitude = busArrivalUIState.busStopInfo!!.latitude,
+                            longitude = busArrivalUIState.busStopInfo!!.longitude
+                        ) },
+                        modifier = Modifier.padding(4.dp).fillMaxWidth()
+                    ) {
+                        Row {
+                            Icon(
+                                Icons.Filled.NearMe,
+                                contentDescription = "Nearby bus/MRT"
+                            )
+
+                            Text(
+                                text = "Nearby bus/MRT",
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                        }
+                    }
+                }
+
                 if (busArrivalUIState.showBusArrival) {
                     BusArrivalsList(
                         uiState = busArrivalUIState,
                         onRefresh = busArrivalViewModel::refreshBusArrival,
-                        toggleShowBusArrival = busArrivalViewModel::toggleShowBusArrival,
-                        navController = navController)
+                        navController = navController
+                    )
                 } else {
                     if (configuration.orientation == 1) {
                         SearchBarWithSuggestions(
@@ -175,6 +225,15 @@ fun BusArrivalUI(
                             onSearch = { busArrivalViewModel.updateBusStop() },
                             query = busArrivalUIState.busStopCodeInput,
                             placeholder = "Bus stop code or name",
+                            trailingIcon = {
+                                Icon(
+                                    Icons.Filled.Clear,
+                                    contentDescription = "Clear input",
+                                    modifier = Modifier.clickable {
+                                        busArrivalViewModel.updateBusStopCodeInput(busStopCodeInput = "")
+                                    }
+                                )
+                            },
                             expanded = busArrivalUIState.expanded,
                             onExpandedChange = busArrivalViewModel::setExpanded,
                             searchResults = busArrivalUIState.searchResult,
@@ -190,7 +249,6 @@ fun BusArrivalUI(
 
                     BusStopInformation(
                         uiState = busArrivalUIState,
-                        toggleShowBusArrival = { busArrivalViewModel.toggleShowBusArrival() },
                         navController = navController
                     )
                 }
@@ -201,7 +259,6 @@ fun BusArrivalUI(
 @Composable
 private fun BusStopInformation(
     uiState: BusArrivalUIState,
-    toggleShowBusArrival: () -> Unit,
     navController: NavHostController
 ) {
 
@@ -214,44 +271,6 @@ private fun BusStopInformation(
             icon = Icons.Filled.NoTransfer
         )
     } else {
-
-        Row(
-            modifier = Modifier.padding(4.dp)
-        ) {
-            Button(
-                onClick = { navigateToHomePage(navController) },
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    Icons.Filled.Home,
-                    contentDescription = "Bus Arrival Timings"
-                )
-            }
-
-            Button(
-                onClick = toggleShowBusArrival,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    Icons.Filled.DepartureBoard,
-                    contentDescription = "Bus Arrival Timings"
-                )
-            }
-
-            Button(
-                onClick = { navigateToNearby(
-                    navController = navController,
-                    latitude = busStopInfo.latitude,
-                    longitude = busStopInfo.longitude
-                ) },
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    Icons.Filled.NearMe,
-                    contentDescription = "Nearby bus and MRT stations"
-                )
-            }
-        }
 
         Text(
             fontSize = 24.sp,
@@ -306,26 +325,10 @@ private fun BusStopInformation(
 private fun BusArrivalsList(
     uiState: BusArrivalUIState,
     onRefresh: () -> Unit,
-    toggleShowBusArrival: () -> Unit,
     navController: NavHostController) {
 
-    val data: BusStop? = uiState.busArrivalData
+    val data = uiState.busArrivalData
     val busStopInfo: BusStopInfo? = uiState.busStopInfo
-    val configuration = LocalConfiguration.current
-
-    if (configuration.orientation == 1) {
-        Button(
-            onClick = toggleShowBusArrival,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp)
-        ) {
-            Text(
-                text = "See bus stop details",
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
-        }
-    }
 
     if (busStopInfo == null) {
         ErrorMessage(
@@ -338,7 +341,7 @@ private fun BusArrivalsList(
                 text = "Data is currently unavailable.",
                 icon = Icons.Filled.MobiledataOff
             )
-        } else if (data.services.isNotEmpty()){
+        } else if (data.isNotEmpty()){
             PullToRefreshBox(
                 isRefreshing = uiState.isRefreshing,
                 onRefresh = onRefresh,
@@ -348,10 +351,12 @@ private fun BusArrivalsList(
                     modifier = Modifier,
                     columns = GridCells.Adaptive(minSize = 320.dp)
                 ) {
-                    items(data.services) { service ->
+                    items(data) { service ->
                         BusArrivalsLayout(
                             data = service,
-                            navController = navController)
+                            navController = navController,
+                            hideBusType = uiState.hideBusType
+                        )
                     }
                 }
             }
@@ -367,19 +372,23 @@ private fun BusArrivalsList(
 @Composable
 private fun BusArrivalsLayout(
     navController: NavHostController,
-    data: BusService) {
+    data: Pair<Pair<BusStopInfo?, BusStopInfo?>, BusService>,
+    hideBusType: Boolean = false
+) {
 
     val busArrivalViewModel: BusArrivalViewModel = viewModel()
+    val busService = data.second
+    val originDestination = data.first
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Card(
             modifier = Modifier.weight(1f),
             onClick = {
-                val busRoute = busArrivalViewModel.getBusRoute(data.serviceNo)
+                val busRoute = busArrivalViewModel.getBusRoute(busService.serviceNo)
                 if (busRoute != null) {
                     navigateToBusRouteInformation(
                         navController = navController,
@@ -399,23 +408,38 @@ private fun BusArrivalsLayout(
         ) {
 
             Text(
-                text = data.serviceNo,
-                fontSize = 36.sp,
+                text = busService.serviceNo,
+                fontSize = if (!hideBusType) 36.sp else 24.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
+
             Text(
-                text = "To: ${data.nextBus.destinationCode}",
+                text = originDestination.second?.description ?: "an error occurred",
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
-            Text(
-                text = data.operator,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
+
+            if (!hideBusType) {
+
+                if (busService.nextBus.isLoop()) {
+                    Text(
+                        text = "(loop)",
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Text(
+                    text = busService.operator,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
         }
         Card(modifier = Modifier.weight(2f)) {
             Row(
@@ -423,9 +447,21 @@ private fun BusArrivalsLayout(
                     .fillMaxWidth()
                     .padding(8.dp)
                 ) {
-                BusArrivalLayout(data = data.nextBus, modifier = Modifier.weight(1f))
-                BusArrivalLayout(data = data.nextBus2, modifier = Modifier.weight(1f))
-                BusArrivalLayout(data = data.nextBus3, modifier = Modifier.weight(1f))
+                BusArrivalLayout(
+                    data = busService.nextBus,
+                    modifier = Modifier.weight(1f),
+                    hideBusType = hideBusType
+                )
+                BusArrivalLayout(
+                    data = busService.nextBus2,
+                    modifier = Modifier.weight(1f),
+                    hideBusType = hideBusType
+                )
+                BusArrivalLayout(
+                    data = busService.nextBus3,
+                    modifier = Modifier.weight(1f),
+                    hideBusType = hideBusType
+                )
             }
         }
 
@@ -433,7 +469,11 @@ private fun BusArrivalsLayout(
 }
 
 @Composable
-private fun BusArrivalLayout(data: Bus, modifier: Modifier = Modifier) {
+private fun BusArrivalLayout(
+    data: Bus,
+    modifier: Modifier = Modifier,
+    hideBusType: Boolean = false
+) {
 
     val busArrivalViewModel: BusArrivalViewModel = viewModel()
 
@@ -445,11 +485,13 @@ private fun BusArrivalLayout(data: Bus, modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            Image(
-                painter = painterResource(id = busArrivalViewModel.busTypeToPicture(data)),
-                contentDescription = "Bus Image",
-                modifier = Modifier.heightIn(max = 80.dp).widthIn(max = 80.dp)
-            )
+            if (!hideBusType) {
+                Image(
+                    painter = painterResource(id = busArrivalViewModel.busTypeToPicture(data)),
+                    contentDescription = "Bus Image",
+                    modifier = Modifier.heightIn(max = 80.dp).widthIn(max = 80.dp)
+                )
+            }
 
             if (data.isValid()) {
                 Text(

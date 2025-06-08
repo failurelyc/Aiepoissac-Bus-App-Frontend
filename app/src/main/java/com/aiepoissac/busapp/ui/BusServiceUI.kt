@@ -139,7 +139,7 @@ private fun BusServiceInformation(
         )
 
         Text(
-            text = "From ${busService.originBusStopInfo.description} to ${busService.destinationBusStopInfo.description}" ,
+            text = "${busService.originBusStopInfo.description} to ${busService.destinationBusStopInfo.description}" ,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )

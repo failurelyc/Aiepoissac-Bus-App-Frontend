@@ -1,6 +1,5 @@
 package com.aiepoissac.busapp.ui
 
-
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.getValue
@@ -33,7 +32,6 @@ import java.io.IOException
 import java.time.Duration
 import java.time.LocalDateTime
 
-
 class BusArrivalViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
     private val busStopCodeInput: String
@@ -65,19 +63,21 @@ class BusArrivalViewModel(
             )
         }
         viewModelScope.launch {
-            if (busStopCodeInput.length > 3) {
-                _uiState.update {
-                    it.copy(
-                        searchResult = busRepository.getBusStopContaining(busStopCodeInput),
-                        expanded = true
-                    )
-                }
-            } else {
-                _uiState.update {
-                    it.copy(
-                        searchResult = listOf(),
-                        expanded = false
-                    )
+            if (busStopCodeInput.isNotEmpty()) {
+                if (busStopCodeInput.first() < '0' || busStopCodeInput.first() > '9') {
+                    _uiState.update {
+                        it.copy(
+                            searchResult = busRepository.getBusStopsContaining(busStopCodeInput),
+                            expanded = true
+                        )
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            searchResult = busRepository.getBusStopsWithPrefixCode(busStopCodeInput),
+                            expanded = true
+                        )
+                    }
                 }
             }
         }
@@ -127,6 +127,10 @@ class BusArrivalViewModel(
         if (busStopInfo != null) {
             try {
                 val busArrivalData = getBusArrival(busStopCode)
+                    .services
+                    .map {
+                        it.attachOriginDestinationBusStopInfo(busRepository)
+                    }
                 _uiState.update {
                     it.copy(
                         busStopInfo = busStopInfo,
@@ -176,6 +180,10 @@ class BusArrivalViewModel(
                     delay(16) //to allow time for the loading animation to start
                     try {
                         val busArrivalData = getBusArrival(busStopInfo.busStopCode)
+                            .services
+                            .map {
+                                it.attachOriginDestinationBusStopInfo(busRepository)
+                            }
                         _uiState.update {
                             it.copy(
                                 busArrivalData = busArrivalData,
@@ -210,6 +218,12 @@ class BusArrivalViewModel(
     fun toggleShowBusArrival() {
         _uiState.update {
             it.copy(showBusArrival = !uiState.value.showBusArrival)
+        }
+    }
+
+    fun toggleHideBusType() {
+        _uiState.update {
+            it.copy(hideBusType = !uiState.value.hideBusType)
         }
     }
 
@@ -254,15 +268,14 @@ class BusArrivalViewModel(
     fun getBusRoute(serviceNo: String): BusRouteInfo? {
         val busRoutes = uiState.value.busRoutes
             .filter { it.serviceNo == serviceNo }
-        if (busRoutes.size == 1) { //bus service stops here only once, no ambiguity
-            return busRoutes[0]
+        return if (busRoutes.size == 1) { //bus service stops here only once, no ambiguity
+            busRoutes[0]
         } else if (busRoutes.map {it.direction} .distinct().size == 1 ) {
             //bus stops here more than once in the same direction
-            return busRoutes.minBy { it.stopSequence } //returns the first stop along the route
+            busRoutes.minBy { it.stopSequence } //returns the first stop along the route
         } else { //bus stops here more than once in different directions
-            return null //cannot resolve the ambiguity
+            null //cannot resolve the ambiguity
         }
-
     }
 
     init {

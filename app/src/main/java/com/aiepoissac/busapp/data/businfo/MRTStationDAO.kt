@@ -27,6 +27,10 @@ interface MRTStationDAO {
     @Query("SELECT * FROM MRT_Stations_Table WHERE stationCode = :stationCode")
     suspend fun getMRTStation(stationCode: String): MRTStation
 
+    @Query("SELECT * FROM MRT_Stations_Table " +
+            "WHERE stationName LIKE '%' || :partialName || '%'")
+    suspend fun getMRTStationsContaining(partialName: String): List<MRTStation>
+
     @Query("SELECT * FROM MRT_Stations_Table")
     suspend fun getAllMRTStations(): List<MRTStation>
 

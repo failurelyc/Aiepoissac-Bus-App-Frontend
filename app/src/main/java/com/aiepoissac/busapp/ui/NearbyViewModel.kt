@@ -85,11 +85,11 @@ class NearbyViewModel(
             LocationManager.stopFetchingLocation()
             _uiState.update { it.copy(isLiveLocation = false) }
         } else {
-            val threshold = LocationManager.REFRESH_INTERVAL_IN_SECONDS
+            val threshold = LocationManager.SLOW_REFRESH_INTERVAL_IN_SECONDS
             val currentTime = LocalDateTime.now()
             val difference = Duration.between(lastTimeToggleLocationPressed, currentTime).seconds
             if (difference > threshold) {
-                LocationManager.startFetchingLocation()
+                LocationManager.startFetchingLocation(fastRefresh = false)
                 _uiState.update { it.copy(isLiveLocation = true) }
             } else {
                 Toast.makeText(
@@ -99,13 +99,24 @@ class NearbyViewModel(
                 ).show()
             }
         }
+    }
 
+    fun toggleShowNearbyBusStops() {
+        _uiState.update {
+            it.copy(showNearbyBusStops = !uiState.value.showNearbyBusStops)
+        }
+    }
+
+    fun toggleShowNearbyMRTStations() {
+        _uiState.update {
+            it.copy(showNearbyMRTStations = !uiState.value.showNearbyMRTStations)
+        }
     }
 
     fun updateLiveLocation() {
         viewModelScope.launch {
             if (uiState.value.isLiveLocation) {
-                LocationManager.startFetchingLocation()
+                LocationManager.startFetchingLocation(fastRefresh = false)
             }
             snapshotFlow { LocationManager.currentLocation.value }
                 .filterNotNull()
@@ -122,7 +133,6 @@ class NearbyViewModel(
     }
 
     private suspend fun updateLocation(point: LatLong) {
-
         _uiState.update { nearbyUiState ->
             nearbyUiState.copy(
                 busStopList = findNearbyBusStops(
@@ -141,7 +151,5 @@ class NearbyViewModel(
                 point = point
             )
         }
-
     }
-
 }

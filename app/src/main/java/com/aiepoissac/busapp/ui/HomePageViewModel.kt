@@ -37,34 +37,47 @@ class HomePageViewModel : ViewModel() {
 
     fun updateBusStopCodeInput(busStopCodeInput: String) {
         _uiState.update {
-            it.copy(
-                busStopCodeInput = busStopCodeInput
-            )
+            it.copy(busStopCodeInput = busStopCodeInput)
         }
         viewModelScope.launch {
-            if (busStopCodeInput.length > 3) {
-                _uiState.update {
-                    it.copy(
-                        busStopSearchResult = busRepository.getBusStopContaining(busStopCodeInput),
-                        busStopSearchBarExpanded = true
-                    )
+            if (busStopCodeInput.isNotEmpty()) {
+                if (busStopCodeInput.first() < '0' || busStopCodeInput.first() > '9') {
+                    _uiState.update {
+                        it.copy(
+                            busStopSearchResult = busRepository.getBusStopsContaining(busStopCodeInput),
+                            busStopSearchBarExpanded = true
+                        )
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            busStopSearchResult = busRepository.getBusStopsWithPrefixCode(busStopCodeInput),
+                            busStopSearchBarExpanded = true
+                        )
+                    }
                 }
-            } else {
-                _uiState.update {
-                    it.copy(
-                        busStopSearchResult = listOf(),
-                        busStopSearchBarExpanded = false
-                    )
-                }
+            }
+        }
+    }
+
+    fun updateBusStopRoadInput(busStopRoadInput: String) {
+        _uiState.update {
+            it.copy(busStopRoadInput = busStopRoadInput)
+        }
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    busStopRoadSearchResult = busRepository.getBusStopsWithPartialRoadName(busStopRoadInput),
+                    busStopRoadSearchBarExpanded = true
+                )
             }
         }
     }
 
     fun updateBusServiceInput(busServiceInput: String) {
         _uiState.update {
-            it.copy(
-                busServiceInput = busServiceInput
-            )
+            it.copy(busServiceInput = busServiceInput)
         }
 
         viewModelScope.launch {
@@ -77,12 +90,35 @@ class HomePageViewModel : ViewModel() {
         }
     }
 
+    fun updateMRTStationInput(mrtStationInput: String) {
+        _uiState.update {
+            it.copy(mrtStationInput = mrtStationInput)
+        }
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    mrtStationSearchResult = busRepository.getMRTStationsContaining(mrtStationInput),
+                    mrtStationSearchBarExpanded = true
+                )
+            }
+        }
+    }
+
     fun setBusStopSearchBarExpanded(expanded: Boolean) {
         _uiState.update { it.copy(busStopSearchBarExpanded = expanded) }
     }
 
     fun setBusServiceSearchBarExpanded(expanded: Boolean) {
         _uiState.update { it.copy(busServiceSearchBarExpanded = expanded) }
+    }
+
+    fun setBusStopRoadSearchBarExpanded(expanded: Boolean) {
+        _uiState.update { it.copy(busStopRoadSearchBarExpanded = expanded) }
+    }
+
+    fun setMRTStationSearchBarExpanded(expanded: Boolean) {
+        _uiState.update { it.copy(mrtStationSearchBarExpanded = expanded) }
     }
 
     init {

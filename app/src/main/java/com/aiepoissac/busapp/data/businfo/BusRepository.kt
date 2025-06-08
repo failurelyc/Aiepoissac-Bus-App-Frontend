@@ -48,7 +48,11 @@ interface BusRepository {
 
     suspend fun getAllBusStops(): List<BusStopInfo>
 
-    suspend fun getBusStopContaining(partialDescription: String): List<BusStopInfo>
+    suspend fun getBusStopsContaining(partialDescription: String): List<BusStopInfo>
+
+    suspend fun getBusStopsWithPrefixCode(busStopCode: String): List<BusStopInfo>
+
+    suspend fun getBusStopsWithPartialRoadName(roadName:String): List<BusStopInfo>
 
     suspend fun getBusStopWithBusRoutes(busStopCode: String): BusStopInfoWithBusRoutesInfo
 
@@ -63,6 +67,8 @@ interface BusRepository {
     suspend fun getMRTStationCount(): Int
 
     suspend fun getMRTStation(stationCode: String): MRTStation
+
+    suspend fun getMRTStationsContaining(partialName: String): List<MRTStation>
 
     suspend fun getAllMRTStations(): List<MRTStation>
 

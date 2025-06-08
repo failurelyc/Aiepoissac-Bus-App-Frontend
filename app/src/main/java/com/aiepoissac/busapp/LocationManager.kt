@@ -12,13 +12,21 @@ import com.google.android.gms.location.Priority
 
 object LocationManager {
 
-    const val REFRESH_INTERVAL_IN_SECONDS = 5
+    const val FAST_REFRESH_INTERVAL_IN_SECONDS = 2
+
+    const val SLOW_REFRESH_INTERVAL_IN_SECONDS = 10
 
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(BusApplication.instance)
 
-    private val locationRequest = LocationRequest.Builder(
+    private val fastLocationRequest = LocationRequest.Builder(
         Priority.PRIORITY_HIGH_ACCURACY,
-        REFRESH_INTERVAL_IN_SECONDS * 1000L
+        FAST_REFRESH_INTERVAL_IN_SECONDS * 1000L
+    )
+        .build()
+
+    private val slowLocationRequest = LocationRequest.Builder(
+        Priority.PRIORITY_HIGH_ACCURACY,
+        SLOW_REFRESH_INTERVAL_IN_SECONDS * 1000L
     )
         .build()
 
@@ -34,9 +42,9 @@ object LocationManager {
     }
 
     @SuppressLint("MissingPermission")
-    fun startFetchingLocation() {
+    fun startFetchingLocation(fastRefresh: Boolean) {
         fusedLocationClient.requestLocationUpdates(
-            locationRequest,
+            if (fastRefresh) fastLocationRequest else slowLocationRequest,
             locationCallback,
             Looper.getMainLooper()
         )

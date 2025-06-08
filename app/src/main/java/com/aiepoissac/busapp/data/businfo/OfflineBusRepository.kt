@@ -97,8 +97,16 @@ class OfflineBusRepository(
         return busStopInfoDAO.getAllBusStops()
     }
 
-    override suspend fun getBusStopContaining(partialDescription: String): List<BusStopInfo> {
-        return busStopInfoDAO.getBusStopContaining(partialDescription)
+    override suspend fun getBusStopsContaining(partialDescription: String): List<BusStopInfo> {
+        return busStopInfoDAO.getBusStopsContaining(partialDescription)
+    }
+
+    override suspend fun getBusStopsWithPrefixCode(busStopCode: String): List<BusStopInfo> {
+        return busStopInfoDAO.getBusStopsWithPrefixCode(busStopCode)
+    }
+
+    override suspend fun getBusStopsWithPartialRoadName(roadName:String): List<BusStopInfo> {
+        return busStopInfoDAO.getBusStopsWithPartialRoadName(roadName)
     }
 
     override suspend fun getBusStopWithBusRoutes(busStopCode: String):
@@ -132,6 +140,10 @@ class OfflineBusRepository(
 
     override suspend fun getAllMRTStations(): List<MRTStation> {
         return mrtStationDAO.getAllMRTStations()
+    }
+
+    override suspend fun getMRTStationsContaining(partialName: String): List<MRTStation> {
+        return mrtStationDAO.getMRTStationsContaining(partialName)
     }
 
 }

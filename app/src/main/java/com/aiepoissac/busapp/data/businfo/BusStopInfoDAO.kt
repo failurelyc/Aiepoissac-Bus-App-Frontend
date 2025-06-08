@@ -33,7 +33,14 @@ interface BusStopInfoDAO {
 
     @Query("SELECT * FROM BUS_STOPS_TABLE " +
             "WHERE LOWER(description) LIKE '%' || LOWER(:partialDescription) || '%'")
-    suspend fun getBusStopContaining(partialDescription: String): List<BusStopInfo>
+    suspend fun getBusStopsContaining(partialDescription: String): List<BusStopInfo>
+
+    @Query("SELECT * FROM Bus_Stops_Table WHERE busStopCode LIKE :busStopCode || '%'")
+    suspend fun getBusStopsWithPrefixCode(busStopCode: String): List<BusStopInfo>
+
+    @Query("SELECT * FROM Bus_Stops_Table " +
+            "WHERE LOWER(roadName) LIKE '%' || LOWER(:roadName) || '%'")
+    suspend fun getBusStopsWithPartialRoadName(roadName:String): List<BusStopInfo>
 
     @Transaction
     @Query("SELECT * FROM Bus_Stops_Table WHERE busStopCode = :busStopCode")

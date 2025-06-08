@@ -9,5 +9,7 @@ data class NearbyUIState(
     val mrtStationList: List<Pair<Int, MRTStation>> = listOf(),
     val point: HasCoordinates,
     val distanceThreshold: Int,
-    val isLiveLocation: Boolean
+    val isLiveLocation: Boolean,
+    val showNearbyBusStops: Boolean = false,
+    val showNearbyMRTStations: Boolean = false
 )
