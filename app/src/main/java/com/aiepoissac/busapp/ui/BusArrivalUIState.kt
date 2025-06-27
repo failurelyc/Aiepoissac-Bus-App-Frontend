@@ -13,5 +13,6 @@ data class BusArrivalUIState(
     val hideBusType: Boolean = false,
     val busStopCodeInput: String = "",
     val expanded: Boolean = false,
+    val connectionIssue: Boolean = false,
     val searchResult: List<BusStopInfo> = listOf()
 )

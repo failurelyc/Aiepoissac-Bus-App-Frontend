@@ -54,7 +54,7 @@ class BusArrivalViewModel(
     private val _uiState = MutableStateFlow(BusArrivalUIState())
     val uiState: StateFlow<BusArrivalUIState> = _uiState.asStateFlow()
 
-    private var lastTimeRefreshPressed: LocalDateTime by mutableStateOf(LocalDateTime.now())
+    private var lastTimeRefreshPressed: LocalDateTime by mutableStateOf(LocalDateTime.MIN)
 
     fun updateBusStopCodeInput(busStopCodeInput: String) {
         _uiState.update {
@@ -78,6 +78,12 @@ class BusArrivalViewModel(
                             expanded = true
                         )
                     }
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        expanded = false
+                    )
                 }
             }
         }
@@ -121,36 +127,21 @@ class BusArrivalViewModel(
 
     private suspend fun updateBusStop(busStopCode: String) {
 
+        lastTimeRefreshPressed = LocalDateTime.MIN
         val busStopInfo = busRepository.getBusStop(busStopCode)
         val busRoutes = busRepository.getBusRoutesAtBusStop(busStopCode)
 
         if (busStopInfo != null) {
-            try {
-                val busArrivalData = getBusArrival(busStopCode)
-                    .services
-                    .map {
-                        it.attachOriginDestinationBusStopInfo(busRepository)
-                    }
-                _uiState.update {
-                    it.copy(
-                        busStopInfo = busStopInfo,
-                        busArrivalData = busArrivalData,
-                        busRoutes = busRoutes,
-                        busStopCodeInput = busStopCode,
-                        expanded = false
-                    )
-                }
-            } catch (e: IOException) {
-                _uiState.update {
-                    it.copy(
-                        busStopInfo = busStopInfo,
-                        busArrivalData = null,
-                        busRoutes = busRoutes,
-                        busStopCodeInput = busStopCode,
-                        expanded = false
-                    )
-                }
+            _uiState.update {
+                it.copy(
+                    busStopInfo = busStopInfo,
+                    busRoutes = busRoutes,
+                    busStopCodeInput = busStopCode,
+                    busArrivalData = null,
+                    expanded = false
+                )
             }
+            refreshBusArrival()
         } else {
             _uiState.update {
                 it.copy(
@@ -174,7 +165,9 @@ class BusArrivalViewModel(
             if (difference > threshold) {
                 lastTimeRefreshPressed = currentTime
                 _uiState.update {
-                    it.copy(isRefreshing = true)
+                    it.copy(
+                        isRefreshing = true
+                    )
                 }
                 viewModelScope.launch {
                     delay(16) //to allow time for the loading animation to start
@@ -187,14 +180,18 @@ class BusArrivalViewModel(
                         _uiState.update {
                             it.copy(
                                 busArrivalData = busArrivalData,
+                                connectionIssue = false,
                                 isRefreshing = false
                             )
                         }
                     } catch (e: IOException) {
+                        lastTimeRefreshPressed = LocalDateTime.MIN
                         _uiState.update {
                             it.copy(
-                                busArrivalData = null,
-                                isRefreshing = false) }
+                                connectionIssue = true,
+                                isRefreshing = false
+                            )
+                        }
                     }
                 }
             } else {

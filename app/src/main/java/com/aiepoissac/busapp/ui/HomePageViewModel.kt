@@ -56,6 +56,13 @@ class HomePageViewModel : ViewModel() {
                         )
                     }
                 }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        busStopSearchResult = listOf(),
+                        busStopSearchBarExpanded = false
+                    )
+                }
             }
         }
     }
@@ -66,11 +73,20 @@ class HomePageViewModel : ViewModel() {
         }
 
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    busStopRoadSearchResult = busRepository.getBusStopsWithPartialRoadName(busStopRoadInput),
-                    busStopRoadSearchBarExpanded = true
-                )
+            if (busStopRoadInput.isNotEmpty()) {
+                _uiState.update {
+                    it.copy(
+                        busStopRoadSearchResult = busRepository.getBusStopsWithPartialRoadName(busStopRoadInput),
+                        busStopRoadSearchBarExpanded = true
+                    )
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        busStopRoadSearchResult = listOf(),
+                        busStopRoadSearchBarExpanded = false
+                    )
+                }
             }
         }
     }

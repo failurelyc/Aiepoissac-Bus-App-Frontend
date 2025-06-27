@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DepartureBoard
 import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.MobiledataOff
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.NoTransfer
@@ -336,10 +337,15 @@ private fun BusArrivalsList(
             icon = Icons.Filled.NoTransfer
         )
     } else {
-        if (data == null) {
+        if (uiState.connectionIssue) {
             ErrorMessage(
-                text = "Data is currently unavailable.",
+                text = "Bus arrival data is currently unavailable.",
                 icon = Icons.Filled.MobiledataOff
+            )
+        } else if (data == null) {
+            ErrorMessage(
+                text = "Loading bus arrivals",
+                icon = Icons.Filled.Download
             )
         } else if (data.isNotEmpty()){
             PullToRefreshBox(
