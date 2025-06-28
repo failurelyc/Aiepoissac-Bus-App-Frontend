@@ -19,11 +19,6 @@ class BusApplication : Application() {
         super.onCreate()
         container = AppDataContainer(context = this)
         instance = this
-
-
-
     }
-
-
 
 }

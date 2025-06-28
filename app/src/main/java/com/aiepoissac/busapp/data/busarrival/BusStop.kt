@@ -25,7 +25,12 @@ data class BusStop (
     @SerialName("odata.metadata") val metadata: String,
     @SerialName("BusStopCode") val busStopCode: String,
     @SerialName("Services") val services: List<BusService>
-)
+) {
+    fun getBusArrivalsOfASingleService(serviceNo: String): List<BusService> {
+        //result is at most of size 2
+        return services.filter { it.serviceNo == serviceNo }
+    }
+}
 
 object DoubleStringSerializer : KSerializer<Double> {
     override val descriptor: SerialDescriptor =

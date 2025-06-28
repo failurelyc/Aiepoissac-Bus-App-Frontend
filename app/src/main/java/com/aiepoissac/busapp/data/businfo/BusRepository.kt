@@ -26,11 +26,17 @@ interface BusRepository {
 
     suspend fun getBusRoutesCount(): Int
 
-    suspend fun getBusServiceRoute(serviceNo: String, direction: Int):
-            List<BusRouteInfoWithBusStopInfo>
+    suspend fun getBusServiceRoute(
+        serviceNo: String, direction: Int
+    ): List<BusRouteInfoWithBusStopInfo>
 
-    suspend fun getBusServiceRouteAfterSpecifiedStop(serviceNo: String, direction: Int, stopSequence: Int):
-            List<BusRouteInfoWithBusStopInfo>
+    suspend fun getBusServiceRouteAfterSpecifiedStop(
+        serviceNo: String, direction: Int, stopSequence: Int
+    ): List<BusRouteInfoWithBusStopInfo>
+
+    suspend fun getBusRouteInfoWithBusStopInfo(
+        serviceNo: String, direction: Int, stopSequence: Int
+    ): BusRouteInfoWithBusStopInfo
 
     suspend fun getBusRoutesAtBusStop(busStopCode: String): List<BusRouteInfo>
 

@@ -10,4 +10,8 @@ data class BusRouteInfoWithBusStopInfo (
         entityColumn = "busStopCode"
     )
     val busStopInfo: BusStopInfo
-)
+) {
+    override fun toString(): String {
+        return "${busRouteInfo.stopSequence} $busStopInfo"
+    }
+}

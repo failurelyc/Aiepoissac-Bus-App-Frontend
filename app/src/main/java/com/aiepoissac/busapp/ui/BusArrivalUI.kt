@@ -51,10 +51,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.aiepoissac.busapp.BusApplication
+import com.aiepoissac.busapp.LocationManager
+import com.aiepoissac.busapp.data.HasCoordinates
 import com.aiepoissac.busapp.data.busarrival.Bus
 import com.aiepoissac.busapp.data.busarrival.BusService
 import com.aiepoissac.busapp.data.businfo.BusRouteInfo
 import com.aiepoissac.busapp.data.businfo.BusStopInfo
+import com.aiepoissac.busapp.data.businfo.LatLong
 
 @Composable
 fun BusArrivalUI(
@@ -99,7 +102,7 @@ fun BusArrivalUI(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Surface(
-                            color = busArrivalViewModel.getBusArrivalColor(
+                            color = getBusArrivalColor(
                                 s = "SEA",
                                 darkMode = isSystemInDarkTheme()
                             ),
@@ -113,7 +116,7 @@ fun BusArrivalUI(
                             )
                         }
                         Surface(
-                            color = busArrivalViewModel.getBusArrivalColor(
+                            color = getBusArrivalColor(
                                 s = "SDA",
                                 darkMode = isSystemInDarkTheme()
                             ),
@@ -127,7 +130,7 @@ fun BusArrivalUI(
                             )
                         }
                         Surface(
-                            color = busArrivalViewModel.getBusArrivalColor(
+                            color = getBusArrivalColor(
                                 s = "LSD",
                                 darkMode = isSystemInDarkTheme()
                             ),
@@ -141,7 +144,7 @@ fun BusArrivalUI(
                             )
                         }
                         Surface(
-                            color = busArrivalViewModel.getBusArrivalColor(
+                            color = getBusArrivalColor(
                                 darkMode = isSystemInDarkTheme()
                             ),
                             modifier = Modifier.weight(1f)
@@ -360,6 +363,7 @@ private fun BusArrivalsList(
                     items(data) { service ->
                         BusArrivalsLayout(
                             data = service,
+                            busStopInfo = busStopInfo,
                             navController = navController,
                             hideBusType = uiState.hideBusType
                         )
@@ -378,6 +382,7 @@ private fun BusArrivalsList(
 @Composable
 private fun BusArrivalsLayout(
     navController: NavHostController,
+    busStopInfo: BusStopInfo,
     data: Pair<Pair<BusStopInfo?, BusStopInfo?>, BusService>,
     hideBusType: Boolean = false
 ) {
@@ -456,16 +461,19 @@ private fun BusArrivalsLayout(
                 BusArrivalLayout(
                     data = busService.nextBus,
                     modifier = Modifier.weight(1f),
+                    hasCoordinates = busStopInfo,
                     hideBusType = hideBusType
                 )
                 BusArrivalLayout(
                     data = busService.nextBus2,
                     modifier = Modifier.weight(1f),
+                    hasCoordinates = busStopInfo,
                     hideBusType = hideBusType
                 )
                 BusArrivalLayout(
                     data = busService.nextBus3,
                     modifier = Modifier.weight(1f),
+                    hasCoordinates = busStopInfo,
                     hideBusType = hideBusType
                 )
             }
@@ -475,16 +483,16 @@ private fun BusArrivalsLayout(
 }
 
 @Composable
-private fun BusArrivalLayout(
+fun BusArrivalLayout(
     data: Bus,
+    hasCoordinates: HasCoordinates,
     modifier: Modifier = Modifier,
     hideBusType: Boolean = false
 ) {
 
-    val busArrivalViewModel: BusArrivalViewModel = viewModel()
 
     Surface(
-        color = busArrivalViewModel.getBusArrivalColor(data, isSystemInDarkTheme()),
+        color = getBusArrivalColor(data, isSystemInDarkTheme()),
         modifier = modifier
     ) {
         Column(
@@ -493,7 +501,7 @@ private fun BusArrivalLayout(
 
             if (!hideBusType) {
                 Image(
-                    painter = painterResource(id = busArrivalViewModel.busTypeToPicture(data)),
+                    painter = painterResource(id = busTypeToPicture(data)),
                     contentDescription = "Bus Image",
                     modifier = Modifier.heightIn(max = 80.dp).widthIn(max = 80.dp)
                 )
@@ -507,7 +515,7 @@ private fun BusArrivalLayout(
                 )
 
                 Text(
-                    text = busArrivalViewModel.getDistance(data),
+                    text = if (data.isLive()) data.getDistanceFrom(hasCoordinates).toString() + "m" else "-",
                     color = Color.Black,
                     fontSize = 10.sp,
                     modifier = Modifier.padding(horizontal = 4.dp)

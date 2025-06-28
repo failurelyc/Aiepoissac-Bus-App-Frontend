@@ -4,7 +4,8 @@ class OfflineBusRepository(
     private val busServiceInfoDAO: BusServiceInfoDAO,
     private val busRouteInfoDAO: BusRouteInfoDAO,
     private val busStopInfoDAO: BusStopInfoDAO,
-    private val mrtStationDAO: MRTStationDAO): BusRepository {
+    private val mrtStationDAO: MRTStationDAO
+): BusRepository {
 
     override suspend fun insertBusService(busServiceInfo: BusServiceInfo) {
         busServiceInfoDAO.insert(busServiceInfo = busServiceInfo)
@@ -54,15 +55,23 @@ class OfflineBusRepository(
         return busRouteInfoDAO.getBusRoutesCount()
     }
 
-    override suspend fun getBusServiceRoute(serviceNo: String, direction: Int):
-            List<BusRouteInfoWithBusStopInfo> {
+    override suspend fun getBusServiceRoute(
+        serviceNo: String, direction: Int
+    ): List<BusRouteInfoWithBusStopInfo> {
         return busRouteInfoDAO.getBusServiceRoute(serviceNo, direction)
     }
 
     override suspend fun getBusServiceRouteAfterSpecifiedStop(
-        serviceNo: String, direction: Int, stopSequence: Int): List<BusRouteInfoWithBusStopInfo> {
+        serviceNo: String, direction: Int, stopSequence: Int
+    ): List<BusRouteInfoWithBusStopInfo> {
         return busRouteInfoDAO
             .getBusServiceRouteAfterSpecifiedStop(serviceNo, direction, stopSequence)
+    }
+
+    override suspend fun getBusRouteInfoWithBusStopInfo(
+        serviceNo: String, direction: Int, stopSequence: Int
+    ): BusRouteInfoWithBusStopInfo {
+        return busRouteInfoDAO.getBusRouteInfoWithBusStopInfo(serviceNo, direction, stopSequence)
     }
 
     override suspend fun getBusRoutesAtBusStop(busStopCode: String): List<BusRouteInfo> {

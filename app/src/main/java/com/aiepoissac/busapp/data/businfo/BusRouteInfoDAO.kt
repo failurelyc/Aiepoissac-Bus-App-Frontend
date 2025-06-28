@@ -26,16 +26,24 @@ interface BusRouteInfoDAO {
     suspend fun getBusRoutesCount(): Int
 
     @Transaction
-    @Query("SELECT * from Bus_Routes_Table WHERE serviceNo = :serviceNo AND direction = :direction")
+    @Query("SELECT * FROM Bus_Routes_Table WHERE serviceNo = :serviceNo AND direction = :direction")
     suspend fun getBusServiceRoute(serviceNo: String, direction: Int):
             List<BusRouteInfoWithBusStopInfo>
 
     @Transaction
-    @Query("SELECT * from Bus_Routes_Table WHERE " +
+    @Query("SELECT * FROM Bus_Routes_Table WHERE " +
             "serviceNo = :serviceNo AND direction = :direction AND stopSequence >= :stopSequence")
-    suspend fun getBusServiceRouteAfterSpecifiedStop(serviceNo: String, direction: Int, stopSequence: Int):
-            List<BusRouteInfoWithBusStopInfo>
+    suspend fun getBusServiceRouteAfterSpecifiedStop(
+        serviceNo: String, direction: Int, stopSequence: Int
+    ): List<BusRouteInfoWithBusStopInfo>
 
-    @Query("SELECT * from Bus_Routes_Table WHERE busStopCode = :busStopCode")
+    @Transaction
+    @Query("SELECT * FROM Bus_Routes_Table WHERE " +
+            "serviceNo = :serviceNo AND direction = :direction AND stopSequence == :stopSequence")
+    suspend fun getBusRouteInfoWithBusStopInfo(
+        serviceNo: String, direction: Int, stopSequence: Int
+    ): BusRouteInfoWithBusStopInfo
+
+    @Query("SELECT * FROM Bus_Routes_Table WHERE busStopCode = :busStopCode")
     suspend fun getBusRoutesAtBusStop(busStopCode: String): List<BusRouteInfo>
 }

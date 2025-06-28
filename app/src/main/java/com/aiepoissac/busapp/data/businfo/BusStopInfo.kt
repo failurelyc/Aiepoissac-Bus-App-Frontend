@@ -30,6 +30,10 @@ data class BusStopInfo (
         return Pair(latitude, longitude)
     }
 
+    override fun toString(): String {
+        return "$busStopCode $description"
+    }
+
 }
 
 suspend fun findNearbyBusStops(

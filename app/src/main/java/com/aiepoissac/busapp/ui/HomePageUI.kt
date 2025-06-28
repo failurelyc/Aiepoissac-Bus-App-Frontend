@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.DepartureBoard
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.NearMe
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Subway
 import androidx.compose.material3.Button
@@ -55,7 +56,9 @@ enum class Pages(val route: String, val title: String) {
     BusServiceInformation(route = "BusServiceInfo/{text}", title = "Bus Service Information"),
     BusRouteInformation(route = "BusRouteInfo/{text1}/{text2}/{text3}", title = "Bus Route Information"),
     NearbyInformation(route = "NearbyInfo/{text1}/{text2}/{text3}", title = "Nearby Bus Stops"),
-    BusesToMRTStation(route = "BusesToMRTStation/{text1}/{text2}/{text3}", title = "Bus Service to MRT station");
+    BusesToMRTStation(route = "BusesToMRTStation/{text1}/{text2}/{text3}", title = "Bus Service to MRT station"),
+    SavedJourneys(route = "SavedJourneys", title = "Saved Journeys"),
+    SavedJourney(route = "SavedJourney/{text}", title = "Saved Journey");
 
     fun withText(text: String): String {
         return route.replace("{text}", text)
@@ -80,6 +83,8 @@ enum class Pages(val route: String, val title: String) {
                 route.startsWith(BusRouteInformation.route) -> BusRouteInformation
                 route.startsWith(NearbyInformation.route) -> NearbyInformation
                 route.startsWith(BusesToMRTStation.route) -> BusesToMRTStation
+                route.startsWith(SavedJourneys.route) -> SavedJourneys
+                route.startsWith(SavedJourney.route) -> SavedJourney
                 else -> HomePage
             }
         }
@@ -122,6 +127,7 @@ fun BusApp(
                 composable(route = Pages.HomePage.route) {
                     HomePageUI(navController = navController)
                 }
+
                 composable(route = Pages.BusArrival.route) {
                     backStackEntry ->
                         val text = backStackEntry.arguments?.getString("text") ?: ""
@@ -130,14 +136,15 @@ fun BusApp(
                             busStopCodeInput = text
                         )
                 }
-                composable(route = Pages.BusServiceInformation.route) {
-                    backStackEntry ->
-                        val text = backStackEntry.arguments?.getString("text") ?: ""
-                        BusServiceUI(
-                            navController = navController,
-                            busServiceInput = text
-                        )
+
+                composable(route = Pages.BusServiceInformation.route) { backStackEntry ->
+                    val text = backStackEntry.arguments?.getString("text") ?: ""
+                    BusServiceUI(
+                        navController = navController,
+                        busServiceInput = text
+                    )
                 }
+
                 composable(route = Pages.BusRouteInformation.route) { backStackEntry ->
                     val text1 = backStackEntry.arguments?.getString("text1") ?: ""
                     val text2 = backStackEntry.arguments?.getString("text2") ?: ""
@@ -149,6 +156,7 @@ fun BusApp(
                         stopSequence = text3.toInt()
                     )
                 }
+
                 composable(route = Pages.NearbyInformation.route) { backStackEntry ->
                     val text1 = backStackEntry.arguments?.getString("text1") ?: ""
                     val text2 = backStackEntry.arguments?.getString("text2") ?: ""
@@ -160,6 +168,7 @@ fun BusApp(
                         isLiveLocation = text3.toBoolean()
                     )
                 }
+
                 composable(route = Pages.BusesToMRTStation.route) { backStackEntry ->
                     val text1 = backStackEntry.arguments?.getString("text1") ?: ""
                     val text2 = backStackEntry.arguments?.getString("text2") ?: ""
@@ -169,6 +178,20 @@ fun BusApp(
                         latitude = text1.toDouble(),
                         longitude = text2.toDouble(),
                         stationCode = text3
+                    )
+                }
+
+                composable(route = Pages.SavedJourneys.route) {
+                    SavedJourneysUI(
+                        navController = navController
+                    )
+                }
+
+                composable(route = Pages.SavedJourney.route) { backStackEntry ->
+                    val text = backStackEntry.arguments?.getString("text") ?: ""
+                    SavedJourneyUI(
+                        navController = navController,
+                        journeyID = text
                     )
                 }
             }
@@ -192,18 +215,17 @@ private fun HomePageUI(
                     !homePageUIState.busServiceSearchBarExpanded &&
                     !homePageUIState.busStopRoadSearchBarExpanded &&
                     !homePageUIState.mrtStationSearchBarExpanded
-
                 ) {
                 Button(
-                    onClick = {
-                        navigateToNearby(
-                            navController = navController,
-                            isLiveLocation = true
-                        )
-                    },
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
+                        onClick = {
+                            navigateToNearby(
+                                navController = navController,
+                                isLiveLocation = true
+                            )
+                        },
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth()
                 ) {
                     Row {
                         Icon(
@@ -213,6 +235,27 @@ private fun HomePageUI(
 
                         Text(
                             text = "Nearby bus/MRT",
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        navigateToSavedJourneys(navController = navController)
+                    },
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth()
+                ) {
+                    Row {
+                        Icon(
+                            Icons.Filled.Save,
+                            contentDescription = "Saved journeys"
+                        )
+
+                        Text(
+                            text = "Saved journeys",
                             modifier = Modifier.padding(horizontal = 8.dp)
                         )
                     }
@@ -582,6 +625,12 @@ fun navigateToBusServiceInformation(
     busServiceInput: String = ""
 ) {
     navController.navigate(Pages.BusServiceInformation.withText(busServiceInput))
+}
+
+fun navigateToSavedJourneys(
+    navController: NavHostController
+) {
+    navController.navigate(Pages.SavedJourneys.route)
 }
 
 fun navigateToHomePage(navController: NavHostController) {

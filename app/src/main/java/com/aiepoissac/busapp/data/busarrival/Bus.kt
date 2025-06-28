@@ -55,9 +55,9 @@ data class Bus (
         return if (this.isValid()) (if (duration >= 0) duration else 0) else -1
     }
 
-    fun getDistanceFrom(busStopInfo: BusStopInfo?): Int {
-        return if (busStopInfo != null && isValid() && monitored == 1) {
-            this.distanceFromInMetres(busStopInfo)
+    fun getDistanceFrom(hasCoordinates: HasCoordinates?): Int {
+        return if (hasCoordinates != null && isValid() && monitored == 1) {
+            this.distanceFromInMetres(hasCoordinates)
         } else {
             -1
         }

@@ -224,44 +224,6 @@ class BusArrivalViewModel(
         }
     }
 
-    fun busTypeToPicture(bus: Bus): Int {
-        return if (bus.type == "SD") {
-            R.drawable.sd
-        } else if (bus.type == "DD") {
-            R.drawable.dd
-        } else if (bus.type == "BD") {
-            R.drawable.bd
-        } else {
-            R.drawable.na
-        }
-    }
-
-    fun getBusArrivalColor(bus: Bus, darkMode: Boolean = false): Color {
-        return if(bus.isValid()) {
-            if (!bus.isLive()) {
-                if (!darkMode) Color.White else Color.LightGray
-            } else {
-                return getBusArrivalColor(bus.load, darkMode)
-            }
-        } else {
-            if (!darkMode) Color.LightGray else Color.DarkGray
-        }
-
-    }
-
-    fun getBusArrivalColor(s: String = "", darkMode: Boolean = false) : Color {
-
-        return if (s == "SEA") {
-            if (!darkMode) GreenLight else GreenDark
-        } else if (s == "SDA") {
-            if (!darkMode) YellowLight else YellowDark
-        } else if (s == "LSD") {
-            if (!darkMode) RedLight else RedDark
-        } else {
-            if (!darkMode) Color.White else Color.LightGray //Invalid data
-        }
-    }
-
     fun getBusRoute(serviceNo: String): BusRouteInfo? {
         val busRoutes = uiState.value.busRoutes
             .filter { it.serviceNo == serviceNo }
@@ -292,5 +254,41 @@ class BusArrivalViewModel(
 
 }
 
+fun busTypeToPicture(bus: Bus): Int {
+    return if (bus.type == "SD") {
+        R.drawable.sd
+    } else if (bus.type == "DD") {
+        R.drawable.dd
+    } else if (bus.type == "BD") {
+        R.drawable.bd
+    } else {
+        R.drawable.na
+    }
+}
 
+fun getBusArrivalColor(bus: Bus, darkMode: Boolean = false): Color {
+    return if(bus.isValid()) {
+        if (!bus.isLive()) {
+            if (!darkMode) Color.White else Color.LightGray
+        } else {
+            return getBusArrivalColor(bus.load, darkMode)
+        }
+    } else {
+        if (!darkMode) Color.LightGray else Color.DarkGray
+    }
+
+}
+
+fun getBusArrivalColor(s: String = "", darkMode: Boolean = false) : Color {
+
+    return if (s == "SEA") {
+        if (!darkMode) GreenLight else GreenDark
+    } else if (s == "SDA") {
+        if (!darkMode) YellowLight else YellowDark
+    } else if (s == "LSD") {
+        if (!darkMode) RedLight else RedDark
+    } else {
+        if (!darkMode) Color.White else Color.LightGray //Invalid data
+    }
+}
 
