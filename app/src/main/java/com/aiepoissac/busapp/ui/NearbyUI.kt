@@ -2,6 +2,7 @@ package com.aiepoissac.busapp.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
@@ -17,6 +18,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -36,6 +38,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -44,6 +47,18 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.aiepoissac.busapp.BusApplication
+import com.aiepoissac.busapp.data.HasCoordinates
+import com.aiepoissac.busapp.data.businfo.MRTStation
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerComposable
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.rememberMarkerState
 
 @Composable
 fun NearbyUI(
@@ -93,6 +108,7 @@ fun NearbyUI(
                     contents = {
                         MRTStationList(
                             navController = navController,
+                            openDirections = nearbyViewModel::openDirectionsToMRTStation,
                             uiState = nearbyUIState
                         )
                     },
@@ -112,6 +128,7 @@ fun NearbyUI(
                     contents = {
                         BusStopList(
                             navController = navController,
+                            openDirections = nearbyViewModel::openDirections,
                             uiState = nearbyUIState
                         )
                     },
@@ -123,6 +140,80 @@ fun NearbyUI(
                         )
                     }
                 )
+
+                val location = nearbyUIState.point.getCoordinates()
+                val latLng = LatLng(location.first, location.second)
+
+                
+
+                GoogleMap(
+                    modifier = Modifier.fillMaxWidth(),
+                    cameraPositionState = rememberCameraPositionState {
+                        position = CameraPosition.fromLatLngZoom(latLng, 15f)
+                    },
+                    contentDescription = "Map of nearby bus stops",
+                    onMapClick = nearbyViewModel::updateLocation
+                ) {
+
+                    Marker(
+                        state = MarkerState(position = latLng)
+                    )
+
+                    nearbyUIState.busStopList.forEach {
+                        val busStopInfo = it.second.busStopInfo
+                        MarkerComposable(
+                            state = MarkerState(position = LatLng(busStopInfo.latitude, busStopInfo.longitude)),
+                            onClick = {
+                                navigateToBusArrival(
+                                    navController = navController,
+                                    busStopInput = busStopInfo.busStopCode
+                                )
+                                return@MarkerComposable true
+                            }
+                        ) {
+                            Column {
+                                Text(
+                                    text = it.first.toString() + "m",
+                                    fontSize = 6.sp,
+                                    color = Color.Black
+                                )
+
+                                Icon(
+                                    imageVector = Icons.Filled.DirectionsBus,
+                                    contentDescription = "Bus Stop",
+                                    tint = Color.Black
+                                )
+                            }
+                        }
+                    }
+
+                    nearbyUIState.mrtStationList.forEach {
+                        val mrtStation = it.second
+                        MarkerComposable(
+                            state = MarkerState(position = LatLng(mrtStation.latitude, mrtStation.longitude))
+                        ) {
+                            Column {
+                                Text(
+                                    text = mrtStation.stationCode,
+                                    fontSize = 6.sp,
+                                    color = Color.Black
+                                )
+
+                                Text(
+                                    text = it.first.toString() + "m",
+                                    fontSize = 6.sp,
+                                    color = Color.Black
+                                )
+
+                                Icon(
+                                    imageVector = Icons.Filled.Subway,
+                                    contentDescription = "MRT station",
+                                    tint = Color.Black
+                                )
+                            }
+                        }
+                    }
+                }
 
             } else {
                 Text(
@@ -200,6 +291,7 @@ fun CollapsibleSection(
 @Composable
 private fun MRTStationList(
     navController: NavHostController,
+    openDirections: (MRTStation) -> Unit,
     uiState: NearbyUIState
 ) {
 
@@ -227,6 +319,16 @@ private fun MRTStationList(
                         modifier = Modifier.padding(horizontal = 8.dp)
                     )
 
+                    Icon(
+                        imageVector = Icons.Filled.Directions,
+                        contentDescription = "directions",
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .clickable {
+                                openDirections(mrtStation.second)
+                            }
+                    )
+
                 }
 
             }
@@ -244,6 +346,7 @@ private fun MRTStationList(
 @Composable
 private fun BusStopList(
     navController: NavHostController,
+    openDirections: (HasCoordinates) -> Unit,
     uiState: NearbyUIState
 ) {
 
@@ -254,25 +357,43 @@ private fun BusStopList(
             columns = GridCells.Adaptive(minSize = 320.dp)
         ) {
             items(data) { busStop ->
-                val busStopInfo = busStop.second
+                val busStopInfo = busStop.second.busStopInfo
                 Card(
                     onClick = { navigateToBusArrival(
                         navController = navController,
-                        busStopInput = busStopInfo.busStopInfo.busStopCode) },
+                        busStopInput = busStopInfo.busStopCode) },
                     modifier = Modifier.padding(8.dp)
                 ) {
+                    Row {
+
+                        Column(
+                            modifier = Modifier.weight(5f)
+                        ) {
+                            Text(
+                                text = "${busStopInfo.busStopCode} ${busStopInfo.description}",
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                            Text(
+                                text = "${busStopInfo.roadName} (${busStop.first}m)",
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                        }
+
+                        Icon(
+                            imageVector = Icons.Filled.Directions,
+                            contentDescription = "directions",
+                            modifier = Modifier
+                                .weight(1f)
+                                .align(Alignment.CenterVertically)
+                                .clickable {
+                                    openDirections(busStopInfo)
+                                }
+                        )
+                    }
                     Text(
-                        text = "${busStopInfo.busStopInfo.busStopCode} ${busStopInfo.busStopInfo.description}",
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                    Text(
-                        text = "${busStopInfo.busStopInfo.roadName} (${busStop.first}m)",
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                    Text(
-                        text = busStopInfo.busRoutesInfo
+                        text = busStop.second.busRoutesInfo
                             .map{ it.serviceNo }
                             .distinct()
                             .joinToString(", ")

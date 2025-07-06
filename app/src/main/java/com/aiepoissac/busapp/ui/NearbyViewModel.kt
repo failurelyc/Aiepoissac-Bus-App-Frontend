@@ -1,15 +1,19 @@
 package com.aiepoissac.busapp.ui
 
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
+import com.aiepoissac.busapp.GoogleMapsURLGenerator
 import com.aiepoissac.busapp.LocationManager
+import com.aiepoissac.busapp.data.HasCoordinates
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.LatLong
 import com.aiepoissac.busapp.data.businfo.findNearbyBusStops
@@ -25,6 +29,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.time.LocalDateTime
+import androidx.core.net.toUri
+import com.aiepoissac.busapp.data.businfo.MRTStation
+import com.google.android.gms.maps.model.LatLng
 
 class NearbyViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
@@ -151,5 +158,31 @@ class NearbyViewModel(
                 point = point
             )
         }
+    }
+
+    fun updateLocation(latLng: LatLng) {
+        viewModelScope.launch {
+            updateLocation(LatLong(latLng.latitude, latLng.longitude))
+            LocationManager.stopFetchingLocation()
+            _uiState.update { it.copy(isLiveLocation = false) }
+        }
+    }
+
+    fun openDirections(destination: HasCoordinates) {
+        val intent = Intent(
+            Intent.ACTION_VIEW,
+            GoogleMapsURLGenerator.directions(uiState.value.point, destination).toUri()
+        )
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(BusApplication.instance, intent, null)
+    }
+
+    fun openDirectionsToMRTStation(destination: MRTStation) {
+        val intent = Intent(
+            Intent.ACTION_VIEW,
+            GoogleMapsURLGenerator.directionsToMRTStation(uiState.value.point, destination).toUri()
+        )
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(BusApplication.instance, intent, null)
     }
 }

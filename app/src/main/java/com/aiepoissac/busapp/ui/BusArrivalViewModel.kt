@@ -1,15 +1,19 @@
 package com.aiepoissac.busapp.ui
 
+import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.core.content.ContextCompat.startActivity
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
+import com.aiepoissac.busapp.GoogleMapsURLGenerator
 import com.aiepoissac.busapp.LocationManager
 import com.aiepoissac.busapp.R
 import com.aiepoissac.busapp.data.busarrival.Bus
@@ -234,6 +238,21 @@ class BusArrivalViewModel(
             busRoutes.minBy { it.stopSequence } //returns the first stop along the route
         } else { //bus stops here more than once in different directions
             null //cannot resolve the ambiguity
+        }
+    }
+
+    fun openDirections() {
+        val busStopInfo = uiState.value.busStopInfo
+        if (busStopInfo != null) {
+            val intent = Intent(
+                Intent.ACTION_VIEW,
+                GoogleMapsURLGenerator.directions(
+                    destination = busStopInfo,
+                    travelMode = GoogleMapsURLGenerator.TravelMode.Transit
+                ).toUri()
+            )
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            startActivity(BusApplication.instance, intent, null)
         }
     }
 

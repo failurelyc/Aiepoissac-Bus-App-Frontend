@@ -79,6 +79,7 @@ suspend fun getBusArrival(busStopCode: String): BusStop {
 }
 
 private suspend fun getBusArrivalData(busStopCode: String): String = withContext(Dispatchers.IO) {
+    //val url = URL("https://aiepoissac-bus-app-backend.onrender.com/api/bus-arrival/$busStopCode")
     val url = URL("https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival?BusStopCode=$busStopCode")
     val connection = url.openConnection() as HttpURLConnection
     connection.requestMethod = "GET"

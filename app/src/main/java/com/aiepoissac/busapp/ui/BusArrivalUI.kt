@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DepartureBoard
+import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.MobiledataOff
@@ -51,13 +52,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.aiepoissac.busapp.BusApplication
-import com.aiepoissac.busapp.LocationManager
 import com.aiepoissac.busapp.data.HasCoordinates
 import com.aiepoissac.busapp.data.busarrival.Bus
 import com.aiepoissac.busapp.data.busarrival.BusService
 import com.aiepoissac.busapp.data.businfo.BusRouteInfo
 import com.aiepoissac.busapp.data.businfo.BusStopInfo
-import com.aiepoissac.busapp.data.businfo.LatLong
 
 @Composable
 fun BusArrivalUI(
@@ -175,6 +174,11 @@ fun BusArrivalUI(
                         modifier = Modifier.weight(1f)
                     )
 
+                    Text(
+                        text = "Arrivals",
+                        modifier = Modifier.weight(2f)
+                    )
+
                     Switch(
                         checked = busArrivalUIState.showBusArrival,
                         onCheckedChange = { busArrivalViewModel.toggleShowBusArrival() }
@@ -186,6 +190,11 @@ fun BusArrivalUI(
                         modifier = Modifier.weight(1f)
                     )
 
+                    Text(
+                        text = "Bus Type",
+                        modifier = Modifier.weight(2f)
+                    )
+
                     Switch(
                         checked = !busArrivalUIState.hideBusType,
                         onCheckedChange = { busArrivalViewModel.toggleHideBusType() }
@@ -194,24 +203,45 @@ fun BusArrivalUI(
                 }
 
                 if (busArrivalUIState.busStopInfo != null) {
-                    Button(
-                        onClick = { navigateToNearby(
-                            navController = navController,
-                            latitude = busArrivalUIState.busStopInfo!!.latitude,
-                            longitude = busArrivalUIState.busStopInfo!!.longitude
-                        ) },
-                        modifier = Modifier.padding(4.dp).fillMaxWidth()
+                    Row (
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row {
-                            Icon(
-                                Icons.Filled.NearMe,
-                                contentDescription = "Nearby bus/MRT"
-                            )
+                        Button(
+                            onClick = { navigateToNearby(
+                                navController = navController,
+                                latitude = busArrivalUIState.busStopInfo!!.latitude,
+                                longitude = busArrivalUIState.busStopInfo!!.longitude
+                            ) },
+                            modifier = Modifier.padding(4.dp).weight(1f)
+                        ) {
+                            Row {
+                                Icon(
+                                    Icons.Filled.NearMe,
+                                    contentDescription = "Nearby bus/MRT"
+                                )
 
-                            Text(
-                                text = "Nearby bus/MRT",
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            )
+                                Text(
+                                    text = "Nearby",
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = busArrivalViewModel::openDirections,
+                            modifier = Modifier.padding(4.dp).weight(1f)
+                        ) {
+                            Row {
+                                Icon(
+                                    Icons.Filled.Directions,
+                                    contentDescription = "Directions"
+                                )
+
+                                Text(
+                                    text = "Directions",
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                )
+                            }
                         }
                     }
                 }
