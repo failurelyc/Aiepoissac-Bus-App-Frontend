@@ -31,7 +31,10 @@ import java.time.Duration
 import java.time.LocalDateTime
 import androidx.core.net.toUri
 import com.aiepoissac.busapp.data.businfo.MRTStation
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.CameraPositionState
+import com.google.maps.android.compose.MarkerState
 
 class NearbyViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
@@ -70,6 +73,19 @@ class NearbyViewModel(
     )
     val uiState: StateFlow<NearbyUIState> = _uiState.asStateFlow()
 
+    private val _cameraPositionState = MutableStateFlow(
+        CameraPositionState(
+            position = CameraPosition.fromLatLngZoom(LatLng(point.latitude, point.longitude), 15f)
+        )
+    )
+    val cameraPositionState = _cameraPositionState.asStateFlow()
+
+    private val _markerState = MutableStateFlow(
+        MarkerState(position = LatLng(point.latitude, point.longitude))
+    )
+
+    val markerState = _markerState.asStateFlow()
+
     private var lastTimeToggleLocationPressed: LocalDateTime by mutableStateOf(LocalDateTime.MIN)
 
     init {
@@ -89,8 +105,7 @@ class NearbyViewModel(
     fun toggleFreezeLocation() {
 
         if (uiState.value.isLiveLocation) {
-            LocationManager.stopFetchingLocation()
-            _uiState.update { it.copy(isLiveLocation = false) }
+            stopLiveLocation()
         } else {
             val threshold = LocationManager.SLOW_REFRESH_INTERVAL_IN_SECONDS
             val currentTime = LocalDateTime.now()
@@ -106,6 +121,11 @@ class NearbyViewModel(
                 ).show()
             }
         }
+    }
+
+    private fun stopLiveLocation() {
+        LocationManager.stopFetchingLocation()
+        _uiState.update { it.copy(isLiveLocation = false) }
     }
 
     fun toggleShowNearbyBusStops() {
@@ -158,14 +178,46 @@ class NearbyViewModel(
                 point = point
             )
         }
+
+        val target = LatLng(point.latitude, point.longitude)
+
+        _markerState.update {
+            MarkerState(target)
+        }
+
+        updateCameraPosition(target)
     }
 
     fun updateLocation(latLng: LatLng) {
         viewModelScope.launch {
             updateLocation(LatLong(latLng.latitude, latLng.longitude))
-            LocationManager.stopFetchingLocation()
-            _uiState.update { it.copy(isLiveLocation = false) }
+            stopLiveLocation()
         }
+    }
+
+    fun updateCameraPosition(target: LatLng, zoomIn: Boolean = false) {
+        _cameraPositionState.update {
+            CameraPositionState(
+                position = CameraPosition(
+                    target,
+                    if (zoomIn) 25f else it.position.zoom,
+                    it.position.tilt,
+                    it.position.bearing
+                )
+            )
+        }
+    }
+
+    fun setCameraPositionToLocation(point: HasCoordinates) {
+        _uiState.update {
+            it.copy(
+                showNearbyBusStops = false,
+                showNearbyMRTStations = false
+            )
+        }
+        stopLiveLocation()
+        val target = LatLng(point.getCoordinates().first, point.getCoordinates().second)
+        updateCameraPosition(target = target, zoomIn = true)
     }
 
     fun openDirections(destination: HasCoordinates) {

@@ -11,5 +11,7 @@ data class NearbyUIState(
     val distanceThreshold: Int,
     val isLiveLocation: Boolean,
     val showNearbyBusStops: Boolean = false,
-    val showNearbyMRTStations: Boolean = false
+    val showNearbyMRTStations: Boolean = false,
+    val showNearbyBusStopsOnMap: Boolean = true,
+    val showNearbyMRTStationsOnMap: Boolean = false
 )

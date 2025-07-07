@@ -39,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -47,18 +48,13 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.HasCoordinates
 import com.aiepoissac.busapp.data.businfo.MRTStation
-import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.rememberMarkerState
 
 @Composable
 fun NearbyUI(
@@ -77,6 +73,10 @@ fun NearbyUI(
     )
 
     val nearbyUIState by nearbyViewModel.uiState.collectAsState()
+    val cameraPositionState by nearbyViewModel.cameraPositionState.collectAsState()
+    val markerState by nearbyViewModel.markerState.collectAsState()
+
+    val configuration = LocalConfiguration.current
 
     RequestLocationPermission {
         nearbyViewModel.updateLiveLocation()
@@ -101,62 +101,62 @@ fun NearbyUI(
         ) {
             if (nearbyUIState.mrtStationList.isNotEmpty()) {
 
-                CollapsibleSection(
-                    text = "Nearby MRT Stations",
-                    expanded = nearbyUIState.showNearbyMRTStations,
-                    onClick = { nearbyViewModel.toggleShowNearbyMRTStations() },
-                    contents = {
-                        MRTStationList(
-                            navController = navController,
-                            openDirections = nearbyViewModel::openDirectionsToMRTStation,
-                            uiState = nearbyUIState
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Subway,
-                            contentDescription = "Nearby MRT Stations",
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                )
+                if (configuration.orientation == 1) {
+                    CollapsibleSection(
+                        text = "Nearby MRT Stations",
+                        expanded = nearbyUIState.showNearbyMRTStations,
+                        onClick = { nearbyViewModel.toggleShowNearbyMRTStations() },
+                        contents = {
+                            MRTStationList(
+                                navController = navController,
+                                openDirections = nearbyViewModel::openDirectionsToMRTStation,
+                                uiState = nearbyUIState
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Subway,
+                                contentDescription = "Nearby MRT Stations",
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    )
 
-                CollapsibleSection(
-                    text = "Nearby Bus Stops",
-                    expanded = nearbyUIState.showNearbyBusStops,
-                    onClick = { nearbyViewModel.toggleShowNearbyBusStops() },
-                    contents = {
-                        BusStopList(
-                            navController = navController,
-                            openDirections = nearbyViewModel::openDirections,
-                            uiState = nearbyUIState
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.DirectionsBus,
-                            contentDescription = "Nearby Bus Stops",
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                )
-
-                val location = nearbyUIState.point.getCoordinates()
-                val latLng = LatLng(location.first, location.second)
-
-                
+                    CollapsibleSection(
+                        text = "Nearby Bus Stops",
+                        expanded = nearbyUIState.showNearbyBusStops,
+                        onClick = { nearbyViewModel.toggleShowNearbyBusStops() },
+                        contents = {
+                            BusStopList(
+                                navController = navController,
+                                openDirections = nearbyViewModel::openDirections,
+                                updateCameraPosition = nearbyViewModel::setCameraPositionToLocation,
+                                uiState = nearbyUIState
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.DirectionsBus,
+                                contentDescription = "Nearby Bus Stops",
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    )
+                }
 
                 GoogleMap(
                     modifier = Modifier.fillMaxWidth(),
-                    cameraPositionState = rememberCameraPositionState {
-                        position = CameraPosition.fromLatLngZoom(latLng, 15f)
-                    },
+                    cameraPositionState = cameraPositionState,
                     contentDescription = "Map of nearby bus stops",
                     onMapClick = nearbyViewModel::updateLocation
                 ) {
 
                     Marker(
-                        state = MarkerState(position = latLng)
+                        state = markerState,
+                        onClick = {
+                            nearbyViewModel.updateCameraPosition(it.position)
+                            return@Marker true
+                        }
                     )
 
                     nearbyUIState.busStopList.forEach {
@@ -193,12 +193,6 @@ fun NearbyUI(
                             state = MarkerState(position = LatLng(mrtStation.latitude, mrtStation.longitude))
                         ) {
                             Column {
-                                Text(
-                                    text = mrtStation.stationCode,
-                                    fontSize = 6.sp,
-                                    color = Color.Black
-                                )
-
                                 Text(
                                     text = it.first.toString() + "m",
                                     fontSize = 6.sp,
@@ -347,6 +341,7 @@ private fun MRTStationList(
 private fun BusStopList(
     navController: NavHostController,
     openDirections: (HasCoordinates) -> Unit,
+    updateCameraPosition: (HasCoordinates) -> Unit,
     uiState: NearbyUIState
 ) {
 
@@ -382,8 +377,19 @@ private fun BusStopList(
                         }
 
                         Icon(
+                            imageVector = Icons.Filled.LocationOn,
+                            contentDescription = "location of bus stop",
+                            modifier = Modifier
+                                .weight(1f)
+                                .align(Alignment.CenterVertically)
+                                .clickable {
+                                    updateCameraPosition(busStop.second.busStopInfo)
+                                }
+                        )
+
+                        Icon(
                             imageVector = Icons.Filled.Directions,
-                            contentDescription = "directions",
+                            contentDescription = "directions to bus stop",
                             modifier = Modifier
                                 .weight(1f)
                                 .align(Alignment.CenterVertically)
