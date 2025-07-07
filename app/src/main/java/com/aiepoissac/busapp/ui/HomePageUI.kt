@@ -54,7 +54,7 @@ enum class Pages(val route: String, val title: String) {
     HomePage(route = "HomePage", title = "Home"),
     BusArrival(route = "BusArrival/{text}", title = "Bus Stop Information"),
     BusServiceInformation(route = "BusServiceInfo/{text}", title = "Bus Service Information"),
-    BusRouteInformation(route = "BusRouteInfo/{text1}/{text2}/{text3}", title = "Bus Route Information"),
+    BusRouteInformation(route = "BusRouteInfo/{text1}/{text2}/{text3}/{text4}/{text5}", title = "Bus Route Information"),
     NearbyInformation(route = "NearbyInfo/{text1}/{text2}/{text3}", title = "Nearby Bus Stops"),
     BusesToMRTStation(route = "BusesToMRTStation/{text1}/{text2}/{text3}", title = "Bus Service to MRT station"),
     SavedJourneys(route = "SavedJourneys", title = "Saved Journeys"),
@@ -73,6 +73,14 @@ enum class Pages(val route: String, val title: String) {
         return route.replace("{text1}", text1)
             .replace("{text2}", text2)
             .replace("{text3}", text3)
+    }
+
+    fun with5Text(text1: String, text2: String, text3: String, text4: String, text5: String): String {
+        return route.replace("{text1}", text1)
+            .replace("{text2}", text2)
+            .replace("{text3}", text3)
+            .replace("{text4}", text4)
+            .replace("{text5}", text5)
     }
 
     companion object {
@@ -149,11 +157,15 @@ fun BusApp(
                     val text1 = backStackEntry.arguments?.getString("text1") ?: ""
                     val text2 = backStackEntry.arguments?.getString("text2") ?: ""
                     val text3 = backStackEntry.arguments?.getString("text3") ?: ""
+                    val text4 = backStackEntry.arguments?.getString("text4") ?: ""
+                    val text5 = backStackEntry.arguments?.getString("text5") ?: ""
                     BusRouteUI(
                         navController = navController,
                         serviceNo = text1,
                         direction = text2.toInt(),
-                        stopSequence = text3.toInt()
+                        stopSequence = text3.toInt(),
+                        showMap = text4.toBoolean(),
+                        showLiveBuses = text5.toBoolean()
                     )
                 }
 
@@ -637,5 +649,24 @@ fun navigateToHomePage(navController: NavHostController) {
     navController.popBackStack(
         route = Pages.HomePage.name,
         inclusive = false
+    )
+}
+
+fun navigateToBusRouteInformation(
+    navController: NavHostController,
+    serviceNo: String = "",
+    direction: Int,
+    stopSequence: Int = -1,
+    showMap: Boolean = false,
+    showLiveBuses: Boolean = false
+) {
+    navController.navigate(
+        Pages.BusRouteInformation.with5Text(
+            text1 = serviceNo,
+            text2 = direction.toString(),
+            text3 = stopSequence.toString(),
+            text4 = showMap.toString(),
+            text5 = showLiveBuses.toString()
+        )
     )
 }

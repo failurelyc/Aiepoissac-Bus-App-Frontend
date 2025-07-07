@@ -3,12 +3,17 @@ package com.aiepoissac.busapp.ui
 import android.location.Location
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.LocationManager
+import com.aiepoissac.busapp.data.busarrival.Bus
+import com.aiepoissac.busapp.data.busarrival.getBusArrival
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
 import com.aiepoissac.busapp.data.businfo.LatLong
@@ -16,6 +21,10 @@ import com.aiepoissac.busapp.data.businfo.attachDistanceFromPoint
 import com.aiepoissac.busapp.data.businfo.isLoop
 import com.aiepoissac.busapp.data.businfo.truncateLoopRoute
 import com.aiepoissac.busapp.data.businfo.truncateTillBusStop
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.CameraPositionState
+import com.google.maps.android.compose.MarkerState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +33,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.IOException
 import java.time.Duration
 import java.time.LocalDateTime
 
@@ -31,7 +41,9 @@ class BusRouteViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
     private val serviceNo: String,
     private val direction: Int,
-    private val stopSequence: Int
+    private val stopSequence: Int,
+    private val showMap: Boolean,
+    private val showLiveBuses: Boolean
 ) : ViewModelProvider.Factory {
     override fun<T: ViewModel> create(modelClass: Class<T>): T {
         return if (modelClass.isAssignableFrom(BusRouteViewModel::class.java)) {
@@ -39,7 +51,9 @@ class BusRouteViewModelFactory(
                 busRepository = busRepository,
                 serviceNo = serviceNo,
                 direction = direction,
-                stopSequence = stopSequence
+                stopSequence = stopSequence,
+                showMap = showMap,
+                showLiveBuses = showLiveBuses
             ) as T
         } else {
             throw IllegalArgumentException("Unknown View Model Class")
@@ -51,11 +65,33 @@ class BusRouteViewModel(
     private val busRepository: BusRepository,
     serviceNo: String,
     direction: Int,
-    stopSequence: Int
+    stopSequence: Int,
+    showMap: Boolean,
+    showLiveBuses: Boolean
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(BusRouteUIState())
+    private val _uiState = MutableStateFlow(
+        BusRouteUIState(
+            showLiveBuses = showLiveBuses,
+            showMap = showMap
+        )
+    )
     val uiState: StateFlow<BusRouteUIState> = _uiState.asStateFlow()
+
+    private var lastTimeRefreshPressed: LocalDateTime by mutableStateOf(LocalDateTime.MIN)
+
+    private val _cameraPositionState = MutableStateFlow(
+        CameraPositionState(
+            position = CameraPosition.fromLatLngZoom(LatLng(1.290270, 103.851959), 15f)
+        )
+    )
+    val cameraPositionState = _cameraPositionState.asStateFlow()
+
+    private val _markerState = MutableStateFlow(
+        MarkerState(position = LatLng(1.290270, 103.851959))
+    )
+
+    val markerState = _markerState.asStateFlow()
 
     init {
         updateBusService(serviceNo, direction, stopSequence)
@@ -75,19 +111,26 @@ class BusRouteViewModel(
             val busRoute: List<BusRouteInfoWithBusStopInfo> = busRepository
                 .getBusServiceRoute(serviceNo = serviceNo, direction = direction)
 
-            _uiState.update {
-                it.copy(
-                    busRoute = attachDistanceFromCurrentLocation(busRoute),
-                    busStopSequenceOffset = 0,
-                    originalBusRoute = busRoute,
-                    busServiceInfo = busRepository
-                        .getBusService(serviceNo = serviceNo, direction = direction),
-                    truncated = false,
-                    truncatedAfterLoopingPoint = false
-                )
-            }
-            if (stopSequence >= 0) {
-                setFirstBusStop(stopSequence)
+            if (busRoute.isNotEmpty()) {
+                _uiState.update {
+                    it.copy(
+                        busRoute = attachDistanceFromCurrentLocation(busRoute),
+                        busStopSequenceOffset = 0,
+                        originalBusRoute = busRoute,
+                        busServiceInfo = busRepository
+                            .getBusService(serviceNo = serviceNo, direction = direction),
+                        truncated = false,
+                        truncatedAfterLoopingPoint = false,
+                        liveBuses = listOf()
+                    )
+                }
+                if (stopSequence >= 0) {
+                    setFirstBusStop(stopSequence)
+                }
+                updateCameraPositionToFirstStop()
+                if (uiState.value.showLiveBuses) {
+                    refreshLiveBuses()
+                }
             }
         }
     }
@@ -99,6 +142,12 @@ class BusRouteViewModel(
                 serviceNo = busServiceInfo.serviceNo,
                 direction = if (busServiceInfo.direction == 1) 2 else 1
             )
+        } else {
+            Toast.makeText(
+                BusApplication.instance,
+                "Other direction does not exist",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
@@ -116,6 +165,7 @@ class BusRouteViewModel(
                         busStopSequenceOffset = (stopSequence + uiState.value.busStopSequenceOffset)
                                 % (uiState.value.originalBusRoute.size - 1))
                 }
+                updateCameraPositionToFirstStop()
             } else {
                 setOriginalFirstBusStop()
             }
@@ -123,17 +173,20 @@ class BusRouteViewModel(
     }
 
     fun setLoopingPointAsFirstBusStop() {
-        _uiState.update {
-            val truncatedRoute = truncateLoopRoute(
-                route = uiState.value.originalBusRoute,
-                after = true
-            )
-            it.copy(
-                busRoute = attachDistanceFromCurrentLocation(truncatedRoute.second),
-                truncated = false,
-                truncatedAfterLoopingPoint = true,
-                busStopSequenceOffset = truncatedRoute.first
-            )
+        viewModelScope.launch {
+            _uiState.update {
+                val truncatedRoute = truncateLoopRoute(
+                    route = uiState.value.originalBusRoute,
+                    after = true
+                )
+                it.copy(
+                    busRoute = attachDistanceFromCurrentLocation(truncatedRoute.second),
+                    truncated = false,
+                    truncatedAfterLoopingPoint = true,
+                    busStopSequenceOffset = truncatedRoute.first
+                )
+            }
+            updateCameraPositionToFirstStop()
         }
     }
 
@@ -147,34 +200,38 @@ class BusRouteViewModel(
                 busStopSequenceOffset = 0
             )
         }
+        updateCameraPositionToFirstStop()
     }
 
-    fun toggleShowFirstLastBusToTrue() {
-        val showFirstLastBus = uiState.value.showFirstLastBus
+    fun setShowMap(showMap: Boolean) {
         _uiState.update {
-            it.copy(showFirstLastBus = !showFirstLastBus)
+            it.copy(showMap = showMap)
         }
     }
 
-    fun toggleFreezeLocation() {
+    fun setShowLiveBuses(showLiveBuses: Boolean) {
+        _uiState.update {
+            it.copy(showLiveBuses = showLiveBuses)
+        }
+        if (showLiveBuses) {
+            refreshLiveBuses()
+        }
+    }
 
-        if (uiState.value.isLiveLocation) {
+    fun setShowFirstLastBusTimings(showFirstLastBus: Boolean) {
+        _uiState.update {
+            it.copy(showFirstLastBus = showFirstLastBus)
+        }
+    }
+
+    fun setIsLiveLocation(isLiveLocation: Boolean) {
+
+        if (!isLiveLocation) {
             LocationManager.stopFetchingLocation()
             _uiState.update { it.copy(isLiveLocation = false) }
         } else {
-            val threshold = LocationManager.FAST_REFRESH_INTERVAL_IN_SECONDS
-            val currentTime = LocalDateTime.now()
-            val difference = Duration.between(uiState.value.lastTimeLocationUpdated, currentTime).seconds
-            if (difference > threshold) {
-                LocationManager.startFetchingLocation(fastRefresh = true)
-                _uiState.update { it.copy(isLiveLocation = true) }
-            } else {
-                Toast.makeText(
-                    BusApplication.instance,
-                    "Try again in ${threshold - difference}s",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
+            LocationManager.startFetchingLocation(fastRefresh = true)
+            _uiState.update { it.copy(isLiveLocation = true) }
         }
 
     }
@@ -208,8 +265,31 @@ class BusRouteViewModel(
                             .distanceFromInMetres(LatLong(location.latitude, location.longitude)),
                         second = it.second
                     ) },
-                lastTimeLocationUpdated = time,
                 currentSpeed = if (location.hasSpeed()) (location.speed * 3.6).toInt() else 0
+            )
+        }
+        val target = LatLng(location.latitude, location.longitude)
+        _markerState.update {
+            MarkerState(target)
+        }
+    }
+
+    private fun updateCameraPositionToFirstStop() {
+        if (uiState.value.busRoute.isNotEmpty()) {
+            val busStopInfo = uiState.value.busRoute.first().second.busStopInfo
+            updateCameraPosition(LatLng(busStopInfo.latitude, busStopInfo.longitude))
+        }
+    }
+
+    private fun updateCameraPosition(target: LatLng, zoomIn: Boolean = false) {
+        _cameraPositionState.update {
+            CameraPositionState(
+                position = CameraPosition(
+                    target,
+                    if (zoomIn) 25f else it.position.zoom,
+                    it.position.tilt,
+                    it.position.bearing
+                )
             )
         }
     }
@@ -222,6 +302,75 @@ class BusRouteViewModel(
         } else {
             return route.map { Pair(0, it) }
         }
+    }
+
+    fun refreshLiveBuses() {
+        val busServiceInfo = uiState.value.busServiceInfo
+        if (busServiceInfo != null && uiState.value.showLiveBuses) {
+            val threshold = 20
+            val currentTime = LocalDateTime.now()
+            val difference = Duration.between(lastTimeRefreshPressed, currentTime).seconds
+            if (difference > threshold) {
+                viewModelScope.launch {
+                    try {
+                        var previousDistance = 0.0
+                        val secondLastStopSequence = uiState.value.originalBusRoute.size - 2
+                        val liveBuses = uiState.value.originalBusRoute
+                            .filter {
+                                val distance = it.busRouteInfo.distance
+                                if (distance > previousDistance + 3 //check points that are >3km apart
+                                    || it.busRouteInfo.stopSequence == secondLastStopSequence) {
+                                    previousDistance = distance
+                                    return@filter true
+                                } else {
+                                    return@filter false
+                                }
+                            }
+                            .map {
+                                getBusArrival(it.busStopInfo.busStopCode)
+                                    .getBusArrivalsOfASingleService(busServiceInfo.serviceNo)
+                            }
+                            .filter { //remove the bus stops that the service serves twice in different direction
+                                it.size == 1
+                            }
+                            .flatten()
+                            .flatMap {
+                                listOf(it.nextBus, it.nextBus2, it.nextBus3)
+                            }
+                            .filter {
+                                it.isLive()
+                            }
+                            .distinctBy { it.getCoordinates() }
+                        _uiState.update {
+                            it.copy(
+                                liveBuses = liveBuses
+                            )
+                        }
+                        lastTimeRefreshPressed = currentTime
+                    } catch (e: IOException) {
+                        _uiState.update {
+                            it.copy(
+                                liveBuses = listOf(),
+                                showLiveBuses = false
+                            )
+                        }
+                        Toast.makeText(
+                            BusApplication.instance,
+                            "Failed to obtain bus locations",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } else {
+                Toast.makeText(
+                    BusApplication.instance,
+                    "Refresh live buses again in ${threshold - difference}s",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+
     }
 
 }

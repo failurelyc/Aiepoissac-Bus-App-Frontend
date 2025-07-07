@@ -41,7 +41,8 @@ class NearbyViewModelFactory(
     private val latitude: Double = 1.290270,
     private val longitude: Double = 103.851959,
     private val isLiveLocation: Boolean = false,
-    private val distanceThreshold: Int = 1500
+    private val distanceThreshold: Int = 5000,
+    private val busStopListLimit: Int = 50
 ) : ViewModelProvider.Factory {
     override fun<T: ViewModel> create(modelClass: Class<T>): T {
         return if (modelClass.isAssignableFrom(NearbyViewModel::class.java)) {
@@ -49,6 +50,7 @@ class NearbyViewModelFactory(
                 busRepository = busRepository,
                 point = LatLong(latitude, longitude),
                 distanceThreshold = distanceThreshold,
+                busStopListLimit = busStopListLimit,
                 isLiveLocation = isLiveLocation
             ) as T
         } else {
@@ -61,12 +63,14 @@ class NearbyViewModel(
     private val busRepository: BusRepository,
     point: LatLong,
     isLiveLocation: Boolean,
-    distanceThreshold: Int
+    distanceThreshold: Int,
+    busStopListLimit: Int
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         NearbyUIState(
             distanceThreshold = distanceThreshold,
+            busStopListLimit = busStopListLimit,
             point = point,
             isLiveLocation = isLiveLocation
         )
@@ -154,6 +158,7 @@ class NearbyViewModel(
                             lastTimeToggleLocationPressed = LocalDateTime.now()
                         }
                         updateLocation(LatLong(location.latitude, location.longitude))
+                        stopLiveLocation()
                     }
                 }
         }
@@ -165,7 +170,8 @@ class NearbyViewModel(
                 busStopList = findNearbyBusStops(
                     point = point,
                     distanceThreshold = uiState.value.distanceThreshold,
-                    busRepository = busRepository
+                    busRepository = busRepository,
+                    limit = uiState.value.busStopListLimit
                 )
                     .map { Pair(
                         first = it.first,

@@ -186,17 +186,3 @@ private fun BusServiceInformation(
 
     }
 }
-
-fun navigateToBusRouteInformation(
-    navController: NavHostController,
-    serviceNo: String = "",
-    direction: Int,
-    stopSequence: Int = -1
-) {
-    navController.navigate(
-        Pages.BusRouteInformation.with3Text(
-            text1 = serviceNo,
-            text2 = direction.toString(),
-            text3 = stopSequence.toString())
-    )
-}

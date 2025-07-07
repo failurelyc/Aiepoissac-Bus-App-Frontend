@@ -438,9 +438,10 @@ private fun BusArrivalsLayout(
                         stopSequence = busRoute.stopSequence
                     )
                 } else {
+                    busArrivalViewModel.toggleShowBusArrival()
                     Toast.makeText(
                         BusApplication.instance,
-                        "View the bus route from bus stop details section",
+                        "Click on the bus service here",
                         Toast.LENGTH_SHORT
                     )
                         .show()
@@ -482,7 +483,30 @@ private fun BusArrivalsLayout(
             }
 
         }
-        Card(modifier = Modifier.weight(2f)) {
+        Card(
+            modifier = Modifier.weight(2f),
+            onClick = {
+                val busRoute = busArrivalViewModel.getBusRoute(busService.serviceNo)
+                if (busRoute != null) {
+                    navigateToBusRouteInformation(
+                        navController = navController,
+                        serviceNo = busRoute.serviceNo,
+                        direction = busRoute.direction,
+                        stopSequence = busRoute.stopSequence,
+                        showMap = true,
+                        showLiveBuses = true
+                    )
+                } else {
+                    busArrivalViewModel.toggleShowBusArrival()
+                    Toast.makeText(
+                        BusApplication.instance,
+                        "Click on the bus service here",
+                        Toast.LENGTH_SHORT
+                    )
+                        .show()
+                }
+            }
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

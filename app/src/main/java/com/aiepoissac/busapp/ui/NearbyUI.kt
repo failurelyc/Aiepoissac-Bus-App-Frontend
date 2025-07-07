@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -38,7 +39,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
@@ -152,16 +152,15 @@ fun NearbyUI(
                 ) {
 
                     Marker(
-                        state = markerState,
-                        onClick = {
-                            nearbyViewModel.updateCameraPosition(it.position)
-                            return@Marker true
-                        }
+                        state = markerState
                     )
+
+                    val showMoreDetails = cameraPositionState.position.zoom >= 17f
 
                     nearbyUIState.busStopList.forEach {
                         val busStopInfo = it.second.busStopInfo
                         MarkerComposable(
+                            keys = arrayOf(nearbyUIState.busStopList, showMoreDetails),
                             state = MarkerState(position = LatLng(busStopInfo.latitude, busStopInfo.longitude)),
                             onClick = {
                                 navigateToBusArrival(
@@ -171,38 +170,45 @@ fun NearbyUI(
                                 return@MarkerComposable true
                             }
                         ) {
-                            Column {
-                                Text(
-                                    text = it.first.toString() + "m",
-                                    fontSize = 6.sp,
-                                    color = Color.Black
-                                )
+                            Card(
+                                modifier = Modifier.widthIn(max = 240.dp)
+                            ) {
+                                if (showMoreDetails) {
+                                    Text(
+                                        text = "${it.second.busStopInfo.busStopCode} ${it.second.busStopInfo.description} (${it.first}m)",
+                                        fontSize = 10.sp,
+                                        modifier = Modifier
+                                            .align(Alignment.CenterHorizontally)
+                                            .padding(horizontal = 2.dp)
+                                    )
+
+                                    Text(
+                                        text = it.second.busRoutesInfo
+                                            .map{ it.serviceNo }
+                                            .distinct()
+                                            .joinToString(", ")
+                                        ,
+                                        fontSize = 8.sp,
+                                        modifier = Modifier
+                                            .align(Alignment.CenterHorizontally)
+                                            .padding(horizontal = 2.dp)
+                                    )
+
+
+                                } else {
+                                    Text(
+                                        text = it.first.toString() + "m",
+                                        fontSize = 8.sp,
+                                        modifier = Modifier
+                                            .align(Alignment.CenterHorizontally)
+                                            .padding(horizontal = 2.dp)
+                                    )
+                                }
 
                                 Icon(
                                     imageVector = Icons.Filled.DirectionsBus,
                                     contentDescription = "Bus Stop",
-                                    tint = Color.Black
-                                )
-                            }
-                        }
-                    }
-
-                    nearbyUIState.mrtStationList.forEach {
-                        val mrtStation = it.second
-                        MarkerComposable(
-                            state = MarkerState(position = LatLng(mrtStation.latitude, mrtStation.longitude))
-                        ) {
-                            Column {
-                                Text(
-                                    text = it.first.toString() + "m",
-                                    fontSize = 6.sp,
-                                    color = Color.Black
-                                )
-
-                                Icon(
-                                    imageVector = Icons.Filled.Subway,
-                                    contentDescription = "MRT station",
-                                    tint = Color.Black
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
                                 )
                             }
                         }
@@ -366,13 +372,11 @@ private fun BusStopList(
                         ) {
                             Text(
                                 text = "${busStopInfo.busStopCode} ${busStopInfo.description}",
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 8.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth()
                             )
                             Text(
                                 text = "${busStopInfo.roadName} (${busStop.first}m)",
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 8.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth()
                             )
                         }
 

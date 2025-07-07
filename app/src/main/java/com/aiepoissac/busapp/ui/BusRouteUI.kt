@@ -1,9 +1,13 @@
 package com.aiepoissac.busapp.ui
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -11,9 +15,12 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.DepartureBoard
+import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material3.Button
@@ -21,6 +28,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,7 +36,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +46,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
 import com.aiepoissac.busapp.data.businfo.isLoop
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.CameraPositionState
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerComposable
+import com.google.maps.android.compose.MarkerState
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
@@ -44,7 +60,9 @@ fun BusRouteUI(
     navController: NavHostController,
     serviceNo: String,
     direction: Int,
-    stopSequence: Int
+    stopSequence: Int,
+    showMap: Boolean,
+    showLiveBuses: Boolean
 ) {
 
     val busRouteViewModel: BusRouteViewModel =
@@ -52,11 +70,15 @@ fun BusRouteUI(
             factory = BusRouteViewModelFactory(
                 serviceNo = serviceNo,
                 direction = direction,
-                stopSequence = stopSequence
+                stopSequence = stopSequence,
+                showMap = showMap,
+                showLiveBuses = showLiveBuses
             )
         )
 
     val busRouteUIState by busRouteViewModel.uiState.collectAsState()
+    val cameraPositionState by busRouteViewModel.cameraPositionState.collectAsState()
+    val markerState by busRouteViewModel.markerState.collectAsState()
 
     val gridState = rememberLazyGridState()
 
@@ -66,17 +88,30 @@ fun BusRouteUI(
 
     Scaffold (
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    MainScope().launch {
-                        gridState.scrollToItem(0)
+            if (!busRouteUIState.showMap) {
+                FloatingActionButton(
+                    onClick = {
+                        MainScope().launch {
+                            gridState.scrollToItem(0)
+                        }
                     }
+                ) {
+                    Icon(
+                        Icons.Filled.VerticalAlignTop,
+                        contentDescription = "Scroll to top"
+                    )
                 }
-            ) {
-                Icon(
-                    Icons.Filled.VerticalAlignTop,
-                    contentDescription = "Speed"
-                )
+            } else if (busRouteUIState.showLiveBuses) {
+                FloatingActionButton(
+                    onClick = {
+                        busRouteViewModel.refreshLiveBuses()
+                    }
+                ) {
+                    Icon(
+                        Icons.Filled.Refresh,
+                        contentDescription = "Refresh live bus locations"
+                    )
+                }
             }
         }
     ) { innerPadding ->
@@ -92,8 +127,10 @@ fun BusRouteUI(
                         gridState.scrollToItem(0)
                     }
                                       },
-                toggleLiveLocationOnClick = busRouteViewModel::toggleFreezeLocation,
-                showFirstLastBusButtonOnClick = busRouteViewModel::toggleShowFirstLastBusToTrue,
+                setIsLiveLocationOnClick = busRouteViewModel::setIsLiveLocation,
+                setShowFirstLastBusOnClick = busRouteViewModel::setShowFirstLastBusTimings,
+                setShowLiveBusesOnClick = busRouteViewModel::setShowLiveBuses,
+                setShowMapOnClick = busRouteViewModel::setShowMap,
                 showRouteFromLoopingPointOnClick = {
                     busRouteViewModel.setLoopingPointAsFirstBusStop()
                     MainScope().launch {
@@ -101,8 +138,10 @@ fun BusRouteUI(
                     }
                                                    },
                 setFirstBusStop = busRouteViewModel::setFirstBusStop,
-                switchDirection = { busRouteViewModel.toggleDirection() },
-                gridState = gridState
+                switchDirection = busRouteViewModel::toggleDirection,
+                gridState = gridState,
+                cameraPositionState = cameraPositionState,
+                markerState = markerState
             )
         }
     }
@@ -113,12 +152,16 @@ private fun BusRouteList(
     navController: NavHostController,
     uiState: BusRouteUIState,
     revertButtonOnClick: () -> Unit,
-    toggleLiveLocationOnClick: () -> Unit,
-    showFirstLastBusButtonOnClick: () -> Unit,
+    setIsLiveLocationOnClick: (Boolean) -> Unit,
+    setShowFirstLastBusOnClick: (Boolean) -> Unit,
+    setShowLiveBusesOnClick: (Boolean) -> Unit,
+    setShowMapOnClick: (Boolean) -> Unit,
     showRouteFromLoopingPointOnClick: () -> Unit,
     setFirstBusStop: (Int) -> Unit,
     switchDirection: () -> Unit,
-    gridState: LazyGridState
+    gridState: LazyGridState,
+    cameraPositionState: CameraPositionState,
+    markerState: MarkerState
 ) {
 
     val data = uiState.busRoute
@@ -152,55 +195,75 @@ private fun BusRouteList(
                 Icon(
                     if (uiState.isLiveLocation) Icons.Filled.LocationOn else Icons.Filled.LocationOff,
                     contentDescription = "location status",
-                    modifier = Modifier.weight(0.5f)
+                    modifier = Modifier.weight(1f)
                 )
 
                 Switch(
                     checked = uiState.isLiveLocation,
-                    onCheckedChange = { toggleLiveLocationOnClick() },
-                    modifier = Modifier.weight(1f)
+                    onCheckedChange = setIsLiveLocationOnClick,
+                    modifier = Modifier.weight(2f)
                 )
 
+                if (!uiState.showMap) {
+                    Icon(
+                        imageVector = Icons.Filled.AccessTime,
+                        contentDescription = "First/Last bus timing",
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Switch(
+                        checked = uiState.showFirstLastBus,
+                        onCheckedChange = setShowFirstLastBusOnClick,
+                        modifier = Modifier.weight(2f)
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.DepartureBoard,
+                        contentDescription = "Show live buses",
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Switch(
+                        checked = uiState.showLiveBuses,
+                        onCheckedChange = setShowLiveBusesOnClick,
+                        modifier = Modifier.weight(2f)
+                    )
+                }
+
                 Icon(
-                    Icons.Filled.AccessTime,
-                    contentDescription = "First/Last bus timing",
-                    modifier = Modifier.weight(0.5f)
+                    Icons.Filled.Map,
+                    contentDescription = "Show map",
+                    modifier = Modifier.weight(1f)
                 )
 
                 Switch(
-                    checked = uiState.showFirstLastBus,
-                    onCheckedChange = { showFirstLastBusButtonOnClick() },
-                    modifier = Modifier.weight(1f)
+                    checked = uiState.showMap,
+                    onCheckedChange = setShowMapOnClick,
+                    modifier = Modifier.weight(2f)
                 )
 
-                Icon(
-                    Icons.Filled.Speed,
-                    contentDescription = "Speed",
-                    modifier = Modifier.weight(0.5f)
+                Text(
+                    text = "${if (uiState.isLiveLocation) uiState.currentSpeed else "-"}km/h",
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(3f)
                 )
-
-                if (uiState.isLiveLocation) {
-                    Text(
-                        text = "${uiState.currentSpeed}km/h",
-                        modifier = Modifier.weight(1f)
-                    )
-                } else {
-                    Text(
-                        text = "-km/h",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
 
             }
 
             if (uiState.truncated) {
                 Text(
-                    text = "Bus Stop ${data.first().second.busStopInfo.busStopCode} ${data.first().second.busStopInfo.description}",
+                    text = "Route from ${data.first().second.busStopInfo.busStopCode} ${data.first().second.busStopInfo.description} " +
+                            "to terminus or next looping point is shown",
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            } else if (uiState.truncatedAfterLoopingPoint) {
+                Text(
+                    text = "Route from looping point is shown. ",
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
             } else {
                 Text(
-                    text = "Click the left card to view the route from there to the terminus or looping point",
+                    text = "Full route is shown.",
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
             }
@@ -250,21 +313,143 @@ private fun BusRouteList(
             }
         }
 
-        LazyVerticalGrid(
-            modifier = Modifier,
-            state = gridState,
-            columns = GridCells.Adaptive(minSize = 320.dp)
-        ) {
-            items(data) { busRoute ->
-                BusRouteInformation(
-                    navController = navController,
-                    data = busRoute,
-                    uiState = uiState,
-                    gridState = gridState,
-                    setFirstBusStop = setFirstBusStop
-                )
+        if (!uiState.showMap) {
+            LazyVerticalGrid(
+                modifier = Modifier,
+                state = gridState,
+                columns = GridCells.Adaptive(minSize = 320.dp)
+            ) {
+                items(data) { busRoute ->
+                    BusRouteInformation(
+                        navController = navController,
+                        data = busRoute,
+                        uiState = uiState,
+                        gridState = gridState,
+                        setFirstBusStop = setFirstBusStop
+                    )
+                }
             }
+        } else {
+
+            GoogleMap(
+                modifier = Modifier.fillMaxWidth(),
+                cameraPositionState = cameraPositionState,
+                contentDescription = "Map of bus route"
+            ) {
+
+                if (uiState.isLiveLocation) {
+                    Marker(
+                        state = markerState
+                    )
+                }
+
+                val marked = HashSet<LatLng>()
+                val zoomedIn = cameraPositionState.position.zoom >= 15f
+
+                if (uiState.showLiveBuses) {
+                    uiState.liveBuses.forEach {
+                        MarkerComposable(
+                            keys = arrayOf(uiState.liveBuses, zoomedIn),
+                            state = MarkerState(position = LatLng(it.latitude, it.longitude))
+                        ) {
+                            Surface(
+                                color = getBusArrivalColor(it, isSystemInDarkTheme())
+                            ) {
+
+                                Image(
+                                    painter = painterResource(id = busTypeToPicture(it)),
+                                    contentDescription = "Live bus",
+                                    modifier = if (zoomedIn) Modifier.heightIn(max = 50.dp).widthIn(max = 50.dp)
+                                        else Modifier.heightIn(max = 25.dp).widthIn(max = 25.dp)
+                                )
+
+                            }
+                        }
+                    }
+                }
+
+                uiState.busRoute.forEach {
+                    val busStopInfo = it.second.busStopInfo
+                    val busRouteInfo = it.second.busRouteInfo
+
+                    val latLng = LatLng(busStopInfo.latitude, busStopInfo.longitude)
+                    marked.add(latLng)
+
+                    MarkerComposable(
+                        keys = arrayOf(uiState.busRoute, zoomedIn),
+                        state = MarkerState(position = latLng),
+                        onClick = {
+                            navigateToBusArrival(
+                                navController = navController,
+                                busStopInput = busRouteInfo.busStopCode
+                            )
+                            return@MarkerComposable true
+                        }
+                    ) {
+                        if (zoomedIn) {
+                            Card {
+                                Text(
+                                    text = "${busRouteInfo.stopSequence} (${String.format("%.1f km", busRouteInfo.distance)})",
+                                    fontSize = 8.sp,
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                                )
+
+                                Icon(
+                                    imageVector = Icons.Filled.DirectionsBus,
+                                    contentDescription = "Bus stop",
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                                )
+
+                                Text(
+                                    text = busRouteInfo.busStopCode,
+                                    fontSize = 10.sp,
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                                )
+                            }
+                        } else {
+                            Icon(
+                                imageVector = Icons.Filled.DirectionsBus,
+                                contentDescription = "Bus stop",
+                                tint = Color.Black
+                            )
+                        }
+                    }
+
+                }
+
+                uiState.originalBusRoute
+                    .filter {
+                        !marked.contains(LatLng(it.busStopInfo.latitude, it.busStopInfo.longitude))
+                    }
+                    .forEach {
+                        val busStopInfo = it.busStopInfo
+                        val busRouteInfo = it.busRouteInfo
+
+                        MarkerComposable(
+                            state = MarkerState(position = LatLng(busStopInfo.latitude, busStopInfo.longitude)),
+                            onClick = {
+                                navigateToBusArrival(
+                                    navController = navController,
+                                    busStopInput = busRouteInfo.busStopCode
+                                )
+                                return@MarkerComposable true
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.DirectionsBus,
+                                contentDescription = "Bus Stop outside selected route",
+                                tint = Color.LightGray
+                            )
+                        }
+
+                    }
+
+
+
+            }
+
         }
+
     } else {
         Text(
             text = "No such bus service.",
@@ -313,10 +498,12 @@ private fun BusRouteInformation(
         }
         Card(
             modifier = Modifier.weight(4f),
-            onClick = { navigateToBusArrival(
-                navController = navController,
-                busStopInput = data.second.busRouteInfo.busStopCode
-            ) }
+            onClick = {
+                navigateToBusArrival(
+                    navController = navController,
+                    busStopInput = data.second.busRouteInfo.busStopCode
+                )
+            }
         ) {
 
             val busRouteInfo = data.second.busRouteInfo
