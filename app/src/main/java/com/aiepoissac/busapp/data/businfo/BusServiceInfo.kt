@@ -29,7 +29,8 @@ data class BusServiceInfo(
     @SerialName("LoopDesc") val loopDesc: String
 ) {
     fun isLoop(): Boolean {
-        return loopDesc.isNotEmpty();
+        return originCode == destinationCode
+                || oppositeBusStopCode(originCode) == destinationCode
     }
 
     fun hasAMPeakFrequency(): Boolean {

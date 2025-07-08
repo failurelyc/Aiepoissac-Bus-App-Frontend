@@ -292,10 +292,12 @@ private fun HomePageUI(
                     SearchBarWithSuggestions(
                         onQueryChange = homePageViewModel::updateBusStopCodeInput,
                         onSearch = {
-                            navigateToBusArrival(
-                                navController = navController,
-                                busStopInput = homePageUIState.busStopCodeInput
-                            )
+                            if (homePageUIState.busStopSearchResult.isNotEmpty()) {
+                                navigateToBusArrival(
+                                    navController = navController,
+                                    busStopInput = homePageUIState.busStopSearchResult.first().busStopCode
+                                )
+                            }
                         },
                         query = homePageUIState.busStopCodeInput,
                         placeholder = "Bus stop code or name",
@@ -328,7 +330,12 @@ private fun HomePageUI(
                     SearchBarWithSuggestions(
                         onQueryChange = homePageViewModel::updateBusStopRoadInput,
                         onSearch = {
-
+                            if (homePageUIState.busStopRoadSearchResult.isNotEmpty()) {
+                                navigateToBusArrival(
+                                    navController = navController,
+                                    busStopInput = homePageUIState.busStopRoadSearchResult.first().busStopCode
+                                )
+                            }
                         },
                         query = homePageUIState.busStopRoadInput,
                         placeholder = "Bus road name",
@@ -379,10 +386,14 @@ private fun HomePageUI(
                     SearchBarWithSuggestions(
                         onQueryChange = homePageViewModel::updateBusServiceInput,
                         onSearch = {
-                            navigateToBusServiceInformation(
-                                navController = navController,
-                                busServiceInput = homePageUIState.busServiceInput
-                            )
+                            if (homePageUIState.busServiceSearchResult.isNotEmpty()) {
+                                val busServiceInfo = homePageUIState.busServiceSearchResult.first().busServiceInfo
+                                navigateToBusRouteInformation(
+                                    navController = navController,
+                                    serviceNo = busServiceInfo.serviceNo,
+                                    direction = 1
+                                )
+                            }
                         },
                         query = homePageUIState.busServiceInput,
                         placeholder = "Bus service number",

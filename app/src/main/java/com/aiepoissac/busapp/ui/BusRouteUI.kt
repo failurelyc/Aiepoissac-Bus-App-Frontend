@@ -21,12 +21,13 @@ import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.VerticalAlignTop
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -113,6 +114,44 @@ fun BusRouteUI(
                     )
                 }
             }
+        },
+        bottomBar = {
+            if (busRouteUIState.busServiceVariants.size > 1) {
+                BottomAppBar(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Row(
+                        modifier = Modifier.padding(4.dp)
+                    ) {
+                        busRouteUIState.busServiceVariants.forEach {
+                            if (it.busServiceInfo != busRouteUIState.busServiceInfo) {
+                                Card(
+                                    onClick = { busRouteViewModel.updateBusService(it.busServiceInfo) },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        text = it.busServiceInfo.serviceNo,
+                                        fontSize = 24.sp,
+                                        modifier = Modifier
+                                            .padding(4.dp)
+                                            .align(Alignment.CenterHorizontally)
+                                    )
+
+                                    Text(
+                                        text = it.destinationBusStopInfo.description,
+                                        fontSize = 8.sp,
+                                        lineHeight = 12.sp,
+                                        modifier = Modifier
+                                            .padding(2.dp)
+                                            .align(Alignment.CenterHorizontally)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     ) { innerPadding ->
         Column(
@@ -122,7 +161,7 @@ fun BusRouteUI(
                 navController = navController,
                 uiState = busRouteUIState,
                 revertButtonOnClick = {
-                    busRouteViewModel.setOriginalFirstBusStop()
+                    busRouteViewModel.setOriginalFirstBusStop(truncateAfterLoopingPoint = false)
                     MainScope().launch {
                         gridState.scrollToItem(0)
                     }
@@ -138,7 +177,6 @@ fun BusRouteUI(
                     }
                                                    },
                 setFirstBusStop = busRouteViewModel::setFirstBusStop,
-                switchDirection = busRouteViewModel::toggleDirection,
                 gridState = gridState,
                 cameraPositionState = cameraPositionState,
                 markerState = markerState
@@ -158,7 +196,6 @@ private fun BusRouteList(
     setShowMapOnClick: (Boolean) -> Unit,
     showRouteFromLoopingPointOnClick: () -> Unit,
     setFirstBusStop: (Int) -> Unit,
-    switchDirection: () -> Unit,
     gridState: LazyGridState,
     cameraPositionState: CameraPositionState,
     markerState: MarkerState
@@ -253,12 +290,12 @@ private fun BusRouteList(
             if (uiState.truncated) {
                 Text(
                     text = "Route from ${data.first().second.busStopInfo.busStopCode} ${data.first().second.busStopInfo.description} " +
-                            "to terminus or next looping point is shown",
+                            "to ${data.last().second.busStopInfo.busStopCode} ${data.last().second.busStopInfo.description} is shown",
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
             } else if (uiState.truncatedAfterLoopingPoint) {
                 Text(
-                    text = "Route from looping point is shown. ",
+                    text = "Route from looping point is shown.",
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
             } else {
@@ -298,19 +335,6 @@ private fun BusRouteList(
                 }
 
             }
-
-            if (!isLoop(uiState.originalBusRoute)) {
-                Button(
-                    onClick = switchDirection,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        Icons.Filled.SwapHoriz,
-                        contentDescription = "Speed",
-                        modifier = Modifier.weight(0.5f)
-                    )
-                }
-            }
         }
 
         if (!uiState.showMap) {
@@ -330,6 +354,13 @@ private fun BusRouteList(
                 }
             }
         } else {
+
+            if (uiState.showLiveBuses) {
+                Text(
+                    text = "Maximum of three buses shown within 3km intervals.",
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
 
             GoogleMap(
                 modifier = Modifier.fillMaxWidth(),

@@ -12,10 +12,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.LocationManager
-import com.aiepoissac.busapp.data.busarrival.Bus
 import com.aiepoissac.busapp.data.busarrival.getBusArrival
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
+import com.aiepoissac.busapp.data.businfo.BusServiceInfo
 import com.aiepoissac.busapp.data.businfo.LatLong
 import com.aiepoissac.busapp.data.businfo.attachDistanceFromPoint
 import com.aiepoissac.busapp.data.businfo.isLoop
@@ -105,9 +105,13 @@ class BusRouteViewModel(
         LocationManager.stopFetchingLocation()
     }
 
+    fun updateBusService(busServiceInfo: BusServiceInfo) {
+        updateBusService(busServiceInfo.serviceNo, busServiceInfo.direction)
+    }
+
     private fun updateBusService(serviceNo: String, direction: Int, stopSequence: Int = -1) {
         viewModelScope.launch {
-
+            val oldBusServiceInfo = uiState.value.busServiceInfo
             val busRoute: List<BusRouteInfoWithBusStopInfo> = busRepository
                 .getBusServiceRoute(serviceNo = serviceNo, direction = direction)
 
@@ -124,6 +128,15 @@ class BusRouteViewModel(
                         liveBuses = listOf()
                     )
                 }
+                if (oldBusServiceInfo == null || oldBusServiceInfo.serviceNo != serviceNo) {
+                    _uiState.update {
+                        it.copy(
+                            busServiceVariants = busRepository
+                                .getBusService(serviceNo = serviceNo.filter { it.isDigit() }),
+                        )
+                    }
+                }
+
                 if (stopSequence >= 0) {
                     setFirstBusStop(stopSequence)
                 }
@@ -167,7 +180,7 @@ class BusRouteViewModel(
                 }
                 updateCameraPositionToFirstStop()
             } else {
-                setOriginalFirstBusStop()
+                setOriginalFirstBusStop(truncateAfterLoopingPoint = true)
             }
         }
     }
@@ -190,7 +203,7 @@ class BusRouteViewModel(
         }
     }
 
-    fun setOriginalFirstBusStop() {
+    fun setOriginalFirstBusStop(truncateAfterLoopingPoint: Boolean) {
         val busRoute = uiState.value.originalBusRoute
         _uiState.update {
             it.copy(
@@ -199,6 +212,9 @@ class BusRouteViewModel(
                 truncatedAfterLoopingPoint = false,
                 busStopSequenceOffset = 0
             )
+        }
+        if (truncateAfterLoopingPoint) {
+            setFirstBusStop(0)
         }
         updateCameraPositionToFirstStop()
     }

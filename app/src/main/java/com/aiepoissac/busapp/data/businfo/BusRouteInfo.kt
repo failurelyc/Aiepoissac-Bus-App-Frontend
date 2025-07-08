@@ -52,7 +52,7 @@ fun truncateTillBusStop(
                 visitedFirstStopAgain = it.busRouteInfo.stopSequence
             return@dropWhile it.busRouteInfo.stopSequence < stopSequence }
 
-    if (visitedFirstStopAgain >= 0) { //bus service is a dual loop
+    if (visitedFirstStopAgain >= 0) { //bus route is a dual loop continuous
         truncatedRoute = truncatedRoute +
                 addStopSequenceOffset(route, truncatedRoute.last())
     }
@@ -82,17 +82,21 @@ private fun addStopSequenceOffset(
 
 private fun removeStopSequenceOffset(truncatedRoute: List<BusRouteInfoWithBusStopInfo>):
         List<BusRouteInfoWithBusStopInfo> {
-    val distanceOffset = truncatedRoute.first().busRouteInfo.distance
-    val sequenceOffset = truncatedRoute.first().busRouteInfo.stopSequence
-    return truncatedRoute
-        .map { stop ->
-            val adjustedSequence = stop.busRouteInfo.stopSequence - sequenceOffset
-            val adjustedDistance = stop.busRouteInfo.distance - distanceOffset
-            stop.copy(busRouteInfo = stop.busRouteInfo.copy(
-                stopSequence = adjustedSequence,
-                distance = adjustedDistance)
-            )
-        }
+    if (truncatedRoute.isNotEmpty()) {
+        val distanceOffset = truncatedRoute.first().busRouteInfo.distance
+        val sequenceOffset = truncatedRoute.first().busRouteInfo.stopSequence
+        return truncatedRoute
+            .map { stop ->
+                val adjustedSequence = stop.busRouteInfo.stopSequence - sequenceOffset
+                val adjustedDistance = stop.busRouteInfo.distance - distanceOffset
+                stop.copy(busRouteInfo = stop.busRouteInfo.copy(
+                    stopSequence = adjustedSequence,
+                    distance = adjustedDistance)
+                )
+            }
+    } else {
+        return truncatedRoute
+    }
 }
 
 fun truncateLoopRoute(
@@ -131,7 +135,7 @@ fun truncateLoopRoute(
     }
 }
 
-private fun oppositeBusStopCode(busStopCode: String): String {
+fun oppositeBusStopCode(busStopCode: String): String {
     return if (busStopCode.last() == '9') {
         busStopCode.substring(0, busStopCode.length - 1) + '1'
     } else if (busStopCode.last() == '1') {
