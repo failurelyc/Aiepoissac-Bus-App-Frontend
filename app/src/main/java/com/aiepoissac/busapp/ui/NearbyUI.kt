@@ -110,6 +110,7 @@ fun NearbyUI(
                             MRTStationList(
                                 navController = navController,
                                 openDirections = nearbyViewModel::openDirectionsToMRTStation,
+                                stopLiveLocation = nearbyViewModel::stopLiveLocation,
                                 uiState = nearbyUIState
                             )
                         },
@@ -131,6 +132,7 @@ fun NearbyUI(
                                 navController = navController,
                                 openDirections = nearbyViewModel::openDirections,
                                 updateCameraPosition = nearbyViewModel::setCameraPositionToLocation,
+                                stopLiveLocation = nearbyViewModel::stopLiveLocation,
                                 uiState = nearbyUIState
                             )
                         },
@@ -163,6 +165,7 @@ fun NearbyUI(
                             keys = arrayOf(nearbyUIState.busStopList, showMoreDetails),
                             state = MarkerState(position = LatLng(busStopInfo.latitude, busStopInfo.longitude)),
                             onClick = {
+                                nearbyViewModel.stopLiveLocation()
                                 navigateToBusArrival(
                                     navController = navController,
                                     busStopInput = busStopInfo.busStopCode
@@ -292,6 +295,7 @@ fun CollapsibleSection(
 private fun MRTStationList(
     navController: NavHostController,
     openDirections: (MRTStation) -> Unit,
+    stopLiveLocation: () -> Unit,
     uiState: NearbyUIState
 ) {
 
@@ -305,6 +309,7 @@ private fun MRTStationList(
                 Card(
                     modifier = Modifier.padding(8.dp),
                     onClick = {
+                        stopLiveLocation()
                         navigateToBusToMRTStations(
                             navController = navController,
                             latitude = uiState.point.getCoordinates().first,
@@ -348,6 +353,7 @@ private fun BusStopList(
     navController: NavHostController,
     openDirections: (HasCoordinates) -> Unit,
     updateCameraPosition: (HasCoordinates) -> Unit,
+    stopLiveLocation: () -> Unit,
     uiState: NearbyUIState
 ) {
 
@@ -360,9 +366,13 @@ private fun BusStopList(
             items(data) { busStop ->
                 val busStopInfo = busStop.second.busStopInfo
                 Card(
-                    onClick = { navigateToBusArrival(
-                        navController = navController,
-                        busStopInput = busStopInfo.busStopCode) },
+                    onClick = {
+                        stopLiveLocation()
+                        navigateToBusArrival(
+                            navController = navController,
+                            busStopInput = busStopInfo.busStopCode
+                        )
+                              },
                     modifier = Modifier.padding(8.dp)
                 ) {
                     Row {

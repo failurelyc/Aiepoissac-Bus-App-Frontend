@@ -1,11 +1,10 @@
 package com.aiepoissac.busapp.userdata
 
 import androidx.room.Entity
+import com.aiepoissac.busapp.data.busarrival.BusArrivalGetter
 import com.aiepoissac.busapp.data.busarrival.BusService
-import com.aiepoissac.busapp.data.busarrival.getBusArrival
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
-import com.aiepoissac.busapp.data.businfo.BusStopInfo
 import java.io.IOException
 
 @Entity(
@@ -21,7 +20,8 @@ data class BusJourneyInfo (
     val destinationBusStopSequence: Int
 ) {
     suspend fun attachBusArrivalsAndBusRouteWithBusStopInfo(
-        busRepository: BusRepository
+        busRepository: BusRepository,
+        busArrivalGetter: BusArrivalGetter
     ): Pair<BusJourneyInfo, Pair<
             Pair<BusRouteInfoWithBusStopInfo, List<BusService>?>,
             Pair<BusRouteInfoWithBusStopInfo, List<BusService>?>>>
@@ -37,9 +37,9 @@ data class BusJourneyInfo (
             stopSequence = destinationBusStopSequence
         )
         try {
-            val originBusArrivals = getBusArrival(origin.busRouteInfo.busStopCode)
+            val originBusArrivals = busArrivalGetter.getBusArrival(origin.busRouteInfo.busStopCode)
                 .getBusArrivalsOfASingleService(serviceNo)
-            val destinationBusArrivals = getBusArrival(destination.busRouteInfo.busStopCode)
+            val destinationBusArrivals = busArrivalGetter.getBusArrival(destination.busRouteInfo.busStopCode)
                 .getBusArrivalsOfASingleService(serviceNo)
             return Pair(
                 first = this,

@@ -1,6 +1,10 @@
 package com.aiepoissac.busapp.data
 
 import android.content.Context
+import com.aiepoissac.busapp.LocationManager
+import com.aiepoissac.busapp.RealLocationManager
+import com.aiepoissac.busapp.data.busarrival.BusArrivalGetter
+import com.aiepoissac.busapp.data.busarrival.RealBusArrivalGetter
 import com.aiepoissac.busapp.data.businfo.BusDatabase
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.OfflineBusRepository
@@ -11,6 +15,8 @@ import com.aiepoissac.busapp.userdata.UserDataRepository
 interface AppContainer {
     val busRepository: BusRepository
     val userDataRepository: UserDataRepository
+    val busArrivalGetter: BusArrivalGetter
+    val locationManager: LocationManager
 }
 
 class AppDataContainer(private val context: Context): AppContainer {
@@ -30,4 +36,8 @@ class AppDataContainer(private val context: Context): AppContainer {
             busJourneyListInfoDAO = UserDataDatabase.getDatabase(context).busJourneyListInfoDAO()
         )
     }
+
+    override val busArrivalGetter: BusArrivalGetter by lazy { RealBusArrivalGetter() }
+
+    override val locationManager: LocationManager by lazy { RealLocationManager() }
 }

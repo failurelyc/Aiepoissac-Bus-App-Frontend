@@ -12,7 +12,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.LocationManager
-import com.aiepoissac.busapp.data.busarrival.getBusArrival
+import com.aiepoissac.busapp.data.busarrival.BusArrivalGetter
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
 import com.aiepoissac.busapp.data.businfo.BusServiceInfo
@@ -39,6 +39,8 @@ import java.time.LocalDateTime
 
 class BusRouteViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
+    private val busArrivalGetter: BusArrivalGetter = BusApplication.instance.container.busArrivalGetter,
+    private val locationManager: LocationManager = BusApplication.instance.container.locationManager,
     private val serviceNo: String,
     private val direction: Int,
     private val stopSequence: Int,
@@ -49,6 +51,8 @@ class BusRouteViewModelFactory(
         return if (modelClass.isAssignableFrom(BusRouteViewModel::class.java)) {
             BusRouteViewModel(
                 busRepository = busRepository,
+                busArrivalGetter = busArrivalGetter,
+                locationManager = locationManager,
                 serviceNo = serviceNo,
                 direction = direction,
                 stopSequence = stopSequence,
@@ -63,6 +67,8 @@ class BusRouteViewModelFactory(
 
 class BusRouteViewModel(
     private val busRepository: BusRepository,
+    private val busArrivalGetter: BusArrivalGetter,
+    private val locationManager: LocationManager,
     serviceNo: String,
     direction: Int,
     stopSequence: Int,
@@ -102,7 +108,7 @@ class BusRouteViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        LocationManager.stopFetchingLocation()
+        locationManager.stopFetchingLocation()
     }
 
     fun updateBusService(busServiceInfo: BusServiceInfo) {
@@ -243,10 +249,10 @@ class BusRouteViewModel(
     fun setIsLiveLocation(isLiveLocation: Boolean) {
 
         if (!isLiveLocation) {
-            LocationManager.stopFetchingLocation()
+            locationManager.stopFetchingLocation()
             _uiState.update { it.copy(isLiveLocation = false) }
         } else {
-            LocationManager.startFetchingLocation(fastRefresh = true)
+            locationManager.startFetchingLocation(fastRefresh = true)
             _uiState.update { it.copy(isLiveLocation = true) }
         }
 
@@ -255,9 +261,9 @@ class BusRouteViewModel(
     fun updateLiveLocation() {
         viewModelScope.launch {
             if (uiState.value.isLiveLocation) {
-                LocationManager.startFetchingLocation(fastRefresh = true)
+                locationManager.startFetchingLocation(fastRefresh = true)
             }
-            snapshotFlow { LocationManager.currentLocation.value }
+            snapshotFlow { locationManager.currentLocation.value }
                 .filterNotNull()
                 .distinctUntilChanged()
                 .collectLatest { location ->
@@ -312,7 +318,7 @@ class BusRouteViewModel(
 
     private fun attachDistanceFromCurrentLocation(route: List<BusRouteInfoWithBusStopInfo>)
     : List<Pair<Int, BusRouteInfoWithBusStopInfo>> {
-        val location = LocationManager.currentLocation.value
+        val location = locationManager.currentLocation.value
         if (location != null) {
             return attachDistanceFromPoint(LatLong(location.latitude, location.longitude), route)
         } else {
@@ -343,7 +349,7 @@ class BusRouteViewModel(
                                 }
                             }
                             .map {
-                                getBusArrival(it.busStopInfo.busStopCode)
+                                busArrivalGetter.getBusArrival(it.busStopInfo.busStopCode)
                                     .getBusArrivalsOfASingleService(busServiceInfo.serviceNo)
                             }
                             .filter { //remove the bus stops that the service serves twice in different direction

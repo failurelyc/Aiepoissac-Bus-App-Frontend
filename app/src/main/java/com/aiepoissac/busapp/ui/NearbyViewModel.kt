@@ -38,6 +38,7 @@ import com.google.maps.android.compose.MarkerState
 
 class NearbyViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
+    private val locationManager: LocationManager = BusApplication.instance.container.locationManager,
     private val latitude: Double = 1.290270,
     private val longitude: Double = 103.851959,
     private val isLiveLocation: Boolean = false,
@@ -48,6 +49,7 @@ class NearbyViewModelFactory(
         return if (modelClass.isAssignableFrom(NearbyViewModel::class.java)) {
             NearbyViewModel(
                 busRepository = busRepository,
+                locationManager = locationManager,
                 point = LatLong(latitude, longitude),
                 distanceThreshold = distanceThreshold,
                 busStopListLimit = busStopListLimit,
@@ -61,6 +63,7 @@ class NearbyViewModelFactory(
 
 class NearbyViewModel(
     private val busRepository: BusRepository,
+    private val locationManager: LocationManager,
     point: LatLong,
     isLiveLocation: Boolean,
     distanceThreshold: Int,
@@ -95,7 +98,7 @@ class NearbyViewModel(
     init {
         viewModelScope.launch {
             if (!isLiveLocation) {
-                LocationManager.stopFetchingLocation()
+                locationManager.stopFetchingLocation()
                 updateLocation(point)
             }
         }
@@ -103,7 +106,7 @@ class NearbyViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        LocationManager.stopFetchingLocation()
+        locationManager.stopFetchingLocation()
     }
 
     fun toggleFreezeLocation() {
@@ -111,11 +114,11 @@ class NearbyViewModel(
         if (uiState.value.isLiveLocation) {
             stopLiveLocation()
         } else {
-            val threshold = LocationManager.SLOW_REFRESH_INTERVAL_IN_SECONDS
+            val threshold = 2
             val currentTime = LocalDateTime.now()
             val difference = Duration.between(lastTimeToggleLocationPressed, currentTime).seconds
             if (difference > threshold) {
-                LocationManager.startFetchingLocation(fastRefresh = false)
+                locationManager.startFetchingLocation(fastRefresh = false)
                 _uiState.update { it.copy(isLiveLocation = true) }
             } else {
                 Toast.makeText(
@@ -127,8 +130,8 @@ class NearbyViewModel(
         }
     }
 
-    private fun stopLiveLocation() {
-        LocationManager.stopFetchingLocation()
+    fun stopLiveLocation() {
+        locationManager.stopFetchingLocation()
         _uiState.update { it.copy(isLiveLocation = false) }
     }
 
@@ -147,9 +150,9 @@ class NearbyViewModel(
     fun updateLiveLocation() {
         viewModelScope.launch {
             if (uiState.value.isLiveLocation) {
-                LocationManager.startFetchingLocation(fastRefresh = false)
+                locationManager.startFetchingLocation(fastRefresh = false)
             }
-            snapshotFlow { LocationManager.currentLocation.value }
+            snapshotFlow { locationManager.currentLocation.value }
                 .filterNotNull()
                 .distinctUntilChanged()
                 .collectLatest { location ->

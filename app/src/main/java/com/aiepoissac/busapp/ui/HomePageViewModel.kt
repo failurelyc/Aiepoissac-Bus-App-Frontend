@@ -9,7 +9,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
-import com.aiepoissac.busapp.data.busarrival.getBusArrival
 import com.aiepoissac.busapp.data.businfo.populateBusRoutes
 import com.aiepoissac.busapp.data.businfo.populateBusServices
 import com.aiepoissac.busapp.data.businfo.populateBusStops
@@ -159,10 +158,6 @@ class HomePageViewModel : ViewModel() {
     private suspend fun initialiseOnlineData() = withContext(Dispatchers.IO) {
         if (checkIfSundayOrMonday4amPassed()) {
             try {
-
-                Log.d(Pages.HomePage.title, "Checking connection with API")
-                getBusArrival("11111")
-                Log.d(Pages.HomePage.title, "Connection is successful")
                 Log.d(Pages.HomePage.title, "Started Downloading Bus Data")
                 populateBusServices(busRepository)
                 populateBusRoutes(busRepository)

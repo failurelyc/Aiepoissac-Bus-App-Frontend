@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
+import com.aiepoissac.busapp.data.busarrival.BusArrivalGetter
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
 import com.aiepoissac.busapp.userdata.BusJourneyInfo
@@ -22,6 +23,7 @@ import java.time.LocalDateTime
 class SavedJourneyViewModelFactory(
     private val userDataRepository: UserDataRepository = BusApplication.instance.container.userDataRepository,
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
+    private val busArrivalGetter: BusArrivalGetter = BusApplication.instance.container.busArrivalGetter,
     private val journeyID: String
 ): ViewModelProvider.Factory {
     override fun<T: ViewModel> create(modelClass: Class<T>): T {
@@ -29,6 +31,7 @@ class SavedJourneyViewModelFactory(
             SavedJourneyViewModel(
                 userDataRepository = userDataRepository,
                 busRepository = busRepository,
+                busArrivalGetter = busArrivalGetter,
                 journeyID = journeyID
             ) as T
         } else {
@@ -41,6 +44,7 @@ class SavedJourneyViewModelFactory(
 class SavedJourneyViewModel (
     private val userDataRepository: UserDataRepository,
     private val busRepository: BusRepository,
+    private val busArrivalGetter: BusArrivalGetter,
     private val journeyID: String
 ): ViewModel() {
 
@@ -61,7 +65,12 @@ class SavedJourneyViewModel (
                 SavedJourneyUIState(
                     busJourneys = userDataRepository.getBusJourneyList(journeyID)
                         .sortedBy { it.sequence }
-                        .map { it.attachBusArrivalsAndBusRouteWithBusStopInfo(busRepository) },
+                        .map {
+                            it.attachBusArrivalsAndBusRouteWithBusStopInfo(
+                                busRepository = busRepository,
+                                busArrivalGetter = busArrivalGetter
+                            )
+                        },
                 )
             }
         }
@@ -77,7 +86,12 @@ class SavedJourneyViewModel (
                 _uiState.update {
                     it.copy(
                         busJourneys = uiState.value.busJourneys
-                            .map { it.first.attachBusArrivalsAndBusRouteWithBusStopInfo(busRepository) }
+                            .map {
+                                it.first.attachBusArrivalsAndBusRouteWithBusStopInfo(
+                                    busRepository = busRepository,
+                                    busArrivalGetter = busArrivalGetter
+                                )
+                            }
                     )
                 }
             }

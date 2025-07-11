@@ -10,24 +10,24 @@ import java.time.LocalDateTime
 
 @Serializable
 data class Bus (
-    @SerialName("OriginCode") val originCode: String,
-    @SerialName("DestinationCode") val destinationCode: String,
+    @SerialName("OriginCode") val originCode: String = "",
+    @SerialName("DestinationCode") val destinationCode: String = "",
 
     @Serializable(with = LocalDateTimeDeserializer::class)
-    @SerialName("EstimatedArrival") val estimatedArrival: LocalDateTime,
+    @SerialName("EstimatedArrival") val estimatedArrival: LocalDateTime = LocalDateTime.MIN,
 
-    @SerialName("Monitored") val monitored: Int,
-
-    @Serializable(with = DoubleStringSerializer::class)
-    @SerialName("Latitude") val latitude: Double,
+    @SerialName("Monitored") val monitored: Int = 0,
 
     @Serializable(with = DoubleStringSerializer::class)
-    @SerialName("Longitude") val longitude: Double,
+    @SerialName("Latitude") val latitude: Double = 0.0,
 
-    @SerialName("VisitNumber") val visitNumber: String,
-    @SerialName("Load") val load: String,
-    @SerialName("Feature") val feature: String,
-    @SerialName("Type") val type: String
+    @Serializable(with = DoubleStringSerializer::class)
+    @SerialName("Longitude") val longitude: Double = 0.0,
+
+    @SerialName("VisitNumber") val visitNumber: String = "1",
+    @SerialName("Load") val load: String = "",
+    @SerialName("Feature") val feature: String = "",
+    @SerialName("Type") val type: String = ""
 ): HasCoordinates {
 
     suspend fun getDestinationBusStopInfo(busRepository: BusRepository): BusStopInfo? {

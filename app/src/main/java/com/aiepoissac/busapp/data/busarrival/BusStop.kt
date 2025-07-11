@@ -1,8 +1,5 @@
 package com.aiepoissac.busapp.data.busarrival
 
-import com.aiepoissac.busapp.APIKeyManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -11,20 +8,15 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.Json
-import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
-import java.util.Scanner
 
 @Serializable
 data class BusStop (
-    @SerialName("odata.metadata") val metadata: String,
+    @SerialName("odata.metadata") val metadata: String = "",
     @SerialName("BusStopCode") val busStopCode: String,
-    @SerialName("Services") val services: List<BusService>
+    @SerialName("Services") val services: List<BusService> = listOf()
 ) {
     fun getBusArrivalsOfASingleService(serviceNo: String): List<BusService> {
         //result is at most of size 2
@@ -68,34 +60,5 @@ object LocalDateTimeDeserializer : KSerializer<LocalDateTime> {
     override fun serialize(encoder: Encoder, value: LocalDateTime) {
         // Serialize LocalDateTime to a String in the same pattern
         encoder.encodeString(value.format(formatter))
-    }
-}
-
-suspend fun getBusArrival(busStopCode: String): BusStop {
-    val json = withContext(Dispatchers.IO) {
-        getBusArrivalData(busStopCode)
-    }
-    return Json.decodeFromString<BusStop>(json)
-}
-
-private suspend fun getBusArrivalData(busStopCode: String): String = withContext(Dispatchers.IO) {
-    //val url = URL("https://aiepoissac-bus-app-backend.onrender.com/api/bus-arrival/$busStopCode")
-    val url = URL("https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival?BusStopCode=$busStopCode")
-    val connection = url.openConnection() as HttpURLConnection
-    connection.requestMethod = "GET"
-    connection.setRequestProperty("AccountKey", APIKeyManager.LTA)
-    connection.setRequestProperty("accept", "application/json")
-    connection.connect()
-
-    if (connection.responseCode != 200) {
-        throw IOException(connection.responseMessage)
-    } else {
-        val result = StringBuilder()
-        val scanner = Scanner(connection.inputStream)
-        while (scanner.hasNext()) {
-            result.append(scanner.nextLine())
-        }
-        scanner.close()
-        return@withContext result.toString()
     }
 }

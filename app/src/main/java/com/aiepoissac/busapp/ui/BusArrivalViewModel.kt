@@ -1,7 +1,6 @@
 package com.aiepoissac.busapp.ui
 
 import android.content.Intent
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,10 +13,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.GoogleMapsURLGenerator
-import com.aiepoissac.busapp.LocationManager
 import com.aiepoissac.busapp.R
 import com.aiepoissac.busapp.data.busarrival.Bus
-import com.aiepoissac.busapp.data.busarrival.getBusArrival
+import com.aiepoissac.busapp.data.busarrival.BusArrivalGetter
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfo
 import com.aiepoissac.busapp.ui.theme.GreenDark
@@ -38,13 +36,16 @@ import java.time.LocalDateTime
 
 class BusArrivalViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
+    private val busArrivalGetter: BusArrivalGetter = BusApplication.instance.container.busArrivalGetter,
     private val busStopCodeInput: String
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return if (modelClass.isAssignableFrom(BusArrivalViewModel::class.java)) {
             BusArrivalViewModel(
                 busRepository = busRepository,
-                initialBusStopCodeInput = busStopCodeInput) as T
+                busArrivalGetter = busArrivalGetter,
+                busStopCode = busStopCodeInput
+            ) as T
         } else {
             throw IllegalArgumentException("Unknown View Model Class")
         }
@@ -53,7 +54,9 @@ class BusArrivalViewModelFactory(
 
 class BusArrivalViewModel(
     private val busRepository: BusRepository,
-    initialBusStopCodeInput: String) : ViewModel() {
+    private val busArrivalGetter: BusArrivalGetter,
+    busStopCode: String = ""
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BusArrivalUIState())
     val uiState: StateFlow<BusArrivalUIState> = _uiState.asStateFlow()
@@ -86,6 +89,7 @@ class BusArrivalViewModel(
             } else {
                 _uiState.update {
                     it.copy(
+                        searchResult = listOf(),
                         expanded = false
                     )
                 }
@@ -122,8 +126,6 @@ class BusArrivalViewModel(
                 }
                 if (oppositeBusStopCode.isNotEmpty()) {
                     updateBusStop(oppositeBusStopCode)
-                } else {
-                    Toast.makeText(BusApplication.instance, "No opposite bus stop", Toast.LENGTH_SHORT).show()
                 }
 
         }
@@ -142,7 +144,8 @@ class BusArrivalViewModel(
                     busRoutes = busRoutes,
                     busStopCodeInput = busStopCode,
                     busArrivalData = null,
-                    expanded = false
+                    expanded = false,
+                    searchResult = listOf(busStopInfo)
                 )
             }
             refreshBusArrival()
@@ -154,10 +157,12 @@ class BusArrivalViewModel(
                     busRoutes = busRoutes,
                     busStopCodeInput = busStopCode,
                     showBusArrival = false,
-                    expanded = false
+                    expanded = false,
+                    searchResult = listOf()
                 )
             }
         }
+
     }
 
     fun refreshBusArrival() {
@@ -176,7 +181,7 @@ class BusArrivalViewModel(
                 viewModelScope.launch {
                     delay(16) //to allow time for the loading animation to start
                     try {
-                        val busArrivalData = getBusArrival(busStopInfo.busStopCode)
+                        val busArrivalData = busArrivalGetter.getBusArrival(busStopInfo.busStopCode)
                             .services
                             .map {
                                 it.attachOriginDestinationBusStopInfo(busRepository)
@@ -257,18 +262,14 @@ class BusArrivalViewModel(
     }
 
     init {
-        LocationManager.stopFetchingLocation()
-        this.updateBusStopCodeInput(initialBusStopCodeInput)
+        this.updateBusStopCodeInput(busStopCode)
         this.updateBusStop()
-        Log.d(
-            "BusArrivalViewModel",
-            "BusArrivalViewModel created with parameter: $initialBusStopCodeInput")
-        viewModelScope.launch {
-            while (true) {
-                delay(60000)
-                refreshBusArrival()
-            }
-        }
+//        viewModelScope.launch {
+//            while (true) {
+//                delay(60000)
+//                refreshBusArrival()
+//            }
+//        }
     }
 
 }

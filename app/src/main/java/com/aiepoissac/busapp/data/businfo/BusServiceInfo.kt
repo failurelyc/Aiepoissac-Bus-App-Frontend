@@ -17,16 +17,16 @@ data class BusServicesInfo(
 @Serializable
 data class BusServiceInfo(
     @SerialName("ServiceNo") val serviceNo: String,
-    @SerialName("Operator") val operator: String,
+    @SerialName("Operator") val operator: String = "",
     @SerialName("Direction") val direction: Int,
-    @SerialName("Category") val category: String,
+    @SerialName("Category") val category: String = "",
     @SerialName("OriginCode") val originCode: String,
     @SerialName("DestinationCode") val destinationCode: String,
-    @SerialName("AM_Peak_Freq") val amPeakFreq: String,
-    @SerialName("AM_Offpeak_Freq") val amOffPeakFreq: String,
-    @SerialName("PM_Peak_Freq") val pmPeakFreq: String,
-    @SerialName("PM_Offpeak_Freq") val pmOffPeakFreq: String,
-    @SerialName("LoopDesc") val loopDesc: String
+    @SerialName("AM_Peak_Freq") val amPeakFreq: String = "",
+    @SerialName("AM_Offpeak_Freq") val amOffPeakFreq: String = "",
+    @SerialName("PM_Peak_Freq") val pmPeakFreq: String = "",
+    @SerialName("PM_Offpeak_Freq") val pmOffPeakFreq: String = "",
+    @SerialName("LoopDesc") val loopDesc: String = ""
 ) {
     fun isLoop(): Boolean {
         return originCode == destinationCode

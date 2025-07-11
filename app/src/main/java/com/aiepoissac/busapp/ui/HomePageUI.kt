@@ -53,7 +53,6 @@ import androidx.navigation.compose.rememberNavController
 enum class Pages(val route: String, val title: String) {
     HomePage(route = "HomePage", title = "Home"),
     BusArrival(route = "BusArrival/{text}", title = "Bus Stop Information"),
-    BusServiceInformation(route = "BusServiceInfo/{text}", title = "Bus Service Information"),
     BusRouteInformation(route = "BusRouteInfo/{text1}/{text2}/{text3}/{text4}/{text5}", title = "Bus Route Information"),
     NearbyInformation(route = "NearbyInfo/{text1}/{text2}/{text3}", title = "Nearby Bus Stops"),
     BusesToMRTStation(route = "BusesToMRTStation/{text1}/{text2}/{text3}", title = "Bus Service to MRT station"),
@@ -87,7 +86,6 @@ enum class Pages(val route: String, val title: String) {
         fun getRoute(route: String): Pages {
             return when {
                 route.startsWith(BusArrival.route) -> BusArrival
-                route.startsWith(BusServiceInformation.route) -> BusServiceInformation
                 route.startsWith(BusRouteInformation.route) -> BusRouteInformation
                 route.startsWith(NearbyInformation.route) -> NearbyInformation
                 route.startsWith(BusesToMRTStation.route) -> BusesToMRTStation
@@ -143,14 +141,6 @@ fun BusApp(
                             navController = navController,
                             busStopCodeInput = text
                         )
-                }
-
-                composable(route = Pages.BusServiceInformation.route) { backStackEntry ->
-                    val text = backStackEntry.arguments?.getString("text") ?: ""
-                    BusServiceUI(
-                        navController = navController,
-                        busServiceInput = text
-                    )
                 }
 
                 composable(route = Pages.BusRouteInformation.route) { backStackEntry ->
@@ -641,13 +631,6 @@ fun navigateToNearby(
         text2 = longitude.toString(),
         text3 = isLiveLocation.toString())
     )
-}
-
-fun navigateToBusServiceInformation(
-    navController: NavHostController,
-    busServiceInput: String = ""
-) {
-    navController.navigate(Pages.BusServiceInformation.withText(busServiceInput))
 }
 
 fun navigateToSavedJourneys(

@@ -347,6 +347,7 @@ private fun BusRouteList(
                     BusRouteInformation(
                         navController = navController,
                         data = busRoute,
+                        setIsLiveLocationOnClick = setIsLiveLocationOnClick,
                         uiState = uiState,
                         gridState = gridState,
                         setFirstBusStop = setFirstBusStop
@@ -410,6 +411,7 @@ private fun BusRouteList(
                         keys = arrayOf(uiState.busRoute, zoomedIn),
                         state = MarkerState(position = latLng),
                         onClick = {
+                            setIsLiveLocationOnClick(false)
                             navigateToBusArrival(
                                 navController = navController,
                                 busStopInput = busRouteInfo.busStopCode
@@ -459,6 +461,7 @@ private fun BusRouteList(
                         MarkerComposable(
                             state = MarkerState(position = LatLng(busStopInfo.latitude, busStopInfo.longitude)),
                             onClick = {
+                                setIsLiveLocationOnClick(false)
                                 navigateToBusArrival(
                                     navController = navController,
                                     busStopInput = busRouteInfo.busStopCode
@@ -495,6 +498,7 @@ private fun BusRouteList(
 private fun BusRouteInformation(
     navController: NavHostController,
     data: Pair<Int, BusRouteInfoWithBusStopInfo>,
+    setIsLiveLocationOnClick: (Boolean) -> Unit,
     uiState: BusRouteUIState,
     gridState: LazyGridState,
     setFirstBusStop: (Int) -> Unit,
@@ -530,6 +534,7 @@ private fun BusRouteInformation(
         Card(
             modifier = Modifier.weight(4f),
             onClick = {
+                setIsLiveLocationOnClick(false)
                 navigateToBusArrival(
                     navController = navController,
                     busStopInput = data.second.busRouteInfo.busStopCode
