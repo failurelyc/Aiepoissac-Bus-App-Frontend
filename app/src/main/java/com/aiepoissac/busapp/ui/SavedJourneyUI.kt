@@ -281,19 +281,19 @@ private fun SavedJourneySegmentBusStopInformation(
                 data = busService.nextBus,
                 modifier = Modifier.weight(1f),
                 hasCoordinates = busStop.first.busStopInfo,
-                hideBusType = true
+                showBusType = true
             )
             BusArrivalLayout(
                 data = busService.nextBus2,
                 modifier = Modifier.weight(1f),
                 hasCoordinates = busStop.first.busStopInfo,
-                hideBusType = true
+                showBusType = true
             )
             BusArrivalLayout(
                 data = busService.nextBus3,
                 modifier = Modifier.weight(1f),
                 hasCoordinates = busStop.first.busStopInfo,
-                hideBusType = true
+                showBusType = true
             )
         }
     } else {

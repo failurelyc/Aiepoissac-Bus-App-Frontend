@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DepartureBoard
 import androidx.compose.material.icons.filled.Directions
@@ -166,39 +167,34 @@ fun BusArrivalUI(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(4.dp)
+                    modifier = Modifier.padding(2.dp)
                 ) {
-                    Icon(
-                        Icons.Filled.DepartureBoard,
-                        contentDescription = "Bus Arrival Timings",
-                        modifier = Modifier.weight(1f)
-                    )
 
-                    Text(
+                    IconTextSwitch(
+                        icon = Icons.Filled.DepartureBoard,
                         text = "Arrivals",
-                        modifier = Modifier.weight(2f)
-                    )
-
-                    Switch(
                         checked = busArrivalUIState.showBusArrival,
-                        onCheckedChange = { busArrivalViewModel.toggleShowBusArrival() }
-                    )
-
-                    Icon(
-                        if (busArrivalUIState.hideBusType) Icons.Filled.NoTransfer else Icons.Filled.DirectionsBus,
-                        contentDescription = "Toggle show bus type",
+                        onCheckedChange = busArrivalViewModel::setShowBusArrival,
                         modifier = Modifier.weight(1f)
                     )
 
-                    Text(
-                        text = "Bus Type",
-                        modifier = Modifier.weight(2f)
-                    )
-
-                    Switch(
-                        checked = !busArrivalUIState.hideBusType,
-                        onCheckedChange = { busArrivalViewModel.toggleHideBusType() }
-                    )
+                    if (busArrivalUIState.showBusArrival) {
+                        IconTextSwitch(
+                            icon = Icons.Filled.DirectionsBus,
+                            text = "Bus type",
+                            checked = busArrivalUIState.showBusType,
+                            onCheckedChange = busArrivalViewModel::setShowBusType,
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        IconTextSwitch(
+                            icon = Icons.Filled.AccessTime,
+                            text = "First/Last bus",
+                            checked = busArrivalUIState.showFirstLastBus,
+                            onCheckedChange = busArrivalViewModel::setShowFirstLastBus,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
 
                 }
 
@@ -250,6 +246,8 @@ fun BusArrivalUI(
                     BusArrivalsList(
                         uiState = busArrivalUIState,
                         onRefresh = busArrivalViewModel::refreshBusArrival,
+                        getBusRoute = busArrivalViewModel::getBusRoute,
+                        setShowBusArrival = busArrivalViewModel::setShowBusArrival,
                         navController = navController
                     )
                 } else {
@@ -291,6 +289,42 @@ fun BusArrivalUI(
 }
 
 @Composable
+fun IconTextSwitch(
+    icon: ImageVector,
+    text: String,
+    showText: Boolean = true,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier
+) {
+    Row(
+        modifier = modifier
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = text,
+            modifier = Modifier.weight(1f)
+                .align(Alignment.CenterVertically)
+        )
+
+        if (showText) {
+            Text(
+                text = text,
+                modifier = Modifier.weight(2f)
+                    .align(Alignment.CenterVertically)
+            )
+        }
+
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = Modifier.weight(1f)
+                .align(Alignment.CenterVertically)
+        )
+    }
+}
+
+@Composable
 private fun BusStopInformation(
     uiState: BusArrivalUIState,
     navController: NavHostController
@@ -319,35 +353,70 @@ private fun BusStopInformation(
 
         LazyVerticalGrid (
             modifier = Modifier,
-            columns = GridCells.Adaptive(minSize = 80.dp)
+            columns = GridCells.Adaptive(
+                minSize = if (!uiState.showFirstLastBus) 80.dp else 320.dp
+            )
         ) {
             items(data) { route ->
-                Card(
-                    modifier = Modifier.padding(8.dp),
-                    onClick = { navigateToBusRouteInformation(
-                        navController = navController,
-                        serviceNo = route.serviceNo,
-                        direction = route.direction,
-                        stopSequence = route.stopSequence
-                    ) }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
                 ) {
-                    Text(
-                        text = route.serviceNo,
-                        fontSize = 24.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        text = route.operator,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        text = "Direction: ${route.direction}",
-                        textAlign = TextAlign.Center,
-                        fontSize = 10.sp,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Card(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            navigateToBusRouteInformation(
+                                navController = navController,
+                                serviceNo = route.serviceNo,
+                                direction = route.direction,
+                                stopSequence = route.stopSequence
+                            )
+                        }
+                    ) {
+
+                        Text(
+                            text = route.serviceNo,
+                            fontSize = 24.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text(
+                            text = route.operator,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text(
+                            text = "Direction: ${route.direction}",
+                            textAlign = TextAlign.Center,
+                            fontSize = 10.sp,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    if (uiState.showFirstLastBus) {
+                        Card(
+                            modifier = Modifier.weight(4f)
+                        ) {
+                            Text(
+                                text = "WEEKDAY: ${route.wdFirstBus} to ${route.wdLastBus}",
+                                textAlign = TextAlign.Left,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                            )
+
+                            Text(
+                                text = "SATURDAY: ${route.satFirstBus} to ${route.satLastBus}",
+                                textAlign = TextAlign.Left,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                            )
+
+                            Text(
+                                text = "SUNDAY: ${route.sunFirstBus} to ${route.sunLastBus}",
+                                textAlign = TextAlign.Left,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -359,7 +428,10 @@ private fun BusStopInformation(
 private fun BusArrivalsList(
     uiState: BusArrivalUIState,
     onRefresh: () -> Unit,
-    navController: NavHostController) {
+    navController: NavHostController,
+    getBusRoute: (String) -> BusRouteInfo?,
+    setShowBusArrival: (Boolean) -> Unit,
+) {
 
     val data = uiState.busArrivalData
     val busStopInfo: BusStopInfo? = uiState.busStopInfo
@@ -395,7 +467,9 @@ private fun BusArrivalsList(
                             data = service,
                             busStopInfo = busStopInfo,
                             navController = navController,
-                            hideBusType = uiState.hideBusType
+                            showBusType = uiState.showBusType,
+                            getBusRoute = getBusRoute,
+                            setShowBusArrival = setShowBusArrival
                         )
                     }
                 }
@@ -414,10 +488,11 @@ private fun BusArrivalsLayout(
     navController: NavHostController,
     busStopInfo: BusStopInfo,
     data: Pair<Pair<BusStopInfo?, BusStopInfo?>, BusService>,
-    hideBusType: Boolean = false
+    getBusRoute: (String) -> BusRouteInfo?,
+    setShowBusArrival: (Boolean) -> Unit,
+    showBusType: Boolean = true
 ) {
 
-    val busArrivalViewModel: BusArrivalViewModel = viewModel()
     val busService = data.second
     val originDestination = data.first
 
@@ -429,7 +504,7 @@ private fun BusArrivalsLayout(
         Card(
             modifier = Modifier.weight(1f),
             onClick = {
-                val busRoute = busArrivalViewModel.getBusRoute(busService.serviceNo)
+                val busRoute = getBusRoute(busService.serviceNo)
                 if (busRoute != null) {
                     navigateToBusRouteInformation(
                         navController = navController,
@@ -438,7 +513,7 @@ private fun BusArrivalsLayout(
                         stopSequence = busRoute.stopSequence
                     )
                 } else {
-                    busArrivalViewModel.toggleShowBusArrival()
+                    setShowBusArrival(false)
                     Toast.makeText(
                         BusApplication.instance,
                         "Click on the bus service here",
@@ -451,7 +526,7 @@ private fun BusArrivalsLayout(
 
             Text(
                 text = busService.serviceNo,
-                fontSize = if (!hideBusType) 36.sp else 24.sp,
+                fontSize = if (showBusType) 36.sp else 24.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -463,7 +538,7 @@ private fun BusArrivalsLayout(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            if (!hideBusType) {
+            if (showBusType) {
 
                 if (busService.nextBus.isLoop()) {
                     Text(
@@ -486,7 +561,7 @@ private fun BusArrivalsLayout(
         Card(
             modifier = Modifier.weight(2f),
             onClick = {
-                val busRoute = busArrivalViewModel.getBusRoute(busService.serviceNo)
+                val busRoute = getBusRoute(busService.serviceNo)
                 if (busRoute != null) {
                     navigateToBusRouteInformation(
                         navController = navController,
@@ -497,7 +572,7 @@ private fun BusArrivalsLayout(
                         showLiveBuses = true
                     )
                 } else {
-                    busArrivalViewModel.toggleShowBusArrival()
+                    setShowBusArrival(false)
                     Toast.makeText(
                         BusApplication.instance,
                         "Click on the bus service here",
@@ -516,19 +591,19 @@ private fun BusArrivalsLayout(
                     data = busService.nextBus,
                     modifier = Modifier.weight(1f),
                     hasCoordinates = busStopInfo,
-                    hideBusType = hideBusType
+                    showBusType = showBusType
                 )
                 BusArrivalLayout(
                     data = busService.nextBus2,
                     modifier = Modifier.weight(1f),
                     hasCoordinates = busStopInfo,
-                    hideBusType = hideBusType
+                    showBusType = showBusType
                 )
                 BusArrivalLayout(
                     data = busService.nextBus3,
                     modifier = Modifier.weight(1f),
                     hasCoordinates = busStopInfo,
-                    hideBusType = hideBusType
+                    showBusType = showBusType
                 )
             }
         }
@@ -541,7 +616,7 @@ fun BusArrivalLayout(
     data: Bus,
     hasCoordinates: HasCoordinates,
     modifier: Modifier = Modifier,
-    hideBusType: Boolean = false
+    showBusType: Boolean = false
 ) {
 
 
@@ -553,7 +628,7 @@ fun BusArrivalLayout(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            if (!hideBusType) {
+            if (showBusType) {
                 Image(
                     painter = painterResource(id = busTypeToPicture(data)),
                     contentDescription = "Bus Image",

@@ -44,7 +44,8 @@ class BusArrivalViewModelFactory(
             BusArrivalViewModel(
                 busRepository = busRepository,
                 busArrivalGetter = busArrivalGetter,
-                busStopCode = busStopCodeInput
+                busStopCode = busStopCodeInput,
+                autoRefresh = true
             ) as T
         } else {
             throw IllegalArgumentException("Unknown View Model Class")
@@ -55,7 +56,8 @@ class BusArrivalViewModelFactory(
 class BusArrivalViewModel(
     private val busRepository: BusRepository,
     private val busArrivalGetter: BusArrivalGetter,
-    busStopCode: String = ""
+    busStopCode: String = "",
+    autoRefresh: Boolean = false
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BusArrivalUIState())
@@ -221,15 +223,21 @@ class BusArrivalViewModel(
         }
     }
 
-    fun toggleShowBusArrival() {
+    fun setShowBusArrival(showBusArrivals: Boolean) {
         _uiState.update {
-            it.copy(showBusArrival = !uiState.value.showBusArrival)
+            it.copy(showBusArrival = showBusArrivals)
         }
     }
 
-    fun toggleHideBusType() {
+    fun setShowBusType(showBusType: Boolean) {
         _uiState.update {
-            it.copy(hideBusType = !uiState.value.hideBusType)
+            it.copy(showBusType = showBusType)
+        }
+    }
+
+    fun setShowFirstLastBus(showFirstLastBus: Boolean) {
+        _uiState.update {
+            it.copy(showFirstLastBus = showFirstLastBus)
         }
     }
 
@@ -264,12 +272,14 @@ class BusArrivalViewModel(
     init {
         this.updateBusStopCodeInput(busStopCode)
         this.updateBusStop()
-//        viewModelScope.launch {
-//            while (true) {
-//                delay(60000)
-//                refreshBusArrival()
-//            }
-//        }
+        if (autoRefresh) {
+            viewModelScope.launch {
+                while (true) {
+                    delay(60000)
+                    refreshBusArrival()
+                }
+            }
+        }
     }
 
 }

@@ -139,7 +139,7 @@ fun BusApp(
                         val text = backStackEntry.arguments?.getString("text") ?: ""
                         BusArrivalUI(
                             navController = navController,
-                            busStopCodeInput = text
+                            busStopCodeInput = text,
                         )
                 }
 

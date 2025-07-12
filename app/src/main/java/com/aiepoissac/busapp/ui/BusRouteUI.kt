@@ -30,7 +30,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -125,29 +124,28 @@ fun BusRouteUI(
                         modifier = Modifier.padding(4.dp)
                     ) {
                         busRouteUIState.busServiceVariants.forEach {
-                            if (it.busServiceInfo != busRouteUIState.busServiceInfo) {
-                                Card(
-                                    onClick = { busRouteViewModel.updateBusService(it.busServiceInfo) },
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(
-                                        text = it.busServiceInfo.serviceNo,
-                                        fontSize = 24.sp,
-                                        modifier = Modifier
-                                            .padding(4.dp)
-                                            .align(Alignment.CenterHorizontally)
-                                    )
 
-                                    Text(
-                                        text = it.destinationBusStopInfo.description,
-                                        fontSize = 8.sp,
-                                        lineHeight = 12.sp,
-                                        modifier = Modifier
-                                            .padding(2.dp)
-                                            .align(Alignment.CenterHorizontally)
-                                    )
-                                }
+                            Card(
+                                onClick = { busRouteViewModel.updateBusService(it.busServiceInfo) },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = it.busServiceInfo.serviceNo,
+                                    fontSize = 24.sp,
+                                    color = if (it.busServiceInfo != busRouteUIState.busServiceInfo) Color.Unspecified else Color.Blue,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                Text(
+                                    text = it.destinationBusStopInfo.description,
+                                    fontSize = 8.sp,
+                                    lineHeight = 12.sp,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
+
                         }
                     }
                 }
@@ -229,60 +227,49 @@ private fun BusRouteList(
             Row (
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    if (uiState.isLiveLocation) Icons.Filled.LocationOn else Icons.Filled.LocationOff,
-                    contentDescription = "location status",
-                    modifier = Modifier.weight(1f)
-                )
 
-                Switch(
+                IconTextSwitch(
+                    icon = if (uiState.isLiveLocation) Icons.Filled.LocationOn else Icons.Filled.LocationOff,
+                    text = "location",
+                    showText = false,
+                    modifier = Modifier.weight(1f),
                     checked = uiState.isLiveLocation,
-                    onCheckedChange = setIsLiveLocationOnClick,
-                    modifier = Modifier.weight(2f)
+                    onCheckedChange = setIsLiveLocationOnClick
                 )
 
                 if (!uiState.showMap) {
-                    Icon(
-                        imageVector = Icons.Filled.AccessTime,
-                        contentDescription = "First/Last bus timing",
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    Switch(
+                    IconTextSwitch(
+                        icon = Icons.Filled.AccessTime,
+                        text = "First/Last bus timing",
+                        showText = false,
+                        modifier = Modifier.weight(1f),
                         checked = uiState.showFirstLastBus,
-                        onCheckedChange = setShowFirstLastBusOnClick,
-                        modifier = Modifier.weight(2f)
+                        onCheckedChange = setShowFirstLastBusOnClick
                     )
                 } else {
-                    Icon(
-                        imageVector = Icons.Filled.DepartureBoard,
-                        contentDescription = "Show live buses",
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    Switch(
+                    IconTextSwitch(
+                        icon = Icons.Filled.DepartureBoard,
+                        text = "Live buses",
+                        showText = false,
+                        modifier = Modifier.weight(1f),
                         checked = uiState.showLiveBuses,
-                        onCheckedChange = setShowLiveBusesOnClick,
-                        modifier = Modifier.weight(2f)
+                        onCheckedChange = setShowLiveBusesOnClick
                     )
                 }
 
-                Icon(
-                    Icons.Filled.Map,
-                    contentDescription = "Show map",
-                    modifier = Modifier.weight(1f)
-                )
-
-                Switch(
+                IconTextSwitch(
+                    icon = Icons.Filled.Map,
+                    text = "Map",
+                    showText = false,
+                    modifier = Modifier.weight(1f),
                     checked = uiState.showMap,
-                    onCheckedChange = setShowMapOnClick,
-                    modifier = Modifier.weight(2f)
+                    onCheckedChange = setShowMapOnClick
                 )
 
                 Text(
                     text = "${if (uiState.isLiveLocation) uiState.currentSpeed else "-"}km/h",
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(3f)
+                    modifier = Modifier.weight(1f)
                 )
 
             }
@@ -563,19 +550,19 @@ private fun BusRouteInformation(
                 Text(
                     text = "WEEKDAY: ${busRouteInfo.wdFirstBus} to ${busRouteInfo.wdLastBus}",
                     textAlign = TextAlign.Left,
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
                 )
 
                 Text(
                     text = "SATURDAY: ${busRouteInfo.satFirstBus} to ${busRouteInfo.satLastBus}",
                     textAlign = TextAlign.Left,
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
                 )
 
                 Text(
                     text = "SUNDAY: ${busRouteInfo.sunFirstBus} to ${busRouteInfo.sunLastBus}",
                     textAlign = TextAlign.Left,
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
                 )
             }
         }
