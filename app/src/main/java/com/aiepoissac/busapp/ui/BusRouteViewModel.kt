@@ -6,7 +6,6 @@ import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -263,22 +262,20 @@ class BusRouteViewModel(
             if (uiState.value.isLiveLocation) {
                 locationManager.startFetchingLocation(fastRefresh = true)
             }
-            snapshotFlow { locationManager.currentLocation.value }
+            locationManager.currentLocation
                 .filterNotNull()
                 .distinctUntilChanged()
                 .collectLatest { location ->
                     if (uiState.value.isLiveLocation) {
-                        val timeNow = LocalDateTime.now()
                         updateLocation(
-                            location = location,
-                            time = timeNow
+                            location = location
                         )
                     }
                 }
         }
     }
 
-    private fun updateLocation(location: Location, time: LocalDateTime) {
+    private fun updateLocation(location: Location) {
         _uiState.update {
             it.copy(
                 busRoute = uiState.value.busRoute

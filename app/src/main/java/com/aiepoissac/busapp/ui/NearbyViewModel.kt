@@ -5,7 +5,6 @@ import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -152,7 +151,7 @@ class NearbyViewModel(
             if (uiState.value.isLiveLocation) {
                 locationManager.startFetchingLocation(fastRefresh = false)
             }
-            snapshotFlow { locationManager.currentLocation.value }
+            locationManager.currentLocation
                 .filterNotNull()
                 .distinctUntilChanged()
                 .collectLatest { location ->

@@ -3,19 +3,17 @@ package com.aiepoissac.busapp
 import android.annotation.SuppressLint
 import android.location.Location
 import android.os.Looper
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 interface LocationManager {
 
-
-
-    var currentLocation: MutableState<Location?>
+    val currentLocation: StateFlow<Location?>
 
     fun startFetchingLocation(fastRefresh: Boolean)
 
@@ -43,12 +41,13 @@ class RealLocationManager : LocationManager {
     )
         .build()
 
-    override var currentLocation = mutableStateOf<Location?>(null)
+    private val _currentLocation = MutableStateFlow<Location?>(null)
+    override val currentLocation: StateFlow<Location?> = _currentLocation
 
     private var locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             for (location in locationResult.locations) {
-                currentLocation.value = location
+                _currentLocation.value = location
             }
         }
     }
