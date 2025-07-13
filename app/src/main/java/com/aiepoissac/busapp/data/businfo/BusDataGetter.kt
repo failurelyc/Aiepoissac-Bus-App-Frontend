@@ -15,18 +15,11 @@ import java.util.Scanner
 private enum class BusDataType {
     BusServices,
     BusRoutes,
-    BusStops
+    BusStops,
+    PlannedBusRoutes
 }
 
-private suspend fun getData(dataType: BusDataType, count: Int): String = withContext(Dispatchers.IO) {
-    val url: URL?
-    if (dataType == BusDataType.BusStops) {
-        url = URL("https://datamall2.mytransport.sg/ltaodataservice/BusStops?\$skip=$count")
-    } else if (dataType == BusDataType.BusRoutes) {
-        url = URL("https://datamall2.mytransport.sg/ltaodataservice/BusRoutes?\$skip=$count")
-    } else if (dataType == BusDataType.BusServices) {
-        url = URL("https://datamall2.mytransport.sg/ltaodataservice/BusServices?\$skip=$count")
-    } else throw IllegalArgumentException()
+suspend fun getData(url: URL): String = withContext(Dispatchers.IO) {
     val connection = url.openConnection() as HttpURLConnection
     connection.requestMethod = "GET"
     connection.setRequestProperty("AccountKey", APIKeyManager.LTA)
@@ -45,13 +38,31 @@ private suspend fun getData(dataType: BusDataType, count: Int): String = withCon
     }
 }
 
+private suspend fun getData(dataType: BusDataType, offset: Int = 0): String {
+    val url: URL = when (dataType) {
+        BusDataType.BusStops -> {
+            URL("https://datamall2.mytransport.sg/ltaodataservice/BusStops?\$skip=$offset")
+        }
+        BusDataType.BusRoutes -> {
+            URL("https://datamall2.mytransport.sg/ltaodataservice/BusRoutes?\$skip=$offset")
+        }
+        BusDataType.BusServices -> {
+            URL("https://datamall2.mytransport.sg/ltaodataservice/BusServices?\$skip=$offset")
+        }
+        BusDataType.PlannedBusRoutes -> {
+            URL("https://datamall2.mytransport.sg/ltaodataservice/PlannedBusRoutes")
+        }
+    }
+    return getData(url)
+}
+
 
 suspend fun populateBusServices(busRepository: BusRepository) {
     busRepository.deleteAllBusServices()
     var i = 0
     while (true) {
         val json = withContext(Dispatchers.IO) {
-            getData(dataType = BusDataType.BusServices, count = i * 500)
+            getData(dataType = BusDataType.BusServices, offset = i * 500)
         }
         val busServicesInfo: BusServicesInfo = Json.decodeFromString<BusServicesInfo>(json)
         if (busServicesInfo.value.isEmpty()) {
@@ -71,7 +82,7 @@ suspend fun populateBusRoutes(busRepository: BusRepository) {
     var previous: BusRouteInfo? = null
     while (true) {
         val json = withContext(Dispatchers.IO) {
-            getData(dataType = BusDataType.BusRoutes, count = i * 500)
+            getData(dataType = BusDataType.BusRoutes, offset = i * 500)
         }
         val busRoutesInfo: BusRoutesInfo = Json.decodeFromString<BusRoutesInfo>(json)
         if (busRoutesInfo.value.isEmpty()) {
@@ -100,7 +111,7 @@ suspend fun populateBusStops(busRepository: BusRepository) {
     var i = 0
     while (true) {
         val json = withContext(Dispatchers.IO) {
-            getData(dataType = BusDataType.BusStops, count = i * 500)
+            getData(dataType = BusDataType.BusStops, offset = i * 500)
         }
         val busStopsInfo: BusStopsInfo = Json.decodeFromString(json)
         if (busStopsInfo.value.isEmpty()) {
@@ -130,4 +141,26 @@ suspend fun populateMRTStations(busRepository: BusRepository) = withContext(Disp
     }
     scanner.close()
     inputStream.close()
+}
+
+suspend fun populatePlannedBusRoutes(busRepository: BusRepository) {
+    busRepository.deleteAllPlannedBusRoutes()
+    var previous: PlannedBusRouteInfo? = null
+    val json = withContext(Dispatchers.IO) {
+        getData(dataType = BusDataType.PlannedBusRoutes)
+    }
+    val plannedBusRoutesInfo: PlannedBusRoutesInfo = Json.decodeFromString<PlannedBusRoutesInfo>(json)
+
+    for (plannedBusRouteInfo in plannedBusRoutesInfo.value) {
+        val plannedBusRouteInfoWithCorrectStopSequence = plannedBusRouteInfo.copy(
+            stopSequence = if (previous != null &&
+                previous.serviceNo == plannedBusRouteInfo.serviceNo &&
+                previous.direction == plannedBusRouteInfo.direction
+            ) previous.stopSequence + 1 else 0
+        )
+        busRepository.insertPlannedBusRoute(
+            plannedBusRouteInfoWithCorrectStopSequence
+        )
+        previous = plannedBusRouteInfoWithCorrectStopSequence
+    }
 }

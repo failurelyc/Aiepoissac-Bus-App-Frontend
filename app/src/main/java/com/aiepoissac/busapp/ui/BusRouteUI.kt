@@ -533,7 +533,7 @@ private fun BusRouteInformation(
             val busStopInfo = data.second.busStopInfo
 
             Text(
-                text = "${busRouteInfo.busStopCode} ${busStopInfo.description}",
+                text = busStopInfo.toString(),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
                     .padding(horizontal = 4.dp)

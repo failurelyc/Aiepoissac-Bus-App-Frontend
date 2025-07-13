@@ -22,13 +22,9 @@ data class BusStopInfo (
     @SerialName("BusStopCode") val busStopCode: String,
     @SerialName("RoadName") val roadName: String,
     @SerialName("Description") val description: String,
-    @SerialName("Latitude") val latitude: Double,
-    @SerialName("Longitude") val longitude: Double
+    @SerialName("Latitude") override val latitude: Double,
+    @SerialName("Longitude") override val longitude: Double
 ) : HasCoordinates {
-
-    override fun getCoordinates(): Pair<Double, Double> {
-        return Pair(latitude, longitude)
-    }
 
     override fun toString(): String {
         return "$busStopCode $description"

@@ -41,7 +41,7 @@ object DoubleStringSerializer : KSerializer<Double> {
 }
 
 // Custom deserializer for LocalDateTime
-object LocalDateTimeDeserializer : KSerializer<LocalDateTime> {
+object LocalDateTimeDeserializerForBusArrivals : KSerializer<LocalDateTime> {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
 
     override val descriptor: SerialDescriptor =

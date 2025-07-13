@@ -6,7 +6,12 @@ import kotlin.math.sin
 
 interface HasCoordinates {
 
-    fun getCoordinates(): Pair<Double, Double> //[latitude, longitude]
+    val latitude: Double
+    val longitude: Double
+
+    fun getCoordinates(): Pair<Double, Double> {
+        return Pair(latitude, longitude)
+    }
 
     fun distanceFromInMetres(other: HasCoordinates): Int {
         val point1 = this.getCoordinates()
@@ -14,10 +19,6 @@ interface HasCoordinates {
         return distanceBetweenInMetres(point1, point2)
     }
 
-//    fun distanceFromInMetres(point2: Pair<Double, Double>): Int {
-//        val point1 = this.getCoordinates()
-//        return distanceBetweenInMetres(point1, point2)
-//    }
 }
 
 private fun distanceBetweenInMetres(point1: Pair<Double, Double>, point2: Pair<Double, Double>): Int {

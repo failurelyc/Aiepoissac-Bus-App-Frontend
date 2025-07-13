@@ -2,6 +2,7 @@ package com.aiepoissac.busapp.data.businfo
 
 import androidx.room.Entity
 import com.aiepoissac.busapp.data.HasCoordinates
+import com.aiepoissac.busapp.data.LatLong
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

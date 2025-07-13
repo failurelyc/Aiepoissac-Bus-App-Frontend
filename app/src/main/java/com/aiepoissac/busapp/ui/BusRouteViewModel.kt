@@ -15,7 +15,7 @@ import com.aiepoissac.busapp.data.busarrival.BusArrivalGetter
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
 import com.aiepoissac.busapp.data.businfo.BusServiceInfo
-import com.aiepoissac.busapp.data.businfo.LatLong
+import com.aiepoissac.busapp.data.LatLong
 import com.aiepoissac.busapp.data.businfo.attachDistanceFromPoint
 import com.aiepoissac.busapp.data.businfo.isLoop
 import com.aiepoissac.busapp.data.businfo.truncateLoopRoute

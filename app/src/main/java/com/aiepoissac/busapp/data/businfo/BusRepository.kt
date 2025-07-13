@@ -78,4 +78,14 @@ interface BusRepository {
 
     suspend fun getAllMRTStations(): List<MRTStation>
 
+    suspend fun insertPlannedBusRoute(plannedBusRouteInfo: PlannedBusRouteInfo)
+
+    suspend fun updatePlannedBusRoute(plannedBusRouteInfo: PlannedBusRouteInfo)
+
+    suspend fun deletePlannedBusRoute(plannedBusRouteInfo: PlannedBusRouteInfo)
+
+    suspend fun deleteAllPlannedBusRoutes()
+
+    suspend fun getAllPlannedBusRoutes(): List<PlannedBusRouteInfoWithBusStopInfo>
+
 }

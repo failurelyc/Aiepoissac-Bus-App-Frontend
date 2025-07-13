@@ -17,7 +17,7 @@ object GoogleMapsURLGenerator {
     fun directions(
         origin: HasCoordinates? = null,
         destination: HasCoordinates,
-        travelMode: TravelMode = TravelMode.Walking
+        travelMode: TravelMode
     ): String {
         val originCoordinates = origin?.getCoordinates()?.let { "${it.first}%2C${it.second}" }
         val destinationCoordinates = "${destination.getCoordinates().first}%2C${destination.getCoordinates().second}"

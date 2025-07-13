@@ -13,16 +13,16 @@ data class Bus (
     @SerialName("OriginCode") val originCode: String = "",
     @SerialName("DestinationCode") val destinationCode: String = "",
 
-    @Serializable(with = LocalDateTimeDeserializer::class)
+    @Serializable(with = LocalDateTimeDeserializerForBusArrivals::class)
     @SerialName("EstimatedArrival") val estimatedArrival: LocalDateTime = LocalDateTime.MIN,
 
     @SerialName("Monitored") val monitored: Int = 0,
 
     @Serializable(with = DoubleStringSerializer::class)
-    @SerialName("Latitude") val latitude: Double = 0.0,
+    @SerialName("Latitude") override val latitude: Double = 0.0,
 
     @Serializable(with = DoubleStringSerializer::class)
-    @SerialName("Longitude") val longitude: Double = 0.0,
+    @SerialName("Longitude") override val longitude: Double = 0.0,
 
     @SerialName("VisitNumber") val visitNumber: String = "1",
     @SerialName("Load") val load: String = "",
@@ -61,9 +61,5 @@ data class Bus (
         } else {
             -1
         }
-    }
-
-    override fun getCoordinates(): Pair<Double, Double> {
-        return Pair(latitude, longitude)
     }
 }

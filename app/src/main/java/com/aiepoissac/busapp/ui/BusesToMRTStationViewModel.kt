@@ -4,9 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
-import com.aiepoissac.busapp.LocationManager
 import com.aiepoissac.busapp.data.businfo.BusRepository
-import com.aiepoissac.busapp.data.businfo.LatLong
+import com.aiepoissac.busapp.data.LatLong
 import com.aiepoissac.busapp.data.businfo.findBusServiceTo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

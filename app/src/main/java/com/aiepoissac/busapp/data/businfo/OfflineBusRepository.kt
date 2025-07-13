@@ -4,7 +4,8 @@ class OfflineBusRepository(
     private val busServiceInfoDAO: BusServiceInfoDAO,
     private val busRouteInfoDAO: BusRouteInfoDAO,
     private val busStopInfoDAO: BusStopInfoDAO,
-    private val mrtStationDAO: MRTStationDAO
+    private val mrtStationDAO: MRTStationDAO,
+    private val plannedBusRouteInfoDAO: PlannedBusRouteInfoDAO
 ): BusRepository {
 
     override suspend fun insertBusService(busServiceInfo: BusServiceInfo) {
@@ -153,6 +154,26 @@ class OfflineBusRepository(
 
     override suspend fun getMRTStationsContaining(partialName: String): List<MRTStation> {
         return mrtStationDAO.getMRTStationsContaining(partialName)
+    }
+
+    override suspend fun insertPlannedBusRoute(plannedBusRouteInfo: PlannedBusRouteInfo) {
+        plannedBusRouteInfoDAO.insert(plannedBusRouteInfo)
+    }
+
+    override suspend fun updatePlannedBusRoute(plannedBusRouteInfo: PlannedBusRouteInfo) {
+        plannedBusRouteInfoDAO.update(plannedBusRouteInfo)
+    }
+
+    override suspend fun deletePlannedBusRoute(plannedBusRouteInfo: PlannedBusRouteInfo) {
+        plannedBusRouteInfoDAO.delete(plannedBusRouteInfo)
+    }
+
+    override suspend fun deleteAllPlannedBusRoutes() {
+        plannedBusRouteInfoDAO.deleteAll()
+    }
+
+    override suspend fun getAllPlannedBusRoutes(): List<PlannedBusRouteInfoWithBusStopInfo> {
+        return plannedBusRouteInfoDAO.getAll()
     }
 
 }

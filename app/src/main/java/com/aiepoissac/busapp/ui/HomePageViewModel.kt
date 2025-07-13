@@ -7,8 +7,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
+import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.populateBusRoutes
 import com.aiepoissac.busapp.data.businfo.populateBusServices
 import com.aiepoissac.busapp.data.businfo.populateBusStops
@@ -20,13 +22,31 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import androidx.core.content.edit
+import com.aiepoissac.busapp.data.businfo.populatePlannedBusRoutes
 
-class HomePageViewModel : ViewModel() {
+class HomePageViewModelFactory(
+    private val busRepository: BusRepository = BusApplication.instance.container.busRepository
+) : ViewModelProvider.Factory {
+
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return if (modelClass.isAssignableFrom(HomePageViewModel::class.java)) {
+            HomePageViewModel(
+                busRepository = busRepository
+            ) as T
+        } else {
+            throw IllegalArgumentException("Unknown View Model Class")
+        }
+    }
+
+}
+
+class HomePageViewModel(
+    private val busRepository: BusRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomePageUIState())
     val uiState = _uiState.asStateFlow()
-
-    private val busRepository = BusApplication.instance.container.busRepository
 
     var downloaded by mutableStateOf(false)
         private set
@@ -150,31 +170,36 @@ class HomePageViewModel : ViewModel() {
     }
 
     private suspend fun initialiseOfflineData() = withContext(Dispatchers.IO) {
-        if (BusApplication.instance.container.busRepository.getMRTStationCount() == 0) {
-            populateMRTStations(BusApplication.instance.container.busRepository)
+        if (busRepository.getMRTStationCount() == 0) {
+            populateMRTStations(busRepository)
         }
     }
 
     private suspend fun initialiseOnlineData() = withContext(Dispatchers.IO) {
-        if (checkIfSundayOrMonday4amPassed()) {
+        //downloading bus services, routes and stops data
+        if (checkIfBusDataOutdated() ||
+            busRepository.getBusRoutesCount() == 0 ||
+            busRepository.getBusStopsCount() == 0 ||
+            busRepository.getBusServicesCount() == 0
+            ) {
             try {
                 Log.d(Pages.HomePage.title, "Started Downloading Bus Data")
                 populateBusServices(busRepository)
                 populateBusRoutes(busRepository)
                 populateBusStops(busRepository)
-                Log.d(Pages.HomePage.title, "Downloaded Bus Data")
                 if (busRepository.getBusServicesCount() != 0 &&
                     busRepository.getBusRoutesCount() != 0 &&
                     busRepository.getBusStopsCount() != 0) {
                     withContext(Dispatchers.Main) {
                         downloaded = true
                     }
-                    saveLastOpenedTime()
+                    saveLastTimeBusDataDownloaded()
                 } else {
                     throw IOException("Nothing was downloaded")
                 }
+                Log.d(Pages.HomePage.title, "Downloaded Bus Data")
             } catch (e: IOException) {
-                Log.e(Pages.HomePage.title, "Failed to download bus data")
+                Log.e(Pages.HomePage.title, "Failed to download bus data: ${e.message}")
                 withContext(Dispatchers.Main) {
                     failedDownload = true
                 }
@@ -184,29 +209,64 @@ class HomePageViewModel : ViewModel() {
             withContext(Dispatchers.Main) {
                 downloaded = true
             }
-            saveLastOpenedTime()
+            saveLastTimeBusDataDownloaded()
+        }
+
+        //downloading planned (future) bus routes
+        if (checkIfPlannedBusRoutesOutdated()) {
+            try {
+                Log.d(Pages.HomePage.title, "Started Downloading Planned Bus Routes")
+                populatePlannedBusRoutes(busRepository)
+                Log.d(Pages.HomePage.title, "Downloaded Planned Bus Routes")
+                saveLastTimePlannedBusRoutesDownloaded()
+            } catch (e: IOException) {
+                Log.e(Pages.HomePage.title, "Failed to download planned future bus routes: ${e.message}")
+                busRepository.deleteAllPlannedBusRoutes()
+            }
+        }
+
+
+    }
+
+    private fun saveLastTimePlannedBusRoutesDownloaded() {
+        val sharedPreferences = BusApplication.instance
+            .getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        sharedPreferences.edit {
+            val now = System.currentTimeMillis()
+            putLong("planned_bus_routes_downloaded_time", now)
         }
     }
 
-    private fun saveLastOpenedTime() {
+    private fun saveLastTimeBusDataDownloaded() {
         val sharedPreferences = BusApplication.instance
             .getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        val lastOpenedTime = System.currentTimeMillis()
-        editor.putLong("last_opened_time", lastOpenedTime)
-        editor.apply()
+        sharedPreferences.edit {
+            val now = System.currentTimeMillis()
+            putLong("last_opened_time", now)
+        }
     }
 
-    private fun getLastOpenedTime(): Long {
+    private fun getLastTimePlannedBusRoutesDownloaded(): Long {
+        val sharedPreferences = BusApplication.instance
+            .getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getLong("planned_bus_routes_downloaded_time", 0)
+    }
+
+    private fun getLastTimeBusDataDownloaded(): Long {
         val sharedPreferences = BusApplication.instance
             .getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         return sharedPreferences.getLong("last_opened_time", 0)
     }
 
-    private fun checkIfSundayOrMonday4amPassed(): Boolean {
-        val lastOpenedTime = getLastOpenedTime()
+    private fun checkIfPlannedBusRoutesOutdated(): Boolean {
+        val lastDownloadTime = getLastTimePlannedBusRoutesDownloaded()
+        return System.currentTimeMillis() - lastDownloadTime >= 604800000L
+    }
+
+    private fun checkIfBusDataOutdated(): Boolean {
+        val lastDownloadTime = getLastTimeBusDataDownloaded()
         val lastDate = Calendar.getInstance()
-        lastDate.timeInMillis = lastOpenedTime
+        lastDate.timeInMillis = lastDownloadTime
         val thisDate = Calendar.getInstance()
         thisDate.timeInMillis = System.currentTimeMillis()
         val dayOfLastOpenedDate = lastDate.get(Calendar.DAY_OF_WEEK)

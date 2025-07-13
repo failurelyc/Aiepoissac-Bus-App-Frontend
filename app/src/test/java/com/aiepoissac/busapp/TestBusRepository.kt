@@ -8,6 +8,8 @@ import com.aiepoissac.busapp.data.businfo.BusServiceInfoWithBusStopInfo
 import com.aiepoissac.busapp.data.businfo.BusStopInfo
 import com.aiepoissac.busapp.data.businfo.BusStopInfoWithBusRoutesInfo
 import com.aiepoissac.busapp.data.businfo.MRTStation
+import com.aiepoissac.busapp.data.businfo.PlannedBusRouteInfo
+import com.aiepoissac.busapp.data.businfo.PlannedBusRouteInfoWithBusStopInfo
 
 class TestBusRepository(
     private val busServiceList: List<BusServiceInfo> =
@@ -804,6 +806,26 @@ class TestBusRepository(
     }
 
     override suspend fun getAllMRTStations(): List<MRTStation> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun insertPlannedBusRoute(plannedBusRouteInfo: PlannedBusRouteInfo) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun updatePlannedBusRoute(plannedBusRouteInfo: PlannedBusRouteInfo) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun deletePlannedBusRoute(plannedBusRouteInfo: PlannedBusRouteInfo) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun deleteAllPlannedBusRoutes() {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getAllPlannedBusRoutes(): List<PlannedBusRouteInfoWithBusStopInfo> {
         TODO("Not yet implemented")
     }
 }

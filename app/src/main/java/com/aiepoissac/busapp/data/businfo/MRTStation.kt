@@ -11,11 +11,6 @@ data class MRTStation (
     val type: String,
     @PrimaryKey val stationCode: String,
     val stationName: String,
-    val latitude: Double,
-    val longitude: Double
-): HasCoordinates {
-    override fun getCoordinates(): Pair<Double, Double> {
-        return Pair(latitude, longitude)
-    }
-
-}
+    override val latitude: Double,
+    override val longitude: Double
+): HasCoordinates

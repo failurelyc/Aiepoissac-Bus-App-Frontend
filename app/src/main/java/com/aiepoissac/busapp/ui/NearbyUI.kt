@@ -2,6 +2,7 @@ package com.aiepoissac.busapp.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
@@ -18,13 +19,16 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsBike
 import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.LocationSearching
 import androidx.compose.material.icons.filled.Subway
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
@@ -47,6 +51,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.aiepoissac.busapp.BusApplication
+import com.aiepoissac.busapp.GoogleMapsURLGenerator
 import com.aiepoissac.busapp.data.HasCoordinates
 import com.aiepoissac.busapp.data.businfo.MRTStation
 import com.google.android.gms.maps.model.LatLng
@@ -129,7 +135,11 @@ fun NearbyUI(
                         contents = {
                             BusStopList(
                                 navController = navController,
-                                openDirections = nearbyViewModel::openDirections,
+                                openDirections = {
+                                    nearbyViewModel.openDirections(
+                                        destination = it,
+                                        travelMode = GoogleMapsURLGenerator.TravelMode.Walking
+                                    ) },
                                 updateCameraPosition = nearbyViewModel::setCameraPositionToLocation,
                                 stopLiveLocation = nearbyViewModel::stopLiveLocation,
                                 uiState = nearbyUIState
@@ -145,6 +155,40 @@ fun NearbyUI(
                     )
                 }
 
+                if (!nearbyUIState.showNearbyBusStops && !nearbyUIState.showNearbyMRTStations) {
+                    Row {
+
+                        IconTextSwitch(
+                            icon = Icons.Filled.DirectionsBus,
+                            text = "Bus stops",
+                            showText = false,
+                            checked = nearbyUIState.showNearbyBusStopsOnMap,
+                            onCheckedChange = nearbyViewModel::setShowNearbyBusStopsOnMap,
+                            modifier = Modifier.weight(3f)
+                        )
+
+                        IconTextSwitch(
+                            icon = Icons.AutoMirrored.Filled.DirectionsBike,
+                            text = "Bicycle Parking",
+                            showText = false,
+                            checked = nearbyUIState.showBicycleParkingOnMap,
+                            onCheckedChange = nearbyViewModel::setShowBicycleParkingOnMap,
+                            modifier = Modifier.weight(3f)
+                        )
+
+                        Button(
+                            onClick = nearbyViewModel::recenterCamera,
+                            modifier = Modifier.weight(2f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.LocationSearching,
+                                contentDescription = "Recenter camera"
+                            )
+                        }
+
+                    }
+                }
+
                 GoogleMap(
                     modifier = Modifier.fillMaxWidth(),
                     cameraPositionState = cameraPositionState,
@@ -153,66 +197,136 @@ fun NearbyUI(
                 ) {
 
                     Marker(
-                        state = markerState
+                        state = markerState,
+                        title = "Selected location",
+                        snippet = "${markerState.position.latitude}, ${markerState.position.longitude}"
                     )
 
                     val showMoreDetails = cameraPositionState.position.zoom >= 17f
 
-                    nearbyUIState.busStopList.forEach {
-                        val busStopInfo = it.second.busStopInfo
-                        MarkerComposable(
-                            keys = arrayOf(nearbyUIState.busStopList, showMoreDetails),
-                            state = MarkerState(position = LatLng(busStopInfo.latitude, busStopInfo.longitude)),
-                            onClick = {
-                                nearbyViewModel.stopLiveLocation()
-                                navigateToBusArrival(
-                                    navController = navController,
-                                    busStopInput = busStopInfo.busStopCode
-                                )
-                                return@MarkerComposable true
-                            }
-                        ) {
-                            Card(
-                                modifier = Modifier.widthIn(max = 240.dp)
+                    if (nearbyUIState.showNearbyBusStopsOnMap) {
+                        nearbyUIState.busStopList.forEach {
+                            val busStopInfo = it.second.busStopInfo
+                            MarkerComposable(
+                                keys = arrayOf(nearbyUIState.busStopList, showMoreDetails),
+                                state = MarkerState(position = LatLng(busStopInfo.latitude, busStopInfo.longitude)),
+                                onClick = {
+                                    nearbyViewModel.stopLiveLocation()
+                                    navigateToBusArrival(
+                                        navController = navController,
+                                        busStopInput = busStopInfo.busStopCode
+                                    )
+                                    return@MarkerComposable true
+                                }
                             ) {
-                                if (showMoreDetails) {
-                                    Text(
-                                        text = "${it.second.busStopInfo.busStopCode} ${it.second.busStopInfo.description} (${it.first}m)",
-                                        fontSize = 10.sp,
-                                        modifier = Modifier
-                                            .align(Alignment.CenterHorizontally)
-                                            .padding(horizontal = 2.dp)
-                                    )
+                                Card(
+                                    modifier = Modifier.widthIn(max = 240.dp)
+                                ) {
+                                    if (showMoreDetails) {
+                                        Text(
+                                            text = "${busStopInfo.busStopCode} ${busStopInfo.description} (${it.first}m)",
+                                            fontSize = 10.sp,
+                                            modifier = Modifier
+                                                .align(Alignment.CenterHorizontally)
+                                                .padding(horizontal = 2.dp)
+                                        )
 
-                                    Text(
-                                        text = it.second.busRoutesInfo
-                                            .map{ it.serviceNo }
-                                            .distinct()
-                                            .joinToString(", ")
-                                        ,
-                                        fontSize = 8.sp,
-                                        modifier = Modifier
-                                            .align(Alignment.CenterHorizontally)
-                                            .padding(horizontal = 2.dp)
-                                    )
+                                        Text(
+                                            text = it.second.busRoutesInfo
+                                                .map{ it.serviceNo }
+                                                .distinct()
+                                                .joinToString(", ")
+                                            ,
+                                            fontSize = 8.sp,
+                                            modifier = Modifier
+                                                .align(Alignment.CenterHorizontally)
+                                                .padding(horizontal = 2.dp)
+                                        )
 
 
-                                } else {
-                                    Text(
-                                        text = it.first.toString() + "m",
-                                        fontSize = 8.sp,
-                                        modifier = Modifier
-                                            .align(Alignment.CenterHorizontally)
-                                            .padding(horizontal = 2.dp)
+                                    } else {
+                                        Text(
+                                            text = it.first.toString() + "m",
+                                            fontSize = 8.sp,
+                                            modifier = Modifier
+                                                .align(Alignment.CenterHorizontally)
+                                                .padding(horizontal = 2.dp)
+                                        )
+                                    }
+
+                                    Icon(
+                                        imageVector = Icons.Filled.DirectionsBus,
+                                        contentDescription = "Bus Stop",
+                                        modifier = Modifier.align(Alignment.CenterHorizontally)
                                     )
                                 }
-
-                                Icon(
-                                    imageVector = Icons.Filled.DirectionsBus,
-                                    contentDescription = "Bus Stop",
-                                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                                )
                             }
+                        }
+                    }
+
+                    if (nearbyUIState.showBicycleParkingOnMap) {
+                        val bicycleParkingList = nearbyUIState.bicycleParkingList
+                        if (bicycleParkingList != null) {
+                            bicycleParkingList.forEach {
+                                val bicycleParking = it.second
+                                MarkerComposable(
+                                    keys = arrayOf(bicycleParkingList, showMoreDetails),
+                                    state = MarkerState(position = LatLng(bicycleParking.latitude, bicycleParking.longitude)),
+                                    onClick = {
+                                        nearbyViewModel.openDirections(
+                                            destination = bicycleParking,
+                                            travelMode = GoogleMapsURLGenerator.TravelMode.Bicycling
+                                        )
+                                        return@MarkerComposable true
+                                    }
+                                ) {
+                                    Card(
+                                        modifier = Modifier.widthIn(max = 240.dp)
+                                    ) {
+                                        if (showMoreDetails) {
+                                            Text(
+                                                text = "${bicycleParking.rackCount} (${it.first}m)",
+                                                fontSize = 10.sp,
+                                                modifier = Modifier
+                                                    .align(Alignment.CenterHorizontally)
+                                                    .padding(horizontal = 2.dp)
+                                            )
+
+                                            Text(
+                                                text = "${bicycleParking.rackType} " +
+                                                        if (bicycleParking.hasShelter()) "sheltered" else "",
+                                                fontSize = 8.sp,
+                                                modifier = Modifier
+                                                    .align(Alignment.CenterHorizontally)
+                                                    .padding(horizontal = 2.dp)
+                                            )
+
+
+                                        } else {
+                                            Text(
+                                                text = it.first.toString() + "m",
+                                                fontSize = 8.sp,
+                                                modifier = Modifier
+                                                    .align(Alignment.CenterHorizontally)
+                                                    .padding(horizontal = 2.dp)
+                                            )
+                                        }
+
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.DirectionsBike,
+                                            contentDescription = "Bicycle parking",
+                                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            Toast.makeText(
+                                BusApplication.instance,
+                                "Failed to obtain bicycle parking locations",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            nearbyViewModel.setShowBicycleParkingOnMap(false)
                         }
                     }
                 }

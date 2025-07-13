@@ -207,7 +207,10 @@ private fun HomePageUI(
     navController: NavHostController = rememberNavController()
 ) {
 
-    val homePageViewModel: HomePageViewModel = viewModel()
+    val homePageViewModel: HomePageViewModel =
+        viewModel(
+            factory = HomePageViewModelFactory()
+        )
     val homePageUIState by homePageViewModel.uiState.collectAsState()
 
     if (homePageViewModel.downloaded) {
@@ -303,15 +306,15 @@ private fun HomePageUI(
                         expanded = homePageUIState.busStopSearchBarExpanded,
                         onExpandedChange = homePageViewModel::setBusStopSearchBarExpanded,
                         searchResults = homePageUIState.busStopSearchResult,
-                        onItemClick = { busStop ->
+                        onItemClick = { busStopInfo ->
                             navigateToBusArrival(
                                 navController = navController,
-                                busStopInput = busStop.busStopCode
+                                busStopInput = busStopInfo.busStopCode
                             )
                         },
-                        itemContent = { busStop ->
+                        itemContent = { busStopInfo ->
                             Text(
-                                text = "${busStop.busStopCode} ${busStop.description}",
+                                text = busStopInfo.toString(),
                                 modifier = Modifier.padding(8.dp)
                             )
                         }
@@ -341,15 +344,15 @@ private fun HomePageUI(
                         expanded = homePageUIState.busStopRoadSearchBarExpanded,
                         onExpandedChange = homePageViewModel::setBusStopRoadSearchBarExpanded,
                         searchResults = homePageUIState.busStopRoadSearchResult,
-                        onItemClick = { busStop ->
+                        onItemClick = { busStopInfo ->
                             navigateToBusArrival(
                                 navController = navController,
-                                busStopInput = busStop.busStopCode
+                                busStopInput = busStopInfo.busStopCode
                             )
                         },
-                        itemContent = { busStop ->
+                        itemContent = { busStopInfo ->
                             Text(
-                                text = "${busStop.description} (${busStop.roadName})",
+                                text = "${busStopInfo.description} (${busStopInfo.roadName})",
                                 modifier = Modifier.padding(8.dp)
                             )
                         }

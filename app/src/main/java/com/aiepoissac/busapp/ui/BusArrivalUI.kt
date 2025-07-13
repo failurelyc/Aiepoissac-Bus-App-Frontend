@@ -66,8 +66,11 @@ fun BusArrivalUI(
 ) {
 
     val busArrivalViewModel: BusArrivalViewModel =
-        viewModel(factory = BusArrivalViewModelFactory(
-            busStopCodeInput = busStopCodeInput))
+        viewModel(
+            factory = BusArrivalViewModelFactory(
+                busStopCodeInput = busStopCodeInput
+            )
+        )
 
     val busArrivalUIState by busArrivalViewModel.uiState.collectAsState()
     val configuration = LocalConfiguration.current
@@ -342,7 +345,7 @@ private fun BusStopInformation(
 
         Text(
             fontSize = 24.sp,
-            text = "${busStopInfo.busStopCode} ${busStopInfo.description}",
+            text = busStopInfo.toString(),
             modifier = Modifier.padding(horizontal = 8.dp)
         )
 
