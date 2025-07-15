@@ -228,7 +228,7 @@ class TestBusRepository(
             BusRouteInfo(
                 serviceNo = "1004",
                 direction = 1,
-                stopSequence = 13,
+                stopSequence = 26,
                 busStopCode = "1000169",
                 distance = 12.5
             ),
@@ -641,7 +641,7 @@ class TestBusRepository(
 
     override suspend fun getBusService(serviceNo: String): List<BusServiceInfoWithBusStopInfo> {
         return busServiceList
-            .filter { it.serviceNo == serviceNo }
+            .filter { it.serviceNo.startsWith(serviceNo.filter { it.isDigit() }) }
             .map {
                 BusServiceInfoWithBusStopInfo(
                     busServiceInfo = it,

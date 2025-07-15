@@ -3,6 +3,8 @@ package com.aiepoissac.busapp.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -142,6 +144,8 @@ fun SavedJourneyUI(
     ) { innerPadding ->
         Column(
             modifier = Modifier.padding(innerPadding)
+                .fillMaxSize()
+                .consumeWindowInsets(innerPadding)
         ) {
             Button(
                 modifier = Modifier.fillMaxWidth().padding(8.dp),

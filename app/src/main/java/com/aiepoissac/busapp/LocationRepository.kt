@@ -11,7 +11,7 @@ import com.google.android.gms.location.Priority
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-interface LocationManager {
+interface LocationRepository {
 
     val currentLocation: StateFlow<Location?>
 
@@ -21,7 +21,7 @@ interface LocationManager {
 
 }
 
-class RealLocationManager : LocationManager {
+class RealLocationRepository : LocationRepository {
 
     private val fastRefreshInterval = 2
 

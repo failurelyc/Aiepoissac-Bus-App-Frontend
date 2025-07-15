@@ -10,7 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
-import com.aiepoissac.busapp.LocationManager
+import com.aiepoissac.busapp.LocationRepository
 import com.aiepoissac.busapp.data.busarrival.BusArrivalGetter
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
@@ -39,7 +39,7 @@ import java.time.LocalDateTime
 class BusRouteViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
     private val busArrivalGetter: BusArrivalGetter = BusApplication.instance.container.busArrivalGetter,
-    private val locationManager: LocationManager = BusApplication.instance.container.locationManager,
+    private val locationRepository: LocationRepository = BusApplication.instance.container.locationRepository,
     private val serviceNo: String,
     private val direction: Int,
     private val stopSequence: Int,
@@ -51,7 +51,7 @@ class BusRouteViewModelFactory(
             BusRouteViewModel(
                 busRepository = busRepository,
                 busArrivalGetter = busArrivalGetter,
-                locationManager = locationManager,
+                locationRepository = locationRepository,
                 serviceNo = serviceNo,
                 direction = direction,
                 stopSequence = stopSequence,
@@ -67,7 +67,7 @@ class BusRouteViewModelFactory(
 class BusRouteViewModel(
     private val busRepository: BusRepository,
     private val busArrivalGetter: BusArrivalGetter,
-    private val locationManager: LocationManager,
+    private val locationRepository: LocationRepository,
     serviceNo: String,
     direction: Int,
     stopSequence: Int,
@@ -107,7 +107,7 @@ class BusRouteViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        locationManager.stopFetchingLocation()
+        locationRepository.stopFetchingLocation()
     }
 
     fun updateBusService(busServiceInfo: BusServiceInfo) {
@@ -129,7 +129,7 @@ class BusRouteViewModel(
                         busServiceInfo = busRepository
                             .getBusService(serviceNo = serviceNo, direction = direction),
                         truncated = false,
-                        truncatedAfterLoopingPoint = false,
+                        firstStopIsStartOfLoopingPoint = false,
                         liveBuses = listOf()
                     )
                 }
@@ -171,22 +171,22 @@ class BusRouteViewModel(
 
     fun setFirstBusStop(stopSequence: Int) {
         viewModelScope.launch {
-            if (uiState.value.busRoute.size > 1) {
-                val truncatedRoute = truncateTillBusStop(
-                    route = uiState.value.originalBusRoute,
-                    stopSequence = stopSequence + uiState.value.busStopSequenceOffset
+            val truncatedRoute = truncateTillBusStop(
+                route = uiState.value.originalBusRoute,
+                stopSequence = (stopSequence + uiState.value.busStopSequenceOffset)
+                        % (uiState.value.originalBusRoute.size - 1)
+            )
+            _uiState.update {
+                it.copy(
+                    busRoute = attachDistanceFromCurrentLocation(truncatedRoute),
+                    truncated = true,
+                    firstStopIsStartOfLoopingPoint = false,
+                    busStopSequenceOffset = (stopSequence + uiState.value.busStopSequenceOffset)
+                            % (uiState.value.originalBusRoute.size - 1)
                 )
-                _uiState.update {
-                    it.copy(
-                        busRoute = attachDistanceFromCurrentLocation(truncatedRoute),
-                        truncated = true,
-                        busStopSequenceOffset = (stopSequence + uiState.value.busStopSequenceOffset)
-                                % (uiState.value.originalBusRoute.size - 1))
-                }
-                updateCameraPositionToFirstStop()
-            } else {
-                setOriginalFirstBusStop(truncateAfterLoopingPoint = true)
             }
+            updateCameraPositionToFirstStop()
+
         }
     }
 
@@ -200,7 +200,7 @@ class BusRouteViewModel(
                 it.copy(
                     busRoute = attachDistanceFromCurrentLocation(truncatedRoute.second),
                     truncated = false,
-                    truncatedAfterLoopingPoint = true,
+                    firstStopIsStartOfLoopingPoint = true,
                     busStopSequenceOffset = truncatedRoute.first
                 )
             }
@@ -208,13 +208,13 @@ class BusRouteViewModel(
         }
     }
 
-    fun setOriginalFirstBusStop(truncateAfterLoopingPoint: Boolean) {
+    fun setOriginalFirstBusStop(truncateAfterLoopingPoint: Boolean = false) {
         val busRoute = uiState.value.originalBusRoute
         _uiState.update {
             it.copy(
                 busRoute = attachDistanceFromCurrentLocation(busRoute),
                 truncated = false,
-                truncatedAfterLoopingPoint = false,
+                firstStopIsStartOfLoopingPoint = false,
                 busStopSequenceOffset = 0
             )
         }
@@ -248,10 +248,10 @@ class BusRouteViewModel(
     fun setIsLiveLocation(isLiveLocation: Boolean) {
 
         if (!isLiveLocation) {
-            locationManager.stopFetchingLocation()
+            locationRepository.stopFetchingLocation()
             _uiState.update { it.copy(isLiveLocation = false) }
         } else {
-            locationManager.startFetchingLocation(fastRefresh = true)
+            locationRepository.startFetchingLocation(fastRefresh = true)
             _uiState.update { it.copy(isLiveLocation = true) }
         }
 
@@ -260,9 +260,9 @@ class BusRouteViewModel(
     fun updateLiveLocation() {
         viewModelScope.launch {
             if (uiState.value.isLiveLocation) {
-                locationManager.startFetchingLocation(fastRefresh = true)
+                locationRepository.startFetchingLocation(fastRefresh = true)
             }
-            locationManager.currentLocation
+            locationRepository.currentLocation
                 .filterNotNull()
                 .distinctUntilChanged()
                 .collectLatest { location ->
@@ -315,7 +315,7 @@ class BusRouteViewModel(
 
     private fun attachDistanceFromCurrentLocation(route: List<BusRouteInfoWithBusStopInfo>)
     : List<Pair<Int, BusRouteInfoWithBusStopInfo>> {
-        val location = locationManager.currentLocation.value
+        val location = locationRepository.currentLocation.value
         if (location != null) {
             return attachDistanceFromPoint(LatLong(location.latitude, location.longitude), route)
         } else {
@@ -373,11 +373,6 @@ class BusRouteViewModel(
                                 showLiveBuses = false
                             )
                         }
-                        Toast.makeText(
-                            BusApplication.instance,
-                            "Failed to obtain bus locations",
-                            Toast.LENGTH_SHORT
-                        ).show()
                     }
                 }
             } else {

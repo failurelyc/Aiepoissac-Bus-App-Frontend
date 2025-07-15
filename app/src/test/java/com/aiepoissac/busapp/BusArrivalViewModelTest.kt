@@ -356,7 +356,7 @@ class BusArrivalViewModelTest {
                 BusRouteInfo(
                     serviceNo = "1004",
                     direction = 1,
-                    stopSequence = 13,
+                    stopSequence = 26,
                     busStopCode = "1000169",
                     distance = 12.5
                 )
@@ -419,7 +419,7 @@ class BusArrivalViewModelTest {
                 BusRouteInfo(
                     serviceNo = "1004",
                     direction = 1,
-                    stopSequence = 13,
+                    stopSequence = 26,
                     busStopCode = "1000169",
                     distance = 12.5
                 )

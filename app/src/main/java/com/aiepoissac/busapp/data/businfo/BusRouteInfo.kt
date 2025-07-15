@@ -5,6 +5,7 @@ import com.aiepoissac.busapp.data.HasCoordinates
 import com.aiepoissac.busapp.data.LatLong
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.math.round
 
 @Serializable
 data class BusRoutesInfo(
@@ -74,9 +75,12 @@ private fun addStopSequenceOffset(
     firstStop: BusRouteInfoWithBusStopInfo
 ): List<BusRouteInfoWithBusStopInfo> {
     return route.map { stop ->
-        stop.copy(busRouteInfo = stop.busRouteInfo.copy(
-            stopSequence = stop.busRouteInfo.stopSequence + firstStop.busRouteInfo.stopSequence,
-            distance = stop.busRouteInfo.distance + firstStop.busRouteInfo.distance)
+        stop.copy(
+            busRouteInfo =
+                stop.busRouteInfo.copy(
+                    stopSequence = stop.busRouteInfo.stopSequence + firstStop.busRouteInfo.stopSequence,
+                    distance = round((stop.busRouteInfo.distance + firstStop.busRouteInfo.distance) * 10.0) / 10.0
+                )
         )
     }
 }
@@ -89,7 +93,7 @@ private fun removeStopSequenceOffset(truncatedRoute: List<BusRouteInfoWithBusSto
         return truncatedRoute
             .map { stop ->
                 val adjustedSequence = stop.busRouteInfo.stopSequence - sequenceOffset
-                val adjustedDistance = stop.busRouteInfo.distance - distanceOffset
+                val adjustedDistance = round((stop.busRouteInfo.distance - distanceOffset) * 10.0) / 10.0
                 stop.copy(busRouteInfo = stop.busRouteInfo.copy(
                     stopSequence = adjustedSequence,
                     distance = adjustedDistance)

@@ -17,6 +17,7 @@ materialIconsExtended = "<latest-version>"
 navigationCompose = "2.9.0"
 navigationComposeAndroid = "2.9.0"
 playServicesLocation = "21.3.0"
+robolectric = "4.10.3"
 roomRuntime = "2.7.1"
 
 [libraries]
@@ -47,6 +48,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 androidx-navigation-compose-android = { group = "androidx.navigation", name = "navigation-compose-android", version.ref = "navigationComposeAndroid" }
 maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "mapsCompose" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

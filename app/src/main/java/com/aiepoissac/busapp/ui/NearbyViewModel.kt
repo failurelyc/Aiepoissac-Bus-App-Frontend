@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.GoogleMapsURLGenerator
-import com.aiepoissac.busapp.LocationManager
+import com.aiepoissac.busapp.LocationRepository
 import com.aiepoissac.busapp.data.HasCoordinates
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.LatLong
@@ -31,7 +31,7 @@ import java.io.IOException
 
 class NearbyViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
-    private val locationManager: LocationManager = BusApplication.instance.container.locationManager,
+    private val locationRepository: LocationRepository = BusApplication.instance.container.locationRepository,
     private val bicycleParkingGetter: BicycleParkingGetter = BusApplication.instance.container.bicycleParkingGetter,
     private val latitude: Double = 1.290270,
     private val longitude: Double = 103.851959,
@@ -43,7 +43,7 @@ class NearbyViewModelFactory(
         return if (modelClass.isAssignableFrom(NearbyViewModel::class.java)) {
             NearbyViewModel(
                 busRepository = busRepository,
-                locationManager = locationManager,
+                locationRepository = locationRepository,
                 bicycleParkingGetter = bicycleParkingGetter,
                 point = LatLong(latitude, longitude),
                 distanceThreshold = distanceThreshold,
@@ -58,7 +58,7 @@ class NearbyViewModelFactory(
 
 class NearbyViewModel(
     private val busRepository: BusRepository,
-    private val locationManager: LocationManager,
+    private val locationRepository: LocationRepository,
     private val bicycleParkingGetter: BicycleParkingGetter,
     point: LatLong,
     isLiveLocation: Boolean,
@@ -92,7 +92,7 @@ class NearbyViewModel(
     init {
         viewModelScope.launch {
             if (!isLiveLocation) {
-                locationManager.stopFetchingLocation()
+                locationRepository.stopFetchingLocation()
                 updateLocation(point)
             }
         }
@@ -100,7 +100,7 @@ class NearbyViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        locationManager.stopFetchingLocation()
+        locationRepository.stopFetchingLocation()
     }
 
     fun toggleFreezeLocation() {
@@ -108,14 +108,14 @@ class NearbyViewModel(
         if (uiState.value.isLiveLocation) {
             stopLiveLocation()
         } else {
-                locationManager.startFetchingLocation(fastRefresh = false)
+                locationRepository.startFetchingLocation(fastRefresh = false)
                 _uiState.update { it.copy(isLiveLocation = true) }
 
         }
     }
 
     fun stopLiveLocation() {
-        locationManager.stopFetchingLocation()
+        locationRepository.stopFetchingLocation()
         _uiState.update { it.copy(isLiveLocation = false) }
     }
 
@@ -149,9 +149,9 @@ class NearbyViewModel(
     fun updateLiveLocation() {
         viewModelScope.launch {
             if (uiState.value.isLiveLocation) {
-                locationManager.startFetchingLocation(fastRefresh = false)
+                locationRepository.startFetchingLocation(fastRefresh = false)
             }
-            locationManager.currentLocation
+            locationRepository.currentLocation
                 .filterNotNull()
                 .distinctUntilChanged()
                 .collectLatest { location ->

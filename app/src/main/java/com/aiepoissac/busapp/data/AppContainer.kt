@@ -1,8 +1,8 @@
 package com.aiepoissac.busapp.data
 
 import android.content.Context
-import com.aiepoissac.busapp.LocationManager
-import com.aiepoissac.busapp.RealLocationManager
+import com.aiepoissac.busapp.LocationRepository
+import com.aiepoissac.busapp.RealLocationRepository
 import com.aiepoissac.busapp.data.bicycle.BicycleParkingGetter
 import com.aiepoissac.busapp.data.bicycle.RealBicycleParkingGetter
 import com.aiepoissac.busapp.data.busarrival.BusArrivalGetter
@@ -19,7 +19,7 @@ interface AppContainer {
     val userDataRepository: UserDataRepository
     val busArrivalGetter: BusArrivalGetter
     val bicycleParkingGetter: BicycleParkingGetter
-    val locationManager: LocationManager
+    val locationRepository: LocationRepository
 }
 
 class AppDataContainer(private val context: Context): AppContainer {
@@ -45,5 +45,5 @@ class AppDataContainer(private val context: Context): AppContainer {
 
     override val bicycleParkingGetter: BicycleParkingGetter by lazy { RealBicycleParkingGetter() }
 
-    override val locationManager: LocationManager by lazy { RealLocationManager() }
+    override val locationRepository: LocationRepository by lazy { RealLocationRepository() }
 }

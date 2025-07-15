@@ -3,6 +3,10 @@ package com.aiepoissac.busapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.ui.Modifier
 import com.aiepoissac.busapp.ui.BusApp
 import com.aiepoissac.busapp.ui.theme.AiepoissacBusAppTheme
 
@@ -10,12 +14,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-
+        enableEdgeToEdge()
 
         setContent {
-            AiepoissacBusAppTheme {
-                BusApp()
+            Box(Modifier.safeDrawingPadding()) {
+                AiepoissacBusAppTheme {
+                    BusApp()
+                }
             }
         }
     }

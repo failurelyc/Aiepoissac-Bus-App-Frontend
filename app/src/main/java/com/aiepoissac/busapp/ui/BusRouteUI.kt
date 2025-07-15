@@ -4,6 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -154,6 +156,8 @@ fun BusRouteUI(
     ) { innerPadding ->
         Column(
             modifier = Modifier.padding(innerPadding)
+                .fillMaxSize()
+                .consumeWindowInsets(innerPadding)
         ) {
             BusRouteList(
                 navController = navController,
@@ -280,7 +284,7 @@ private fun BusRouteList(
                             "to ${data.last().second.busStopInfo.busStopCode} ${data.last().second.busStopInfo.description} is shown",
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
-            } else if (uiState.truncatedAfterLoopingPoint) {
+            } else if (uiState.firstStopIsStartOfLoopingPoint) {
                 Text(
                     text = "Route from looping point is shown.",
                     modifier = Modifier.padding(horizontal = 8.dp)
@@ -296,7 +300,7 @@ private fun BusRouteList(
         Row (
             modifier = Modifier.padding(4.dp)
         ) {
-            if (uiState.truncated || uiState.truncatedAfterLoopingPoint) {
+            if (uiState.truncated || uiState.firstStopIsStartOfLoopingPoint) {
                 Button(
                     onClick = revertButtonOnClick,
                     modifier = Modifier.weight(1f)
@@ -309,7 +313,7 @@ private fun BusRouteList(
             }
 
             if ((isLoop(uiState.originalBusRoute) &&
-                        ((!uiState.truncated && !uiState.truncatedAfterLoopingPoint) ||
+                        ((!uiState.truncated && !uiState.firstStopIsStartOfLoopingPoint) ||
                                 uiState.truncated))) {
                 Button(
                     onClick = showRouteFromLoopingPointOnClick,
@@ -409,7 +413,7 @@ private fun BusRouteList(
                         if (zoomedIn) {
                             Card {
                                 Text(
-                                    text = "${busRouteInfo.stopSequence} (${String.format("%.1f km", busRouteInfo.distance)})",
+                                    text = "${busRouteInfo.stopSequence} (${busRouteInfo.distance}km)",
                                     fontSize = 8.sp,
                                     modifier = Modifier.align(Alignment.CenterHorizontally)
                                 )
@@ -513,7 +517,7 @@ private fun BusRouteInformation(
             )
 
             Text(
-                text = String.format("%.1f km", data.second.busRouteInfo.distance),
+                text = "${data.second.busRouteInfo.distance}km",
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
