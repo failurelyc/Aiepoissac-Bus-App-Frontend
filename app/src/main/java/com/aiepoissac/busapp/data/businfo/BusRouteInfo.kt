@@ -5,6 +5,9 @@ import com.aiepoissac.busapp.data.HasCoordinates
 import com.aiepoissac.busapp.data.LatLong
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import kotlin.math.round
 
 @Serializable
@@ -31,7 +34,60 @@ data class BusRouteInfo (
     @SerialName("SAT_LastBus") val satLastBus: String = "",
     @SerialName("SUN_FirstBus") val sunFirstBus: String = "",
     @SerialName("SUN_LastBus") val sunLastBus: String = ""
-)
+) {
+
+    fun isOperatingOnWeekday(): Boolean {
+        return getTime(wdLastBus) != null && getTime(wdFirstBus) != null
+    }
+
+    fun isOperatingOnSaturday(): Boolean {
+        return getTime(satLastBus) != null && getTime(satFirstBus) != null
+    }
+
+    fun isOperatingOnSunday(): Boolean {
+        return getTime(sunLastBus) != null && getTime(sunFirstBus) != null
+    }
+
+    fun isOperatingOnWeekday(time: LocalTime): Boolean {
+        return isOperatingAtThisTime(time, getTime(wdFirstBus), getTime(wdLastBus))
+    }
+
+    fun isOperatingOnSaturday(time: LocalTime): Boolean {
+        return isOperatingAtThisTime(time, getTime(satFirstBus), getTime(satLastBus))
+    }
+
+    fun isOperatingOnSunday(time: LocalTime): Boolean {
+        return isOperatingAtThisTime(time, getTime(sunFirstBus), getTime(sunLastBus))
+    }
+
+    private fun isOperatingAtThisTime(time: LocalTime, firstBusTiming: LocalTime?, lastBusTiming: LocalTime?): Boolean {
+        if (firstBusTiming == null || lastBusTiming == null) {
+            return false
+        } else {
+            val beforeFirstBusTiming = firstBusTiming.minusMinutes(30)
+            return when {
+                //firstBusTiming == lastBusTiming -> true
+                lastBusTiming.isAfter(beforeFirstBusTiming) -> {
+                    // Same-day interval
+                    !time.isBefore(beforeFirstBusTiming) && !time.isAfter(lastBusTiming)
+                }
+                else -> {
+                    // Interval spans past midnight
+                    !time.isBefore(beforeFirstBusTiming) || !time.isAfter(lastBusTiming)
+                }
+            }
+        }
+    }
+}
+
+fun getTime(s: String): LocalTime? {
+    try {
+        val timeFormat = DateTimeFormatter.ofPattern("HHmm")
+        return LocalTime.parse(s, timeFormat)
+    } catch (e: DateTimeParseException) {
+        return null
+    }
+}
 
 fun isLoop(route: List<BusRouteInfoWithBusStopInfo>): Boolean {
     return route.first().busStopInfo.description == route.last().busStopInfo.description ||

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -32,12 +33,17 @@ import androidx.compose.material.icons.filled.LocationSearching
 import androidx.compose.material.icons.filled.Subway
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -50,6 +56,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -62,7 +69,10 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.MarkerState
+import java.time.DayOfWeek
+import java.util.Calendar
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NearbyUI(
     navController: NavHostController,
@@ -143,10 +153,16 @@ fun NearbyUI(
                                     nearbyViewModel.openDirections(
                                         destination = it,
                                         travelMode = GoogleMapsURLGenerator.TravelMode.Walking
-                                    ) },
+                                    )
+                                },
                                 updateCameraPosition = nearbyViewModel::setCameraPositionToLocation,
                                 stopLiveLocation = nearbyViewModel::stopLiveLocation,
-                                uiState = nearbyUIState
+                                uiState = nearbyUIState,
+                                showOnlyOperatingBusServices = nearbyUIState.showOnlyOperatingBusServices,
+                                showOnlyOperatingBusServicesOnCheckedChange = nearbyViewModel::setShowOnlyOperatingBusServices,
+                                setDayOfWeek = nearbyViewModel::setDayOfWeek,
+                                setShowTimeDial = nearbyViewModel::setShowTimeDial,
+                                updateTime = nearbyViewModel::updateTime
                             )
                         },
                         leadingIcon = {
@@ -206,7 +222,8 @@ fun NearbyUI(
                         snippet = "${markerState.position.latitude}, ${markerState.position.longitude}"
                     )
 
-                    val showMoreDetails = cameraPositionState.position.zoom >= 17f
+                    val showMoreDetails = cameraPositionState.position.zoom >= 17f &&
+                            !(nearbyUIState.showNearbyBusStops && nearbyUIState.showNearbyMRTStations)
 
                     if (nearbyUIState.showNearbyBusStopsOnMap) {
                         nearbyUIState.busStopList.forEach {
@@ -238,7 +255,6 @@ fun NearbyUI(
                                         Text(
                                             text = it.second.busRoutesInfo
                                                 .map{ it.serviceNo }
-                                                .distinct()
                                                 .joinToString(", ")
                                             ,
                                             fontSize = 8.sp,
@@ -336,22 +352,29 @@ fun NearbyUI(
                 }
 
             } else {
-                Text(
-                    text = "Loading",
-                    textAlign = TextAlign.Center,
-                    fontSize = 24.sp,
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
-                )
-                CircularProgressIndicator(
-                    modifier = Modifier.width(64.dp)
-                        .align(Alignment.CenterHorizontally),
-                    color = MaterialTheme.colorScheme.secondary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                )
+                LoadingScreen(description = "Loading nearby bus and MRT stations")
             }
         }
+    }
+}
+
+@Composable
+fun LoadingScreen(description: String) {
+    Column {
+        Text(
+            text = description,
+            textAlign = TextAlign.Center,
+            fontSize = 24.sp,
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        )
+        CircularProgressIndicator(
+            modifier = Modifier.width(64.dp)
+                .align(Alignment.CenterHorizontally),
+            color = MaterialTheme.colorScheme.secondary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
     }
 }
 
@@ -420,7 +443,8 @@ private fun MRTStationList(
 
     if (data.isNotEmpty()) {
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 160.dp)
+            columns = GridCells.Adaptive(minSize = 160.dp),
+            modifier = Modifier.heightIn(max = 320.dp)
         ) {
             items(data) { mrtStation ->
                 Card(
@@ -465,20 +489,79 @@ private fun MRTStationList(
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BusStopList(
     navController: NavHostController,
     openDirections: (HasCoordinates) -> Unit,
     updateCameraPosition: (HasCoordinates) -> Unit,
     stopLiveLocation: () -> Unit,
+    showOnlyOperatingBusServices: Boolean,
+    showOnlyOperatingBusServicesOnCheckedChange: (Boolean) -> Unit,
+    setDayOfWeek: () -> Unit,
+    setShowTimeDial: (Boolean) -> Unit,
+    updateTime: (TimePickerState) -> Unit,
     uiState: NearbyUIState
 ) {
 
     val data = uiState.busStopList
 
-    if (data.isNotEmpty()) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text = "Only show bus services operating",
+            modifier = Modifier.padding(horizontal = 4.dp)
+                .align(Alignment.CenterVertically)
+        )
+        Checkbox(
+            checked = showOnlyOperatingBusServices,
+            onCheckedChange = showOnlyOperatingBusServicesOnCheckedChange
+        )
+    }
+
+
+    if (uiState.showOnlyOperatingBusServices) {
+
+        if (uiState.showTimeDial) {
+            DialUseStateExample(
+                onConfirm = updateTime,
+                onDismiss = { setShowTimeDial(false) }
+            )
+        }
+
+        val day =
+            when (uiState.dayOfWeek) {
+                DayOfWeek.SATURDAY -> "Saturdays"
+                DayOfWeek.SUNDAY -> "Sundays and Public Holidays"
+                else -> "Weekdays"
+            }
+
+        Text(
+            text = "$day (5am to 3am)",
+            modifier = Modifier.padding(horizontal = 4.dp)
+                .fillMaxWidth()
+                .clickable {
+                    setDayOfWeek()
+                }
+        )
+
+        Text(
+            text = "Time: ${uiState.currentTime} (click to change)",
+            modifier = Modifier.padding(horizontal = 4.dp)
+                .fillMaxWidth()
+                .clickable {
+                    setShowTimeDial(true)
+                }
+        )
+    }
+
+    if (uiState.searchingForBusStops) {
+        LoadingScreen(description = "Searching for bus stops")
+    } else if (data.isNotEmpty()) {
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 320.dp)
+            columns = GridCells.Adaptive(minSize = 320.dp),
+            modifier = Modifier.heightIn(max = 320.dp)
         ) {
             items(data) { busStop ->
                 val busStopInfo = busStop.second.busStopInfo
@@ -503,7 +586,8 @@ private fun BusStopList(
                             )
                             Text(
                                 text = "${busStopInfo.roadName} (${busStop.first}m)",
-                                modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth()
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                                    .fillMaxWidth()
                             )
                         }
 
@@ -532,8 +616,7 @@ private fun BusStopList(
                     Text(
                         text = busStop.second.busRoutesInfo
                             .map{ it.serviceNo }
-                            .distinct()
-                            .joinToString(", ")
+                            .joinToString(separator = ", ")
                         ,
                         modifier = Modifier.padding(horizontal = 8.dp)
                     )
@@ -543,12 +626,43 @@ private fun BusStopList(
         }
     } else {
         Text(
-            text = "No nearby Bus Stops",
+            text = "No nearby bus stops. Try another location.",
             fontSize = 24.sp,
             modifier = Modifier.padding(8.dp)
         )
     }
 
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DialUseStateExample(
+    onConfirm: (TimePickerState) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismiss
+    ) {
+        val currentTime = Calendar.getInstance()
+
+        val timePickerState = rememberTimePickerState(
+            initialHour = currentTime.get(Calendar.HOUR_OF_DAY),
+            initialMinute = currentTime.get(Calendar.MINUTE),
+            is24Hour = true,
+        )
+
+        Column {
+            TimePicker(
+                state = timePickerState,
+            )
+            Button(onClick = onDismiss) {
+                Text("Dismiss picker")
+            }
+            Button(onClick = { onConfirm(timePickerState) }) {
+                Text("Confirm selection")
+            }
+        }
+    }
 }
 
 private fun navigateToBusToMRTStations(

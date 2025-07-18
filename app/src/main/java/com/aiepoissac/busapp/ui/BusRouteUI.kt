@@ -128,7 +128,12 @@ fun BusRouteUI(
                         busRouteUIState.busServiceVariants.forEach {
 
                             Card(
-                                onClick = { busRouteViewModel.updateBusService(it.busServiceInfo) },
+                                onClick = {
+                                    busRouteViewModel.updateBusService(it.busServiceInfo)
+                                    MainScope().launch {
+                                        gridState.scrollToItem(0)
+                                    }
+                                          },
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(
@@ -372,19 +377,30 @@ private fun BusRouteList(
                 if (uiState.showLiveBuses) {
                     uiState.liveBuses.forEach {
                         MarkerComposable(
-                            keys = arrayOf(uiState.liveBuses, zoomedIn),
+                            keys = arrayOf(uiState.liveBuses, zoomedIn, data.first()),
                             state = MarkerState(position = LatLng(it.latitude, it.longitude))
                         ) {
                             Surface(
                                 color = getBusArrivalColor(it, isSystemInDarkTheme())
                             ) {
 
-                                Image(
-                                    painter = painterResource(id = busTypeToPicture(it)),
-                                    contentDescription = "Live bus",
-                                    modifier = if (zoomedIn) Modifier.heightIn(max = 50.dp).widthIn(max = 50.dp)
+                                Column {
+                                    Image(
+                                        painter = painterResource(id = busTypeToPicture(it)),
+                                        contentDescription = "Live bus",
+                                        modifier = if (zoomedIn) Modifier.heightIn(max = 50.dp).widthIn(max = 50.dp)
                                         else Modifier.heightIn(max = 25.dp).widthIn(max = 25.dp)
-                                )
+                                    )
+
+                                    if (zoomedIn) {
+                                        Text(
+                                            text = it.getDistanceFrom(data.first().second.busStopInfo).toString() + "m",
+                                            color = Color.Black,
+                                            fontSize = 10.sp,
+                                            modifier = Modifier.padding(horizontal = 4.dp)
+                                        )
+                                    }
+                                }
 
                             }
                         }
@@ -513,13 +529,15 @@ private fun BusRouteInformation(
                 text = data.second.busRouteInfo.stopSequence.toString(),
                 fontSize = if (uiState.showFirstLastBus) 24.sp else 18.sp,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                maxLines = 1
             )
 
             Text(
                 text = "${data.second.busRouteInfo.distance}km",
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                maxLines = 1
             )
         }
         Card(
@@ -551,23 +569,29 @@ private fun BusRouteInformation(
             )
 
             if (uiState.showFirstLastBus) {
-                Text(
-                    text = "WEEKDAY: ${busRouteInfo.wdFirstBus} to ${busRouteInfo.wdLastBus}",
-                    textAlign = TextAlign.Left,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
-                )
+                if (busRouteInfo.isOperatingOnWeekday()) {
+                    Text(
+                        text = "WEEKDAY: ${busRouteInfo.wdFirstBus} to ${busRouteInfo.wdLastBus}",
+                        textAlign = TextAlign.Left,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                    )
+                }
 
-                Text(
-                    text = "SATURDAY: ${busRouteInfo.satFirstBus} to ${busRouteInfo.satLastBus}",
-                    textAlign = TextAlign.Left,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
-                )
+                if (busRouteInfo.isOperatingOnSaturday()) {
+                    Text(
+                        text = "SATURDAY: ${busRouteInfo.satFirstBus} to ${busRouteInfo.satLastBus}",
+                        textAlign = TextAlign.Left,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                    )
+                }
 
-                Text(
-                    text = "SUNDAY: ${busRouteInfo.sunFirstBus} to ${busRouteInfo.sunLastBus}",
-                    textAlign = TextAlign.Left,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
-                )
+                if (busRouteInfo.isOperatingOnSunday()) {
+                    Text(
+                        text = "SUNDAY/PH: ${busRouteInfo.sunFirstBus} to ${busRouteInfo.sunLastBus}",
+                        textAlign = TextAlign.Left,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                    )
+                }
             }
         }
     }

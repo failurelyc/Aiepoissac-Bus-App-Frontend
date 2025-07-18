@@ -228,6 +228,9 @@ class BusRouteViewModel(
         _uiState.update {
             it.copy(showMap = showMap)
         }
+        if (!showMap) {
+            setShowLiveBuses(false)
+        }
     }
 
     fun setShowLiveBuses(showLiveBuses: Boolean) {
@@ -235,6 +238,7 @@ class BusRouteViewModel(
             it.copy(showLiveBuses = showLiveBuses)
         }
         if (showLiveBuses) {
+            setShowMap(true)
             refreshLiveBuses()
         }
     }
@@ -326,7 +330,7 @@ class BusRouteViewModel(
     fun refreshLiveBuses() {
         val busServiceInfo = uiState.value.busServiceInfo
         if (busServiceInfo != null && uiState.value.showLiveBuses) {
-            val threshold = 20
+            val threshold = 10
             val currentTime = LocalDateTime.now()
             val difference = Duration.between(lastTimeRefreshPressed, currentTime).seconds
             if (difference > threshold) {

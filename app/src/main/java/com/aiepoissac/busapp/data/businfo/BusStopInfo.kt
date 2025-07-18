@@ -35,14 +35,12 @@ data class BusStopInfo (
 suspend fun findNearbyBusStops(
     point: HasCoordinates,
     busRepository: BusRepository,
-    distanceThreshold: Int,
-    limit: Int = Int.MAX_VALUE
+    distanceThreshold: Int
 ): List<Pair<Int, BusStopInfo>> {
     return busRepository
         .getAllBusStops()
         .map { Pair(it.distanceFromInMetres(point), it) }
         .filter { it.first < distanceThreshold }
         .sortedBy { it.first }
-        .take(limit)
 }
 

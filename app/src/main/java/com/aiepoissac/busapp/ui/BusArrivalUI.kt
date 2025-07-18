@@ -385,17 +385,20 @@ private fun BusStopInformation(
                             text = route.serviceNo,
                             fontSize = 24.sp,
                             textAlign = TextAlign.Center,
+                            maxLines = 1,
                             modifier = Modifier.fillMaxWidth()
                         )
                         Text(
                             text = route.operator,
                             textAlign = TextAlign.Center,
+                            maxLines = 1,
                             modifier = Modifier.fillMaxWidth()
                         )
                         Text(
                             text = "Direction: ${route.direction}",
                             textAlign = TextAlign.Center,
                             fontSize = 10.sp,
+                            maxLines = 1,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -405,19 +408,19 @@ private fun BusStopInformation(
                             modifier = Modifier.weight(4f)
                         ) {
                             Text(
-                                text = "WEEKDAY: ${route.wdFirstBus} to ${route.wdLastBus}",
+                                text = "Weekdays: ${route.wdFirstBus} to ${route.wdLastBus}",
                                 textAlign = TextAlign.Left,
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
                             )
 
                             Text(
-                                text = "SATURDAY: ${route.satFirstBus} to ${route.satLastBus}",
+                                text = "Saturdays: ${route.satFirstBus} to ${route.satLastBus}",
                                 textAlign = TextAlign.Left,
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
                             )
 
                             Text(
-                                text = "SUNDAY: ${route.sunFirstBus} to ${route.sunLastBus}",
+                                text = "Sundays and PH: ${route.sunFirstBus} to ${route.sunLastBus}",
                                 textAlign = TextAlign.Left,
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
                             )
@@ -454,10 +457,7 @@ private fun BusArrivalsList(
                 icon = Icons.Filled.MobiledataOff
             )
         } else if (data == null) {
-            ErrorMessage(
-                text = "Loading bus arrivals",
-                icon = Icons.Filled.Download
-            )
+            LoadingScreen(description = "Loading bus arrivals")
         } else if (data.isNotEmpty()){
             PullToRefreshBox(
                 isRefreshing = uiState.isRefreshing,
