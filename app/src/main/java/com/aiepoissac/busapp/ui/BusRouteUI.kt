@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -213,7 +214,7 @@ private fun BusRouteList(
     val configuration = LocalConfiguration.current
 
     if (busServiceInfo != null) {
-        if (configuration.orientation == 1) {
+        if (configuration.orientation == 1 && !uiState.showMap) {
 
             Text(
                 text = "${busServiceInfo.operator} ${busServiceInfo.category} ${busServiceInfo.serviceNo}",
@@ -233,74 +234,76 @@ private fun BusRouteList(
                 )
             }
 
-            Row (
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        }
 
+        Row (
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            IconTextSwitch(
+                icon = if (uiState.isLiveLocation) Icons.Filled.LocationOn else Icons.Filled.LocationOff,
+                text = "location",
+                showText = false,
+                modifier = Modifier.weight(1f),
+                checked = uiState.isLiveLocation,
+                onCheckedChange = setIsLiveLocationOnClick
+            )
+
+            if (!uiState.showMap) {
                 IconTextSwitch(
-                    icon = if (uiState.isLiveLocation) Icons.Filled.LocationOn else Icons.Filled.LocationOff,
-                    text = "location",
+                    icon = Icons.Filled.AccessTime,
+                    text = "First/Last bus timing",
                     showText = false,
                     modifier = Modifier.weight(1f),
-                    checked = uiState.isLiveLocation,
-                    onCheckedChange = setIsLiveLocationOnClick
-                )
-
-                if (!uiState.showMap) {
-                    IconTextSwitch(
-                        icon = Icons.Filled.AccessTime,
-                        text = "First/Last bus timing",
-                        showText = false,
-                        modifier = Modifier.weight(1f),
-                        checked = uiState.showFirstLastBus,
-                        onCheckedChange = setShowFirstLastBusOnClick
-                    )
-                } else {
-                    IconTextSwitch(
-                        icon = Icons.Filled.DepartureBoard,
-                        text = "Live buses",
-                        showText = false,
-                        modifier = Modifier.weight(1f),
-                        checked = uiState.showLiveBuses,
-                        onCheckedChange = setShowLiveBusesOnClick
-                    )
-                }
-
-                IconTextSwitch(
-                    icon = Icons.Filled.Map,
-                    text = "Map",
-                    showText = false,
-                    modifier = Modifier.weight(1f),
-                    checked = uiState.showMap,
-                    onCheckedChange = setShowMapOnClick
-                )
-
-                Text(
-                    text = "${if (uiState.isLiveLocation) uiState.currentSpeed else "-"}km/h",
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f)
-                )
-
-            }
-
-            if (uiState.truncated) {
-                Text(
-                    text = "Route from ${data.first().second.busStopInfo.busStopCode} ${data.first().second.busStopInfo.description} " +
-                            "to ${data.last().second.busStopInfo.busStopCode} ${data.last().second.busStopInfo.description} is shown",
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-            } else if (uiState.firstStopIsStartOfLoopingPoint) {
-                Text(
-                    text = "Route from looping point is shown.",
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                    checked = uiState.showFirstLastBus,
+                    onCheckedChange = setShowFirstLastBusOnClick
                 )
             } else {
-                Text(
-                    text = "Full route is shown.",
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                IconTextSwitch(
+                    icon = Icons.Filled.DepartureBoard,
+                    text = "Live buses",
+                    showText = false,
+                    modifier = Modifier.weight(1f),
+                    checked = uiState.showLiveBuses,
+                    onCheckedChange = setShowLiveBusesOnClick
                 )
             }
+
+            IconTextSwitch(
+                icon = Icons.Filled.Map,
+                text = "Map",
+                showText = false,
+                modifier = Modifier.weight(1f),
+                checked = uiState.showMap,
+                onCheckedChange = setShowMapOnClick
+            )
+
+            Text(
+                text = "${if (uiState.isLiveLocation) uiState.currentSpeed else "-"}km/h",
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f)
+            )
+
         }
+
+        if (uiState.truncated) {
+            Text(
+                text = "Route from ${data.first().second.busStopInfo.busStopCode} ${data.first().second.busStopInfo.description} " +
+                        "to ${data.last().second.busStopInfo.busStopCode} ${data.last().second.busStopInfo.description} is shown",
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        } else if (uiState.firstStopIsStartOfLoopingPoint) {
+            Text(
+                text = "Route from looping point is shown.",
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        } else {
+            Text(
+                text = "Full route is shown.",
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        }
+
 
         Row (
             modifier = Modifier.padding(4.dp)
@@ -317,9 +320,9 @@ private fun BusRouteList(
                 }
             }
 
-            if ((isLoop(uiState.originalBusRoute) &&
+            if (configuration.orientation == 1 && isLoop(uiState.originalBusRoute) &&
                         ((!uiState.truncated && !uiState.firstStopIsStartOfLoopingPoint) ||
-                                uiState.truncated))) {
+                                uiState.truncated)) {
                 Button(
                     onClick = showRouteFromLoopingPointOnClick,
                     modifier = Modifier.weight(1f)
@@ -333,9 +336,11 @@ private fun BusRouteList(
             }
         }
 
-        if (!uiState.showMap) {
+        if (configuration.orientation == 1 || !uiState.showMap) {
             LazyVerticalGrid(
-                modifier = Modifier,
+                modifier = Modifier.heightIn(
+                    max = if (uiState.showMap) 160.dp else Dp.Unspecified
+                ),
                 state = gridState,
                 columns = GridCells.Adaptive(minSize = 320.dp)
             ) {
@@ -350,14 +355,9 @@ private fun BusRouteList(
                     )
                 }
             }
-        } else {
+        }
 
-            if (uiState.showLiveBuses) {
-                Text(
-                    text = "Maximum of three buses shown within 3km intervals.",
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-            }
+        if (uiState.showMap) {
 
             GoogleMap(
                 modifier = Modifier.fillMaxWidth(),
@@ -380,29 +380,13 @@ private fun BusRouteList(
                             keys = arrayOf(uiState.liveBuses, zoomedIn, data.first()),
                             state = MarkerState(position = LatLng(it.latitude, it.longitude))
                         ) {
-                            Surface(
-                                color = getBusArrivalColor(it, isSystemInDarkTheme())
-                            ) {
 
-                                Column {
-                                    Image(
-                                        painter = painterResource(id = busTypeToPicture(it)),
-                                        contentDescription = "Live bus",
-                                        modifier = if (zoomedIn) Modifier.heightIn(max = 50.dp).widthIn(max = 50.dp)
-                                        else Modifier.heightIn(max = 25.dp).widthIn(max = 25.dp)
-                                    )
-
-                                    if (zoomedIn) {
-                                        Text(
-                                            text = it.getDistanceFrom(data.first().second.busStopInfo).toString() + "m",
-                                            color = Color.Black,
-                                            fontSize = 10.sp,
-                                            modifier = Modifier.padding(horizontal = 4.dp)
-                                        )
-                                    }
-                                }
-
-                            }
+                            BusArrivalLayout(
+                                data = it,
+                                hasCoordinates = uiState.busRoute.first().second.busStopInfo,
+                                modifier = Modifier,
+                                showBusType = true,
+                            )
                         }
                     }
                 }
@@ -484,8 +468,6 @@ private fun BusRouteList(
                         }
 
                     }
-
-
 
             }
 

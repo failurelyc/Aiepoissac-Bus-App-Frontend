@@ -186,7 +186,7 @@ class BusRouteViewModel(
                 )
             }
             updateCameraPositionToFirstStop()
-
+            refreshLiveBuses()
         }
     }
 
@@ -330,40 +330,22 @@ class BusRouteViewModel(
     fun refreshLiveBuses() {
         val busServiceInfo = uiState.value.busServiceInfo
         if (busServiceInfo != null && uiState.value.showLiveBuses) {
-            val threshold = 10
+            val threshold = 5
             val currentTime = LocalDateTime.now()
             val difference = Duration.between(lastTimeRefreshPressed, currentTime).seconds
             if (difference > threshold) {
                 viewModelScope.launch {
                     try {
-                        var previousDistance = 0.0
-                        val secondLastStopSequence = uiState.value.originalBusRoute.size - 2
-                        val liveBuses = uiState.value.originalBusRoute
-                            .filter {
-                                val distance = it.busRouteInfo.distance
-                                if (distance > previousDistance + 3 //check points that are >3km apart
-                                    || it.busRouteInfo.stopSequence == secondLastStopSequence) {
-                                    previousDistance = distance
-                                    return@filter true
-                                } else {
-                                    return@filter false
-                                }
-                            }
-                            .map {
-                                busArrivalGetter.getBusArrival(it.busStopInfo.busStopCode)
-                                    .getBusArrivalsOfASingleService(busServiceInfo.serviceNo)
-                            }
-                            .filter { //remove the bus stops that the service serves twice in different direction
-                                it.size == 1
-                            }
-                            .flatten()
-                            .flatMap {
-                                listOf(it.nextBus, it.nextBus2, it.nextBus3)
-                            }
-                            .filter {
-                                it.isLive()
-                            }
-                            .distinctBy { it.getCoordinates() }
+
+                        val firstStop = uiState.value.busRoute.first().second.busStopInfo
+                        val lastStop = uiState.value.originalBusRoute.last().busStopInfo
+
+                        val liveBuses = busArrivalGetter
+                            .getBusArrival(firstStop.busStopCode)
+                            .getBusArrivalsOfASingleService(serviceNo = busServiceInfo.serviceNo)
+                            .flatMap { listOf(it.nextBus, it.nextBus2, it.nextBus3) }
+                            .filter { it.isLive() && it.destinationCode == lastStop.busStopCode }
+
                         _uiState.update {
                             it.copy(
                                 liveBuses = liveBuses

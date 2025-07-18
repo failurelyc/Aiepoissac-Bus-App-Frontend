@@ -442,6 +442,12 @@ private fun MRTStationList(
     val data = uiState.mrtStationList
 
     if (data.isNotEmpty()) {
+        Text(
+            text = "Click on an MRT station to view alternative bus services to this MRT station.",
+            textAlign = TextAlign.Left,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+        )
+
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 160.dp),
             modifier = Modifier.heightIn(max = 320.dp)
