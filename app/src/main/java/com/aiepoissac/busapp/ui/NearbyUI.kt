@@ -70,6 +70,7 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.MarkerState
 import java.time.DayOfWeek
+import java.time.LocalTime
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,13 +82,14 @@ fun NearbyUI(
     isLiveLocation: Boolean
 ) {
 
-    val nearbyViewModel: NearbyViewModel = viewModel(
-        factory = NearbyViewModelFactory(
-            latitude = latitude,
-            longitude = longitude,
-            isLiveLocation = isLiveLocation
+    val nearbyViewModel: NearbyViewModel =
+        viewModel(
+            factory = NearbyViewModelFactory(
+                latitude = latitude,
+                longitude = longitude,
+                isLiveLocation = isLiveLocation
+            )
         )
-    )
 
     val nearbyUIState by nearbyViewModel.uiState.collectAsState()
     val cameraPositionState by nearbyViewModel.cameraPositionState.collectAsState()
@@ -158,7 +160,6 @@ fun NearbyUI(
                                 updateCameraPosition = nearbyViewModel::setCameraPositionToLocation,
                                 stopLiveLocation = nearbyViewModel::stopLiveLocation,
                                 uiState = nearbyUIState,
-                                showOnlyOperatingBusServices = nearbyUIState.showOnlyOperatingBusServices,
                                 showOnlyOperatingBusServicesOnCheckedChange = nearbyViewModel::setShowOnlyOperatingBusServices,
                                 setDayOfWeek = nearbyViewModel::setDayOfWeek,
                                 setShowTimeDial = nearbyViewModel::setShowTimeDial,
@@ -502,7 +503,6 @@ private fun BusStopList(
     openDirections: (HasCoordinates) -> Unit,
     updateCameraPosition: (HasCoordinates) -> Unit,
     stopLiveLocation: () -> Unit,
-    showOnlyOperatingBusServices: Boolean,
     showOnlyOperatingBusServicesOnCheckedChange: (Boolean) -> Unit,
     setDayOfWeek: () -> Unit,
     setShowTimeDial: (Boolean) -> Unit,
@@ -512,55 +512,16 @@ private fun BusStopList(
 
     val data = uiState.busStopList
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Text(
-            text = "Only show bus services operating",
-            modifier = Modifier.padding(horizontal = 4.dp)
-                .align(Alignment.CenterVertically)
-        )
-        Checkbox(
-            checked = showOnlyOperatingBusServices,
-            onCheckedChange = showOnlyOperatingBusServicesOnCheckedChange
-        )
-    }
-
-
-    if (uiState.showOnlyOperatingBusServices) {
-
-        if (uiState.showTimeDial) {
-            DialUseStateExample(
-                onConfirm = updateTime,
-                onDismiss = { setShowTimeDial(false) }
-            )
-        }
-
-        val day =
-            when (uiState.dayOfWeek) {
-                DayOfWeek.SATURDAY -> "Saturdays"
-                DayOfWeek.SUNDAY -> "Sundays and Public Holidays"
-                else -> "Weekdays"
-            }
-
-        Text(
-            text = "$day (5am to 3am)",
-            modifier = Modifier.padding(horizontal = 4.dp)
-                .fillMaxWidth()
-                .clickable {
-                    setDayOfWeek()
-                }
-        )
-
-        Text(
-            text = "Time: ${uiState.currentTime} (click to change)",
-            modifier = Modifier.padding(horizontal = 4.dp)
-                .fillMaxWidth()
-                .clickable {
-                    setShowTimeDial(true)
-                }
-        )
-    }
+    TimeSettings(
+        showOnlyOperatingBusServices = uiState.showOnlyOperatingBusServices,
+        showOnlyOperatingBusServicesOnCheckedChange = showOnlyOperatingBusServicesOnCheckedChange,
+        showTimeDial = uiState.showTimeDial,
+        updateTime = updateTime,
+        setShowTimeDial = setShowTimeDial,
+        currentDayOfWeek = uiState.dayOfWeek,
+        setDayOfWeek = setDayOfWeek,
+        currentTime = uiState.currentTime
+    )
 
     if (uiState.searchingForBusStops) {
         LoadingScreen(description = "Searching for bus stops")
@@ -642,7 +603,70 @@ private fun BusStopList(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DialUseStateExample(
+fun TimeSettings(
+    showOnlyOperatingBusServices: Boolean,
+    showOnlyOperatingBusServicesOnCheckedChange: (Boolean) -> Unit,
+    showTimeDial: Boolean,
+    updateTime: (TimePickerState) -> Unit,
+    setShowTimeDial: (Boolean) -> Unit,
+    currentDayOfWeek: DayOfWeek,
+    setDayOfWeek: () -> Unit,
+    currentTime: LocalTime
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text = "Only show bus services operating",
+            modifier = Modifier.padding(horizontal = 4.dp)
+                .align(Alignment.CenterVertically)
+        )
+        Checkbox(
+            checked = showOnlyOperatingBusServices,
+            onCheckedChange = showOnlyOperatingBusServicesOnCheckedChange
+        )
+    }
+
+
+    if (showOnlyOperatingBusServices) {
+
+        if (showTimeDial) {
+            TimeSettingDialog(
+                onConfirm = updateTime,
+                onDismiss = { setShowTimeDial(false) }
+            )
+        }
+
+        val day =
+            when (currentDayOfWeek) {
+                DayOfWeek.SATURDAY -> "Saturdays"
+                DayOfWeek.SUNDAY -> "Sundays and Public Holidays"
+                else -> "Weekdays"
+            }
+
+        Text(
+            text = "$day (5am to 3am)",
+            modifier = Modifier.padding(horizontal = 4.dp)
+                .fillMaxWidth()
+                .clickable {
+                    setDayOfWeek()
+                }
+        )
+
+        Text(
+            text = "Time: $currentTime (click to change)",
+            modifier = Modifier.padding(horizontal = 4.dp)
+                .fillMaxWidth()
+                .clickable {
+                    setShowTimeDial(true)
+                }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TimeSettingDialog(
     onConfirm: (TimePickerState) -> Unit,
     onDismiss: () -> Unit,
 ) {
