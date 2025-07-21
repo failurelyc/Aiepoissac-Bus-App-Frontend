@@ -5,15 +5,18 @@ import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
 import com.aiepoissac.busapp.userdata.BusJourneyInfo
 
 data class SavedJourneyUIState (
-    val busJourneys: List<Pair<BusJourneyInfo, Pair<Pair<BusRouteInfoWithBusStopInfo, List<BusService>?>, Pair<BusRouteInfoWithBusStopInfo, List<BusService>?>>>>
+    val busJourneys: List<Pair<BusJourneyInfo, Pair<Pair<BusRouteInfoWithBusStopInfo, BusService?>, Pair<BusRouteInfoWithBusStopInfo, BusService?>>>>
         = listOf(),
     val showAddDialog: Boolean = false,
     val serviceNoInput: String = "",
-    val directionOne: Boolean = true,
+    val isDirectionTwo: Boolean = false,
     val originStopInput: BusRouteInfoWithBusStopInfo? = null,
     val destinationStopInput: BusRouteInfoWithBusStopInfo? = null,
     val originStopSearchResults: List<BusRouteInfoWithBusStopInfo> = listOf(),
     val destinationStopSearchResults: List<BusRouteInfoWithBusStopInfo> = listOf(),
     val originStopSearchExpanded: Boolean = false,
-    val destinationStopSearchExpanded: Boolean = false
+    val destinationStopSearchExpanded: Boolean = false,
+    val showBusType: Boolean = true,
+    val showFirstLastBus: Boolean = false,
+    val showDestinationBusArrivals: Boolean = false
 )

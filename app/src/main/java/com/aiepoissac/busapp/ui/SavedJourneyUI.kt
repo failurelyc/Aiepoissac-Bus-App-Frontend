@@ -13,7 +13,12 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DepartureBoard
+import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.MoveDown
+import androidx.compose.material.icons.filled.MoveUp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -58,7 +63,7 @@ fun SavedJourneyUI(
 
     if (savedJourneyUIState.showAddDialog) {
         Dialog(
-            onDismissRequest = savedJourneyViewModel::toggleAddDialog
+            onDismissRequest = { savedJourneyViewModel.setShowAddDialog(false) }
         ) {
             Card(
                 modifier = Modifier
@@ -80,7 +85,9 @@ fun SavedJourneyUI(
                     onValueChange = savedJourneyViewModel::updateServiceNoInput,
                     label = { Text(text = "Service Number") },
                     isError = savedJourneyUIState.originStopSearchResults.isEmpty(),
-                    modifier = Modifier.padding(8.dp).fillMaxWidth()
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth()
                 )
 
                 Row {
@@ -93,9 +100,11 @@ fun SavedJourneyUI(
                     )
 
                     Switch(
-                        checked = !savedJourneyUIState.directionOne,
-                        onCheckedChange = { savedJourneyViewModel.toggleDirection() },
-                        modifier = Modifier.padding(horizontal = 4.dp).weight(1f)
+                        checked = savedJourneyUIState.isDirectionTwo,
+                        onCheckedChange = savedJourneyViewModel::setIsDirectionTwo,
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .weight(1f)
                     )
                 }
 
@@ -121,7 +130,9 @@ fun SavedJourneyUI(
                 )
 
                 Button(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
                     onClick = savedJourneyViewModel::addBusJourney
                 ) {
                     Text(
@@ -143,13 +154,16 @@ fun SavedJourneyUI(
         }
     ) { innerPadding ->
         Column(
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier
+                .padding(innerPadding)
                 .fillMaxSize()
                 .consumeWindowInsets(innerPadding)
         ) {
             Button(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
-                onClick = savedJourneyViewModel::toggleAddDialog
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                onClick = { savedJourneyViewModel.setShowAddDialog(true) }
             ) {
                 Text(
                     text = "Add journey segment",
@@ -157,10 +171,44 @@ fun SavedJourneyUI(
                 )
             }
 
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(4.dp)
+            ) {
+                IconTextSwitch(
+                    icon = Icons.Filled.DirectionsBus,
+                    text = "Bus type",
+                    showText = false,
+                    checked = savedJourneyUIState.showBusType,
+                    onCheckedChange = savedJourneyViewModel::setShowBusType,
+                    modifier = Modifier.weight(1f)
+                )
+
+                IconTextSwitch(
+                    icon = Icons.Filled.AccessTime,
+                    text = "First/Last Bus",
+                    showText = false,
+                    checked = savedJourneyUIState.showFirstLastBus,
+                    onCheckedChange = savedJourneyViewModel::setShowFirstLastBus,
+                    modifier = Modifier.weight(1f)
+                )
+
+                IconTextSwitch(
+                    icon = Icons.Filled.DepartureBoard,
+                    text = "Dest arrivals",
+                    showText = true,
+                    checked = savedJourneyUIState.showDestinationBusArrivals,
+                    onCheckedChange = savedJourneyViewModel::setShowDestinationBusArrivals,
+                    modifier = Modifier.weight(2f)
+                )
+            }
+
             SavedJourneySegmentList(
                 navController = navController,
                 uiState = savedJourneyUIState,
-                onDelete = savedJourneyViewModel::deleteBusJourney
+                onDelete = savedJourneyViewModel::deleteBusJourney,
+                onMoveUp = savedJourneyViewModel::moveBusJourneyUp,
+                onMoveDown = savedJourneyViewModel::moveBusJourneyDown
             )
 
         }
@@ -172,7 +220,9 @@ fun SavedJourneyUI(
 private fun SavedJourneySegmentList(
     navController: NavHostController,
     uiState: SavedJourneyUIState,
-    onDelete: (BusJourneyInfo) -> Unit
+    onDelete: (BusJourneyInfo) -> Unit,
+    onMoveUp: (BusJourneyInfo) -> Unit,
+    onMoveDown: (BusJourneyInfo) -> Unit
 ) {
 
     val data = uiState.busJourneys
@@ -184,7 +234,12 @@ private fun SavedJourneySegmentList(
             SavedJourneySegmentInformation(
                 navController = navController,
                 data = busJourney,
-                onDelete = onDelete
+                onDelete = onDelete,
+                onMoveUp = onMoveUp,
+                onMoveDown = onMoveDown,
+                showBusType = uiState.showBusType,
+                showDestinationBusArrivals = uiState.showDestinationBusArrivals,
+                showFirstLastBus = uiState.showFirstLastBus
             )
         }
     }
@@ -194,14 +249,19 @@ private fun SavedJourneySegmentList(
 @Composable
 private fun SavedJourneySegmentInformation(
     navController: NavHostController,
-    data: Pair<BusJourneyInfo, Pair<Pair<BusRouteInfoWithBusStopInfo, List<BusService>?>, Pair<BusRouteInfoWithBusStopInfo, List<BusService>?>>>,
-    onDelete: (BusJourneyInfo) -> Unit
+    data: Pair<BusJourneyInfo, Pair<Pair<BusRouteInfoWithBusStopInfo, BusService?>, Pair<BusRouteInfoWithBusStopInfo, BusService?>>>,
+    onDelete: (BusJourneyInfo) -> Unit,
+    onMoveUp: (BusJourneyInfo) -> Unit,
+    onMoveDown: (BusJourneyInfo) -> Unit,
+    showBusType: Boolean,
+    showDestinationBusArrivals: Boolean,
+    showFirstLastBus: Boolean
 ) {
     Row(
         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Card(
-            modifier = Modifier.weight(5f)
+            modifier = Modifier.weight(4f)
         ) {
             val originBusStop = data.second.first
             val destinationBusStop = data.second.second
@@ -209,35 +269,65 @@ private fun SavedJourneySegmentInformation(
             Text(
                 text = "${originBusStop.first.busRouteInfo.operator} ${originBusStop.first.busRouteInfo.serviceNo}",
                 fontSize = 24.sp,
-                modifier = Modifier.fillMaxWidth().padding(4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp),
                 textAlign = TextAlign.Center
             )
 
             SavedJourneySegmentBusStopInformation(
                 navController = navController,
-                busStop = originBusStop
+                busStop = originBusStop,
+                showBusType = showBusType,
+                showFirstLastBus = showFirstLastBus
             )
 
-            SavedJourneySegmentBusStopInformation(
-                navController = navController,
-                busStop = destinationBusStop
-            )
+            if (showDestinationBusArrivals) {
+                SavedJourneySegmentBusStopInformation(
+                    navController = navController,
+                    busStop = destinationBusStop,
+                    showBusType = showBusType,
+                    showFirstLastBus = showFirstLastBus
+                )
+            }
         }
-        Column (
+
+        Card (
             modifier = Modifier.weight(1f)
         ) {
             Text(
                 text = data.first.sequence.toString(),
-                modifier = Modifier.fillMaxWidth().padding(4.dp),
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(vertical = 4.dp),
                 textAlign = TextAlign.Center
             )
 
             Icon(
                 modifier = Modifier
                     .clickable { onDelete(data.first) }
-                    .align(Alignment.CenterHorizontally),
+                    .align(Alignment.CenterHorizontally)
+                    .padding(vertical = 4.dp),
                 imageVector = Icons.Filled.Delete,
                 contentDescription = "Delete"
+            )
+
+            Icon(
+                modifier = Modifier
+                    .clickable { onMoveUp(data.first) }
+                    .align(Alignment.CenterHorizontally)
+                    .padding(vertical = 4.dp),
+                imageVector = Icons.Filled.MoveUp,
+                contentDescription = "Move up"
+            )
+
+            Icon(
+                modifier = Modifier
+                    .clickable { onMoveDown(data.first) }
+                    .align(Alignment.CenterHorizontally)
+                    .padding(vertical = 4.dp),
+                imageVector = Icons.Filled.MoveDown,
+                contentDescription = "Move down"
             )
         }
     }
@@ -246,74 +336,95 @@ private fun SavedJourneySegmentInformation(
 @Composable
 private fun SavedJourneySegmentBusStopInformation(
     navController: NavHostController,
-    busStop: Pair<BusRouteInfoWithBusStopInfo, List<BusService>?>
+    busStop: Pair<BusRouteInfoWithBusStopInfo, BusService?>,
+    showBusType: Boolean,
+    showFirstLastBus: Boolean
 ) {
 
-    Text(
-        text = busStop.first.toString(),
-        modifier = Modifier
-            .padding(4.dp)
-            .fillMaxWidth()
-            .clickable { navigateToBusRouteInformation(
+    Column(
+        modifier = Modifier.clickable {
+            navigateToBusRouteInformation(
                 navController = navController,
                 serviceNo = busStop.first.busRouteInfo.serviceNo,
                 direction = busStop.first.busRouteInfo.direction,
                 stopSequence = busStop.first.busRouteInfo.stopSequence
-            ) }
-    )
-
-    val busServices = busStop.second
-
-    if (busServices == null) {
-        Text(
-            text = "Bus arrival data not available",
-            modifier = Modifier.fillMaxWidth()
-        )
-    } else if (busServices.isEmpty()) {
-        Text(
-            text = "Bus not in operation",
-            modifier = Modifier.fillMaxWidth()
-        )
-    } else if (busServices.size == 1) {
-        val busService = busServices[0]
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-        ) {
-            BusArrivalLayout(
-                data = busService.nextBus,
-                modifier = Modifier.weight(1f),
-                hasCoordinates = busStop.first.busStopInfo,
-                showBusType = true
-            )
-            BusArrivalLayout(
-                data = busService.nextBus2,
-                modifier = Modifier.weight(1f),
-                hasCoordinates = busStop.first.busStopInfo,
-                showBusType = true
-            )
-            BusArrivalLayout(
-                data = busService.nextBus3,
-                modifier = Modifier.weight(1f),
-                hasCoordinates = busStop.first.busStopInfo,
-                showBusType = true
             )
         }
-    } else {
-        Button(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
-            onClick = {
-                navigateToBusArrival(
-                    navController = navController,
-                    busStopInput = busStop.first.busStopInfo.busStopCode
+    ) {
+        Text(
+            text = busStop.first.toString(),
+            modifier = Modifier
+                .padding(4.dp)
+                .fillMaxWidth()
+
+        )
+
+        if (showFirstLastBus) {
+            val busRouteInfo = busStop.first.busRouteInfo
+
+            if (busRouteInfo.isOperatingOnWeekday()) {
+                Text(
+                    text = "WEEKDAY: ${busRouteInfo.wdFirstBus} to ${busRouteInfo.wdLastBus}",
+                    textAlign = TextAlign.Left,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp)
                 )
             }
-        ) {
+
+            if (busRouteInfo.isOperatingOnSaturday()) {
+                Text(
+                    text = "SATURDAY: ${busRouteInfo.satFirstBus} to ${busRouteInfo.satLastBus}",
+                    textAlign = TextAlign.Left,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp)
+                )
+            }
+
+            if (busRouteInfo.isOperatingOnSunday()) {
+                Text(
+                    text = "SUNDAY/PH: ${busRouteInfo.sunFirstBus} to ${busRouteInfo.sunLastBus}",
+                    textAlign = TextAlign.Left,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp)
+                )
+            }
+        }
+
+        val busService = busStop.second
+
+        if (busService == null) {
             Text(
-                text = "View bus arrivals here",
-                textAlign = TextAlign.Center
+                text = "Bus arrival data not available",
+                modifier = Modifier.fillMaxWidth()
             )
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            ) {
+                BusArrivalLayout(
+                    data = busService.nextBus,
+                    modifier = Modifier.weight(1f),
+                    hasCoordinates = busStop.first.busStopInfo,
+                    showBusType = showBusType
+                )
+                BusArrivalLayout(
+                    data = busService.nextBus2,
+                    modifier = Modifier.weight(1f),
+                    hasCoordinates = busStop.first.busStopInfo,
+                    showBusType = showBusType
+                )
+                BusArrivalLayout(
+                    data = busService.nextBus3,
+                    modifier = Modifier.weight(1f),
+                    hasCoordinates = busStop.first.busStopInfo,
+                    showBusType = showBusType
+                )
+            }
         }
     }
 
@@ -332,7 +443,9 @@ private fun <T> OptionsSelector(
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = onExpandedChange,
-        modifier = Modifier.padding(8.dp).fillMaxWidth()
+        modifier = Modifier
+            .padding(8.dp)
+            .fillMaxWidth()
     ) {
         OutlinedTextField(
             value = selected,

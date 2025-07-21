@@ -13,6 +13,7 @@ import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
 import com.aiepoissac.busapp.userdata.BusJourneyInfo
 import com.aiepoissac.busapp.userdata.UserDataRepository
+import com.aiepoissac.busapp.userdata.attachBusArrivalsToBusJourneyWithBusRouteInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -55,23 +56,43 @@ class SavedJourneyViewModel (
 
     init {
         viewModelScope.launch {
-            refreshList()
+            refreshList(afterNewAddition = true)
         }
     }
 
-    private fun refreshList() {
+    private fun refreshList(afterNewAddition: Boolean) {
         viewModelScope.launch {
-            _uiState.update {
-                SavedJourneyUIState(
-                    busJourneys = userDataRepository.getBusJourneyList(journeyID)
-                        .sortedBy { it.sequence }
-                        .map {
-                            it.attachBusArrivalsAndBusRouteWithBusStopInfo(
-                                busRepository = busRepository,
-                                busArrivalGetter = busArrivalGetter
+            val busJourneys = userDataRepository.getBusJourneyList(journeyID)
+                .sortedBy { it.sequence }
+
+            if (afterNewAddition) {
+                _uiState.update { savedJourneyUIState ->
+                    savedJourneyUIState.copy(
+                        busJourneys = busJourneys
+                            .map {
+                                it.attachBusArrivalsAndBusRouteWithBusStopInfo(
+                                    busRepository = busRepository,
+                                    busArrivalGetter = busArrivalGetter
+                                )
+                            }
+                    )
+                }
+            } else {
+                val oldBusJourneys = uiState.value.busJourneys
+                _uiState.update { savedJourneyUIState ->
+                    savedJourneyUIState.copy(
+                        busJourneys = busJourneys.map { busJourneyInfo ->
+                            Pair(
+                                first = busJourneyInfo,
+                                second =
+                                    oldBusJourneys.first {
+                                        it.first.isSameJourneyAs(busJourneyInfo)
+                                    }.second
+
                             )
-                        },
-                )
+                        }
+                    )
+                }
             }
         }
     }
@@ -83,15 +104,23 @@ class SavedJourneyViewModel (
         if (difference > threshold) {
             lastTimeRefreshPressed = currentTime
             viewModelScope.launch {
-                _uiState.update {
-                    it.copy(
+                _uiState.update { savedJourneyUIState ->
+                    savedJourneyUIState.copy(
                         busJourneys = uiState.value.busJourneys
                             .map {
-                                it.first.attachBusArrivalsAndBusRouteWithBusStopInfo(
+                                attachBusArrivalsToBusJourneyWithBusRouteInfo(
+                                    Pair(
+                                        first = it.first,
+                                        second = Pair(
+                                            first = it.second.first.first,
+                                            second = it.second.second.first
+                                        )
+                                    ),
                                     busRepository = busRepository,
                                     busArrivalGetter = busArrivalGetter
                                 )
-                            }
+                            },
+                        showAddDialog = false
                     )
                 }
             }
@@ -104,9 +133,9 @@ class SavedJourneyViewModel (
         }
     }
 
-    fun toggleAddDialog() {
+    fun setShowAddDialog(showAddDialog: Boolean) {
         _uiState.update {
-            it.copy(showAddDialog = !uiState.value.showAddDialog)
+            it.copy(showAddDialog = showAddDialog)
         }
     }
 
@@ -130,7 +159,9 @@ class SavedJourneyViewModel (
                         sequence = uiState.value.busJourneys.size
                     )
                 )
-                refreshList()
+                clearInput()
+                setShowAddDialog(false)
+                refreshList(afterNewAddition = true)
             }
 
         }
@@ -149,7 +180,74 @@ class SavedJourneyViewModel (
                         )
                     }
                 }
-            refreshList()
+            refreshList(afterNewAddition = false)
+        }
+    }
+
+    fun hideBusJourney(busJourney: BusJourneyInfo) {
+
+        viewModelScope.launch {
+
+        }
+
+    }
+
+    fun moveBusJourneyUp(busJourney: BusJourneyInfo) {
+        if (busJourney.sequence > 0) {
+            viewModelScope.launch {
+                swapBusJourneySequence(busJourney, uiState.value.busJourneys[busJourney.sequence - 1].first)
+            }
+        }
+    }
+
+    fun moveBusJourneyDown(busJourney: BusJourneyInfo) {
+        if (busJourney.sequence < uiState.value.busJourneys.size - 1) {
+            viewModelScope.launch {
+                swapBusJourneySequence(busJourney, uiState.value.busJourneys[busJourney.sequence + 1].first)
+            }
+        }
+    }
+
+    private suspend fun swapBusJourneySequence(busJourney1: BusJourneyInfo, busJourney2: BusJourneyInfo) {
+        userDataRepository.deleteBusJourneyInfo(busJourney1)
+        userDataRepository.deleteBusJourneyInfo(busJourney2)
+        val newBusJourney1 = busJourney1.copy(sequence = busJourney2.sequence)
+        val newBusJourney2 = busJourney2.copy(sequence = busJourney1.sequence)
+        userDataRepository.insertBusJourneyInfo(newBusJourney1)
+        userDataRepository.insertBusJourneyInfo(newBusJourney2)
+        refreshList(afterNewAddition = false)
+    }
+
+    fun setShowBusType(showBusType: Boolean) {
+        _uiState.update {
+            it.copy(showBusType = showBusType)
+        }
+    }
+
+    fun setShowFirstLastBus(showFirstLastBus: Boolean) {
+        _uiState.update {
+            it.copy(showFirstLastBus = showFirstLastBus)
+        }
+    }
+
+    fun setShowDestinationBusArrivals(showDestinationBusArrivals: Boolean) {
+        _uiState.update {
+            it.copy(showDestinationBusArrivals = showDestinationBusArrivals)
+        }
+    }
+
+    fun clearInput() {
+        _uiState.update {
+            it.copy(
+                serviceNoInput = "",
+                isDirectionTwo = false,
+                originStopInput = null,
+                destinationStopInput = null,
+                originStopSearchResults = listOf(),
+                destinationStopSearchResults = listOf(),
+                originStopSearchExpanded = false,
+                destinationStopSearchExpanded = false
+            )
         }
     }
 
@@ -167,7 +265,7 @@ class SavedJourneyViewModel (
                     originStopSearchResults = busRepository
                         .getBusServiceRoute(
                             serviceNo = serviceNo,
-                            direction = if (uiState.value.directionOne) 1 else 2
+                            direction = if (uiState.value.isDirectionTwo) 2 else 1
                         ),
                     destinationStopSearchResults = listOf()
                 )
@@ -175,17 +273,17 @@ class SavedJourneyViewModel (
         }
     }
 
-    fun toggleDirection() {
+    fun setIsDirectionTwo(isDirectionTwo: Boolean) {
         viewModelScope.launch {
             _uiState.update {
                 it.copy(
-                    directionOne = !uiState.value.directionOne,
+                    isDirectionTwo = isDirectionTwo,
                     originStopInput = null,
                     destinationStopInput = null,
                     originStopSearchResults = busRepository
                         .getBusServiceRoute(
                             serviceNo = uiState.value.serviceNoInput,
-                            direction = if (!uiState.value.directionOne) 1 else 2
+                            direction = if (isDirectionTwo) 2 else 1
                         ),
                     destinationStopSearchResults = listOf()
                 )
@@ -201,7 +299,7 @@ class SavedJourneyViewModel (
                     destinationStopInput = null,
                     destinationStopSearchResults = busRepository.getBusServiceRouteAfterSpecifiedStop(
                         serviceNo = uiState.value.serviceNoInput,
-                        direction = if (uiState.value.directionOne) 1 else 2,
+                        direction = if (uiState.value.isDirectionTwo) 2 else 1,
                         stopSequence = originStop.busRouteInfo.stopSequence)
                 )
             }

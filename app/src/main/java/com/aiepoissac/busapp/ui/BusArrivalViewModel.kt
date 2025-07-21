@@ -16,6 +16,7 @@ import com.aiepoissac.busapp.GoogleMapsURLGenerator
 import com.aiepoissac.busapp.R
 import com.aiepoissac.busapp.data.busarrival.Bus
 import com.aiepoissac.busapp.data.busarrival.BusArrivalGetter
+import com.aiepoissac.busapp.data.busarrival.BusService
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfo
 import com.aiepoissac.busapp.ui.theme.GreenDark
@@ -24,6 +25,8 @@ import com.aiepoissac.busapp.ui.theme.RedDark
 import com.aiepoissac.busapp.ui.theme.RedLight
 import com.aiepoissac.busapp.ui.theme.YellowDark
 import com.aiepoissac.busapp.ui.theme.YellowLight
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -241,17 +244,43 @@ class BusArrivalViewModel(
         }
     }
 
-    fun getBusRoute(serviceNo: String): BusRouteInfo? {
-        val busRoutes = uiState.value.busRoutes
-            .filter { it.serviceNo == serviceNo }
-        return if (busRoutes.size == 1) { //bus service stops here only once, no ambiguity
-            busRoutes[0]
-        } else if (busRoutes.map {it.direction} .distinct().size == 1 ) {
-            //bus stops here more than once in the same direction
-            busRoutes.minBy { it.stopSequence } //returns the first stop along the route
-        } else { //bus stops here more than once in different directions
-            null //cannot resolve the ambiguity
+    fun getBusRoute(busService: BusService): Deferred<BusRouteInfo?> {
+        val busRouteInfo = CompletableDeferred<BusRouteInfo?>()
+
+        viewModelScope.launch {
+            val busRoutes = uiState.value.busRoutes
+                .filter { it.serviceNo == busService.serviceNo }
+            if (busRoutes.isEmpty()) {
+                busRouteInfo.complete(null)
+            } else if (busRoutes.size == 1) { //bus service stops here only once, no ambiguity
+                busRouteInfo.complete(busRoutes[0])
+            } else if (busRoutes.map {it.direction} .distinct().size == 1 ) {
+                //bus stops here more than once in the same direction
+                busRouteInfo.complete(busRoutes.minBy { it.stopSequence }) //returns the first stop along the route
+            } else { //bus stops here more than once in different directions
+                val busRoute1 = busRepository
+                    .getBusServiceRoute(serviceNo = busService.serviceNo, direction = 1)
+                val busRoute1Destination = busRoute1.last().busRouteInfo
+                val busRoute2 = busRepository
+                    .getBusServiceRoute(serviceNo = busService.serviceNo, direction = 2)
+                val busRoute2Destination = busRoute2.last().busRouteInfo
+
+                if (busService.nextBus.destinationCode == busRoute1Destination.busStopCode) {
+                    busRouteInfo.complete(
+                        busRoute1.find { it.busStopInfo == uiState.value.busStopInfo }?.busRouteInfo
+                    )
+                } else if (busService.nextBus.destinationCode == busRoute2Destination.busStopCode){
+                    busRouteInfo.complete(
+                        busRoute2.find { it.busStopInfo == uiState.value.busStopInfo }?.busRouteInfo
+                    )
+                } else {
+                    busRouteInfo.complete(null)
+                }
+
+            }
         }
+
+        return busRouteInfo
     }
 
     fun openDirections() {

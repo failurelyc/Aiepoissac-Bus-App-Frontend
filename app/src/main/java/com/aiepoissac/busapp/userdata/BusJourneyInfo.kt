@@ -19,44 +19,101 @@ data class BusJourneyInfo (
     val originBusStopSequence: Int,
     val destinationBusStopSequence: Int
 ) {
+
+    fun isSameJourneyAs(other: BusJourneyInfo): Boolean {
+        return serviceNo == other.serviceNo
+                && direction == other.direction
+                && originBusStopSequence == other.originBusStopSequence
+                && destinationBusStopSequence == other.destinationBusStopSequence
+    }
+
     suspend fun attachBusArrivalsAndBusRouteWithBusStopInfo(
         busRepository: BusRepository,
         busArrivalGetter: BusArrivalGetter
     ): Pair<BusJourneyInfo, Pair<
-            Pair<BusRouteInfoWithBusStopInfo, List<BusService>?>,
-            Pair<BusRouteInfoWithBusStopInfo, List<BusService>?>>>
-    {
-        val origin = busRepository.getBusRouteInfoWithBusStopInfo(
-            serviceNo = serviceNo,
-            direction = direction,
-            stopSequence = originBusStopSequence
+            Pair<BusRouteInfoWithBusStopInfo, BusService?>,
+            Pair<BusRouteInfoWithBusStopInfo, BusService?>>> {
+        return attachBusArrivalsToBusJourneyWithBusRouteInfo(
+            busJourneyWithBusRouteInfo = attachBusRouteWithBusStopInfo(busRepository = busRepository),
+            busRepository = busRepository,
+            busArrivalGetter = busArrivalGetter
         )
-        val destination = busRepository.getBusRouteInfoWithBusStopInfo(
-            serviceNo = serviceNo,
-            direction = direction,
-            stopSequence = destinationBusStopSequence
-        )
-        try {
-            val originBusArrivals = busArrivalGetter.getBusArrival(origin.busRouteInfo.busStopCode)
-                .getBusArrivalsOfASingleService(serviceNo)
-            val destinationBusArrivals = busArrivalGetter.getBusArrival(destination.busRouteInfo.busStopCode)
-                .getBusArrivalsOfASingleService(serviceNo)
-            return Pair(
-                first = this,
-                second = Pair(
-                    first = Pair(origin, originBusArrivals),
-                    second = Pair(destination, destinationBusArrivals)
-                )
-            )
-        } catch (e: IOException) {
-            return Pair(
-                first = this,
-                second = Pair(
-                    first = Pair(origin, null),
-                    second = Pair(destination, null)
-                )
+    }
 
+    private suspend fun attachBusRouteWithBusStopInfo(
+        busRepository: BusRepository
+    ): Pair<BusJourneyInfo, Pair<BusRouteInfoWithBusStopInfo, BusRouteInfoWithBusStopInfo>> {
+
+        return Pair(
+            first = this,
+            second = Pair(
+                first = busRepository.getBusRouteInfoWithBusStopInfo(
+                    serviceNo = serviceNo,
+                    direction = direction,
+                    stopSequence = originBusStopSequence
+                ),
+                second = busRepository.getBusRouteInfoWithBusStopInfo(
+                    serviceNo = serviceNo,
+                    direction = direction,
+                    stopSequence = destinationBusStopSequence
+                )
             )
+        )
+
+    }
+}
+
+suspend fun attachBusArrivalsToBusJourneyWithBusRouteInfo(
+    busJourneyWithBusRouteInfo: Pair<BusJourneyInfo, Pair<BusRouteInfoWithBusStopInfo, BusRouteInfoWithBusStopInfo>>,
+    busRepository: BusRepository,
+    busArrivalGetter: BusArrivalGetter
+): Pair<BusJourneyInfo, Pair<
+        Pair<BusRouteInfoWithBusStopInfo, BusService?>,
+        Pair<BusRouteInfoWithBusStopInfo, BusService?>>> {
+    val origin = busJourneyWithBusRouteInfo.second.first
+    val destination = busJourneyWithBusRouteInfo.second.second
+    try {
+        var originBusArrivals = busArrivalGetter.getBusArrival(origin.busRouteInfo.busStopCode)
+            .getBusArrivalsOfASingleService(origin.busRouteInfo.serviceNo)
+
+        if (originBusArrivals.size > 1) {
+            val busRoute = busRepository.getBusServiceRoute(
+                serviceNo = origin.busRouteInfo.serviceNo,
+                direction = origin.busRouteInfo.direction
+            )
+            originBusArrivals = originBusArrivals.filter {
+                it.nextBus.destinationCode == busRoute.last().busStopInfo.busStopCode
+            }
         }
+
+        var destinationBusArrivals = busArrivalGetter.getBusArrival(destination.busRouteInfo.busStopCode)
+            .getBusArrivalsOfASingleService(destination.busRouteInfo.serviceNo)
+
+        if (destinationBusArrivals.size > 1) {
+            val busRoute = busRepository.getBusServiceRoute(
+                serviceNo = destination.busRouteInfo.serviceNo,
+                direction = destination.busRouteInfo.direction
+            )
+            destinationBusArrivals = destinationBusArrivals.filter {
+                it.nextBus.destinationCode == busRoute.last().busStopInfo.busStopCode
+            }
+        }
+
+        return Pair(
+            first = busJourneyWithBusRouteInfo.first,
+            second = Pair(
+                first = Pair(origin, originBusArrivals.firstOrNull()),
+                second = Pair(destination, destinationBusArrivals.firstOrNull())
+            )
+        )
+    } catch (e: IOException) {
+        return Pair(
+            first = busJourneyWithBusRouteInfo.first,
+            second = Pair(
+                first = Pair(origin, null),
+                second = Pair(destination, null)
+            )
+
+        )
     }
 }

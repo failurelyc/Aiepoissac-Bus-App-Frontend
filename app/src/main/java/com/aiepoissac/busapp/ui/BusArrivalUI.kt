@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DepartureBoard
 import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.DirectionsBus
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.MobiledataOff
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.NoTransfer
@@ -59,6 +58,9 @@ import com.aiepoissac.busapp.data.busarrival.Bus
 import com.aiepoissac.busapp.data.busarrival.BusService
 import com.aiepoissac.busapp.data.businfo.BusRouteInfo
 import com.aiepoissac.busapp.data.businfo.BusStopInfo
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun BusArrivalUI(
@@ -173,7 +175,7 @@ fun BusArrivalUI(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(2.dp)
+                    modifier = Modifier.padding(4.dp)
                 ) {
 
                     IconTextSwitch(
@@ -253,7 +255,6 @@ fun BusArrivalUI(
                         uiState = busArrivalUIState,
                         onRefresh = busArrivalViewModel::refreshBusArrival,
                         getBusRoute = busArrivalViewModel::getBusRoute,
-                        setShowBusArrival = busArrivalViewModel::setShowBusArrival,
                         navController = navController
                     )
                 } else {
@@ -438,8 +439,7 @@ private fun BusArrivalsList(
     uiState: BusArrivalUIState,
     onRefresh: () -> Unit,
     navController: NavHostController,
-    getBusRoute: (String) -> BusRouteInfo?,
-    setShowBusArrival: (Boolean) -> Unit,
+    getBusRoute: (BusService) -> Deferred<BusRouteInfo?>,
 ) {
 
     val data = uiState.busArrivalData
@@ -475,7 +475,6 @@ private fun BusArrivalsList(
                             navController = navController,
                             showBusType = uiState.showBusType,
                             getBusRoute = getBusRoute,
-                            setShowBusArrival = setShowBusArrival
                         )
                     }
                 }
@@ -494,8 +493,7 @@ private fun BusArrivalsLayout(
     navController: NavHostController,
     busStopInfo: BusStopInfo,
     data: Pair<Pair<BusStopInfo?, BusStopInfo?>, BusService>,
-    getBusRoute: (String) -> BusRouteInfo?,
-    setShowBusArrival: (Boolean) -> Unit,
+    getBusRoute: (BusService) -> Deferred<BusRouteInfo?>,
     showBusType: Boolean = true
 ) {
 
@@ -510,22 +508,23 @@ private fun BusArrivalsLayout(
         Card(
             modifier = Modifier.weight(1f),
             onClick = {
-                val busRoute = getBusRoute(busService.serviceNo)
-                if (busRoute != null) {
-                    navigateToBusRouteInformation(
-                        navController = navController,
-                        serviceNo = busRoute.serviceNo,
-                        direction = busRoute.direction,
-                        stopSequence = busRoute.stopSequence
-                    )
-                } else {
-                    setShowBusArrival(false)
-                    Toast.makeText(
-                        BusApplication.instance,
-                        "Click on the bus service here",
-                        Toast.LENGTH_SHORT
-                    )
-                        .show()
+                MainScope().launch {
+                    val busRoute = getBusRoute(busService).await()
+                    if (busRoute != null) {
+                        navigateToBusRouteInformation(
+                            navController = navController,
+                            serviceNo = busRoute.serviceNo,
+                            direction = busRoute.direction,
+                            stopSequence = busRoute.stopSequence
+                        )
+                    } else {
+                        Toast.makeText(
+                            BusApplication.instance,
+                            "an error occurred",
+                            Toast.LENGTH_SHORT
+                        )
+                            .show()
+                    }
                 }
             }
         ) {
@@ -567,24 +566,25 @@ private fun BusArrivalsLayout(
         Card(
             modifier = Modifier.weight(2f),
             onClick = {
-                val busRoute = getBusRoute(busService.serviceNo)
-                if (busRoute != null) {
-                    navigateToBusRouteInformation(
-                        navController = navController,
-                        serviceNo = busRoute.serviceNo,
-                        direction = busRoute.direction,
-                        stopSequence = busRoute.stopSequence,
-                        showMap = true,
-                        showLiveBuses = true
-                    )
-                } else {
-                    setShowBusArrival(false)
-                    Toast.makeText(
-                        BusApplication.instance,
-                        "Click on the bus service here",
-                        Toast.LENGTH_SHORT
-                    )
-                        .show()
+                MainScope().launch {
+                    val busRoute = getBusRoute(busService).await()
+                    if (busRoute != null) {
+                        navigateToBusRouteInformation(
+                            navController = navController,
+                            serviceNo = busRoute.serviceNo,
+                            direction = busRoute.direction,
+                            stopSequence = busRoute.stopSequence,
+                            showMap = true,
+                            showLiveBuses = true
+                        )
+                    } else {
+                        Toast.makeText(
+                            BusApplication.instance,
+                            "an error occurred",
+                            Toast.LENGTH_SHORT
+                        )
+                            .show()
+                    }
                 }
             }
         ) {
