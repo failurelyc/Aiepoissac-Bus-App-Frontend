@@ -1,4 +1,4 @@
-package com.aiepoissac.busapp.data.businfo
+package com.aiepoissac.busapp.data.mrtstation
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -13,4 +13,8 @@ data class MRTStation (
     val stationName: String,
     override val latitude: Double,
     override val longitude: Double
-): HasCoordinates
+): HasCoordinates {
+    override fun toString(): String {
+        return "$stationCode $stationName"
+    }
+}

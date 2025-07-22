@@ -10,9 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
@@ -20,12 +23,12 @@ import androidx.compose.material.icons.filled.DepartureBoard
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.NearMe
+import androidx.compose.material.icons.filled.RailwayAlert
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Subway
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,7 +43,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -64,7 +66,8 @@ enum class Pages(val route: String, val title: String) {
     NearbyInformation(route = "NearbyInfo/{text1}/{text2}/{text3}", title = "Nearby Bus Stops"),
     BusesToMRTStation(route = "BusesToMRTStation/{text1}/{text2}/{text3}", title = "Bus Service to MRT station"),
     SavedJourneys(route = "SavedJourneys", title = "Saved Journeys"),
-    SavedJourney(route = "SavedJourney/{text}", title = "Saved Journey");
+    SavedJourney(route = "SavedJourney/{text}", title = "Saved Journey"),
+    TrainServiceAlerts(route = "TrainServiceAlerts", title = "Train Service Alerts");
 
     fun withText(text: String): String {
         return route.replace("{text}", text)
@@ -98,6 +101,7 @@ enum class Pages(val route: String, val title: String) {
                 route.startsWith(BusesToMRTStation.route) -> BusesToMRTStation
                 route.startsWith(SavedJourneys.route) -> SavedJourneys
                 route.startsWith(SavedJourney.route) -> SavedJourney
+                route.startsWith(TrainServiceAlerts.route) -> TrainServiceAlerts
                 else -> HomePage
             }
         }
@@ -209,9 +213,7 @@ fun BusApp(
                 }
 
                 composable(route = Pages.SavedJourneys.route) {
-                    SavedJourneysUI(
-                        navController = navController
-                    )
+                    SavedJourneysUI(navController = navController)
                 }
 
                 composable(route = Pages.SavedJourney.route) { backStackEntry ->
@@ -220,6 +222,10 @@ fun BusApp(
                         navController = navController,
                         journeyID = text
                     )
+                }
+
+                composable(route = Pages.TrainServiceAlerts.route) {
+                    TrainServiceAlertUI(navController = navController)
                 }
             }
     }
@@ -243,6 +249,7 @@ private fun HomePageUI(
         Column(
             modifier = Modifier.fillMaxSize()
                 .consumeWindowInsets(innerPadding)
+                .verticalScroll(rememberScrollState())
         ) {
             if (!homePageUIState.busStopSearchBarExpanded &&
                     !homePageUIState.busServiceSearchBarExpanded &&
@@ -280,6 +287,21 @@ private fun HomePageUI(
                     TitleWithIcon(
                         title = "Saved journeys",
                         icon = Icons.Filled.Save
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        navigateToTrainServiceAlerts(navController = navController)
+                    },
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .fillMaxWidth()
+                ) {
+
+                    TitleWithIcon(
+                        title = "Train service alerts",
+                        icon = Icons.Filled.RailwayAlert
                     )
                 }
             }
@@ -332,7 +354,11 @@ private fun HomePageUI(
                                 text = busStopInfo.toString(),
                                 modifier = Modifier.padding(8.dp)
                             )
-                        }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp)
+                            .heightIn(max = 480.dp)
                     )
 
                     SearchBarWithSuggestions(
@@ -370,7 +396,11 @@ private fun HomePageUI(
                                 text = "${busStopInfo.description} (${busStopInfo.roadName})",
                                 modifier = Modifier.padding(8.dp)
                             )
-                        }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp)
+                            .heightIn(max = 480.dp)
                     )
                 }
             }
@@ -439,7 +469,11 @@ private fun HomePageUI(
                                     )
                                 }
                             }
-                        }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp)
+                            .heightIn(max = 480.dp)
                     )
                 }
             }
@@ -489,7 +523,11 @@ private fun HomePageUI(
                                 text = "${mrtStation.stationCode} ${mrtStation.stationName}",
                                 modifier = Modifier.padding(8.dp)
                             )
-                        }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp)
+                            .heightIn(max = 480.dp)
                     )
                 }
             }
@@ -559,12 +597,11 @@ fun <T> SearchBarWithSuggestions(
     leadingIcon: @Composable (() -> Unit)? = { Icon(Icons.Filled.Search, contentDescription = "Search") },
     trailingIcon: @Composable (() -> Unit)? = null,
     itemContent: @Composable (T) -> Unit,
-    onItemClick: (T) -> Unit
+    onItemClick: (T) -> Unit,
+    modifier: Modifier
 ) {
     SearchBar(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(4.dp),
+        modifier = modifier,
         inputField = {
             SearchBarDefaults.InputField(
                 query = query,
@@ -684,4 +721,10 @@ fun navigateToBusRouteInformation(
             text5 = showLiveBuses.toString()
         )
     )
+}
+
+fun navigateToTrainServiceAlerts(
+    navController: NavHostController
+) {
+    navController.navigate(Pages.TrainServiceAlerts.route)
 }

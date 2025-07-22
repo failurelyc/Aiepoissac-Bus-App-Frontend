@@ -7,7 +7,7 @@ import com.aiepoissac.busapp.data.businfo.BusServiceInfo
 import com.aiepoissac.busapp.data.businfo.BusServiceInfoWithBusStopInfo
 import com.aiepoissac.busapp.data.businfo.BusStopInfo
 import com.aiepoissac.busapp.data.businfo.BusStopInfoWithBusRoutesInfo
-import com.aiepoissac.busapp.data.businfo.MRTStation
+import com.aiepoissac.busapp.data.mrtstation.MRTStation
 import com.aiepoissac.busapp.data.businfo.PlannedBusRouteInfo
 import com.aiepoissac.busapp.data.businfo.PlannedBusRouteInfoWithBusStopInfo
 

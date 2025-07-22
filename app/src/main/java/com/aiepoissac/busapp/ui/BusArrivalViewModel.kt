@@ -177,7 +177,6 @@ class BusArrivalViewModel(
             val currentTime = LocalDateTime.now()
             val difference = Duration.between(lastTimeRefreshPressed, currentTime).seconds
             if (difference > threshold) {
-                lastTimeRefreshPressed = currentTime
                 _uiState.update {
                     it.copy(
                         isRefreshing = true
@@ -191,6 +190,7 @@ class BusArrivalViewModel(
                             .map {
                                 it.attachOriginDestinationBusStopInfo(busRepository)
                             }
+                        lastTimeRefreshPressed = currentTime
                         _uiState.update {
                             it.copy(
                                 busArrivalData = busArrivalData,

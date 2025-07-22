@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
-import com.aiepoissac.busapp.userdata.BusJourneyListInfo
+import com.aiepoissac.busapp.userdata.JourneyInfo
 import com.aiepoissac.busapp.userdata.UserDataRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,7 +38,7 @@ class SavedJourneysViewModel(
         viewModelScope.launch {
             _uiState.update {
                 SavedJourneysUIState(
-                    savedJourneys = userDataRepository.getAllBusJourneyListInfo()
+                    savedJourneys = userDataRepository.getAllJourneys()
                 )
             }
         }
@@ -46,8 +46,8 @@ class SavedJourneysViewModel(
 
     private fun addSavedJourney() {
         viewModelScope.launch {
-            userDataRepository.insertBusJourneyListInfo(
-                BusJourneyListInfo(
+            userDataRepository.insertJourney(
+                JourneyInfo(
                     journeyID = generateRandomString(length = 8),
                     description = uiState.value.descriptionInput
                 )
@@ -60,8 +60,8 @@ class SavedJourneysViewModel(
         val savedJourney = uiState.value.selectedSavedJourney
         if (savedJourney != null) {
             viewModelScope.launch {
-                userDataRepository.updateBusJourneyListInfo(
-                    busJourneyListInfo = savedJourney.copy(description = uiState.value.descriptionInput)
+                userDataRepository.updateJourney(
+                    journeyInfo = savedJourney.copy(description = uiState.value.descriptionInput)
                 )
                 refreshList()
             }
@@ -75,8 +75,8 @@ class SavedJourneysViewModel(
         val savedJourney = uiState.value.selectedSavedJourney
         if (savedJourney != null && uiState.value.descriptionInput == savedJourney.description) {
             viewModelScope.launch {
-                userDataRepository.deleteBusJourneyListInfo(savedJourney)
-                userDataRepository.deleteBusJourneyList(savedJourney.journeyID)
+                userDataRepository.deleteJourney(savedJourney)
+                userDataRepository.deleteAllJourneySegments(savedJourney.journeyID)
                 refreshList()
             }
             return true
@@ -85,7 +85,7 @@ class SavedJourneysViewModel(
         }
     }
 
-    fun setSelectedSavedJourney(savedJourney: BusJourneyListInfo?) {
+    fun setSelectedSavedJourney(savedJourney: JourneyInfo?) {
         _uiState.update {
             it.copy(selectedSavedJourney = savedJourney)
         }

@@ -11,7 +11,7 @@ import java.io.IOException
     tableName = "Bus_Journey_Info_Table",
     primaryKeys = ["journeyID", "sequence"]
 )
-data class BusJourneyInfo (
+data class JourneySegmentInfo (
     val journeyID: String,
     val sequence: Int,
     val serviceNo: String,
@@ -20,7 +20,7 @@ data class BusJourneyInfo (
     val destinationBusStopSequence: Int
 ) {
 
-    fun isSameJourneyAs(other: BusJourneyInfo): Boolean {
+    fun isSameJourneyAs(other: JourneySegmentInfo): Boolean {
         return serviceNo == other.serviceNo
                 && direction == other.direction
                 && originBusStopSequence == other.originBusStopSequence
@@ -30,7 +30,7 @@ data class BusJourneyInfo (
     suspend fun attachBusArrivalsAndBusRouteWithBusStopInfo(
         busRepository: BusRepository,
         busArrivalGetter: BusArrivalGetter
-    ): Pair<BusJourneyInfo, Pair<
+    ): Pair<JourneySegmentInfo, Pair<
             Pair<BusRouteInfoWithBusStopInfo, BusService?>,
             Pair<BusRouteInfoWithBusStopInfo, BusService?>>> {
         return attachBusArrivalsToBusJourneyWithBusRouteInfo(
@@ -42,7 +42,7 @@ data class BusJourneyInfo (
 
     private suspend fun attachBusRouteWithBusStopInfo(
         busRepository: BusRepository
-    ): Pair<BusJourneyInfo, Pair<BusRouteInfoWithBusStopInfo, BusRouteInfoWithBusStopInfo>> {
+    ): Pair<JourneySegmentInfo, Pair<BusRouteInfoWithBusStopInfo, BusRouteInfoWithBusStopInfo>> {
 
         return Pair(
             first = this,
@@ -64,10 +64,10 @@ data class BusJourneyInfo (
 }
 
 suspend fun attachBusArrivalsToBusJourneyWithBusRouteInfo(
-    busJourneyWithBusRouteInfo: Pair<BusJourneyInfo, Pair<BusRouteInfoWithBusStopInfo, BusRouteInfoWithBusStopInfo>>,
+    busJourneyWithBusRouteInfo: Pair<JourneySegmentInfo, Pair<BusRouteInfoWithBusStopInfo, BusRouteInfoWithBusStopInfo>>,
     busRepository: BusRepository,
     busArrivalGetter: BusArrivalGetter
-): Pair<BusJourneyInfo, Pair<
+): Pair<JourneySegmentInfo, Pair<
         Pair<BusRouteInfoWithBusStopInfo, BusService?>,
         Pair<BusRouteInfoWithBusStopInfo, BusService?>>> {
     val origin = busJourneyWithBusRouteInfo.second.first

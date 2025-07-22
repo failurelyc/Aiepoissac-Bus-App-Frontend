@@ -1,7 +1,7 @@
 package com.aiepoissac.busapp.ui
 
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
-import com.aiepoissac.busapp.data.businfo.MRTStation
+import com.aiepoissac.busapp.data.mrtstation.MRTStation
 import java.time.DayOfWeek
 import java.time.LocalTime
 

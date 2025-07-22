@@ -280,6 +280,10 @@ fun BusArrivalUI(
                                 busArrivalViewModel.updateBusStopCodeInput(busStop.busStopCode)
                                 busArrivalViewModel.updateBusStop()
                             },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(4.dp)
+                                .heightIn(max = 480.dp),
                             itemContent = { busStop ->
                                 Text("${busStop.busStopCode} ${busStop.description}", modifier = Modifier.padding(8.dp))
                             }

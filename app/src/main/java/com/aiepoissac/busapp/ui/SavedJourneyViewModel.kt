@@ -11,7 +11,7 @@ import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.busarrival.BusArrivalGetter
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
-import com.aiepoissac.busapp.userdata.BusJourneyInfo
+import com.aiepoissac.busapp.userdata.JourneySegmentInfo
 import com.aiepoissac.busapp.userdata.UserDataRepository
 import com.aiepoissac.busapp.userdata.attachBusArrivalsToBusJourneyWithBusRouteInfo
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,7 +62,7 @@ class SavedJourneyViewModel (
 
     private fun refreshList(afterNewAddition: Boolean) {
         viewModelScope.launch {
-            val busJourneys = userDataRepository.getBusJourneyList(journeyID)
+            val busJourneys = userDataRepository.getAllJourneySegments(journeyID)
                 .sortedBy { it.sequence }
 
             if (afterNewAddition) {
@@ -149,8 +149,8 @@ class SavedJourneyViewModel (
             ) {
 
             viewModelScope.launch {
-                userDataRepository.insertBusJourneyInfo(
-                    BusJourneyInfo(
+                userDataRepository.insertJourneySegment(
+                    JourneySegmentInfo(
                         journeyID = journeyID,
                         serviceNo = originStop.busRouteInfo.serviceNo,
                         direction = originStop.busRouteInfo.direction,
@@ -168,14 +168,14 @@ class SavedJourneyViewModel (
 
     }
 
-    fun deleteBusJourney(busJourney: BusJourneyInfo) {
+    fun deleteBusJourney(busJourney: JourneySegmentInfo) {
         viewModelScope.launch {
-            userDataRepository.deleteBusJourneyInfo(busJourney)
+            userDataRepository.deleteJourneySegment(busJourney)
             uiState.value.busJourneys
                 .forEach {
                     if (it.first.sequence > busJourney.sequence) {
-                        userDataRepository.deleteBusJourneyInfo(it.first)
-                        userDataRepository.insertBusJourneyInfo(
+                        userDataRepository.deleteJourneySegment(it.first)
+                        userDataRepository.insertJourneySegment(
                             it.first.copy(sequence = it.first.sequence - 1)
                         )
                     }
@@ -184,7 +184,7 @@ class SavedJourneyViewModel (
         }
     }
 
-    fun hideBusJourney(busJourney: BusJourneyInfo) {
+    fun hideBusJourney(busJourney: JourneySegmentInfo) {
 
         viewModelScope.launch {
 
@@ -192,7 +192,7 @@ class SavedJourneyViewModel (
 
     }
 
-    fun moveBusJourneyUp(busJourney: BusJourneyInfo) {
+    fun moveBusJourneyUp(busJourney: JourneySegmentInfo) {
         if (busJourney.sequence > 0) {
             viewModelScope.launch {
                 swapBusJourneySequence(busJourney, uiState.value.busJourneys[busJourney.sequence - 1].first)
@@ -200,7 +200,7 @@ class SavedJourneyViewModel (
         }
     }
 
-    fun moveBusJourneyDown(busJourney: BusJourneyInfo) {
+    fun moveBusJourneyDown(busJourney: JourneySegmentInfo) {
         if (busJourney.sequence < uiState.value.busJourneys.size - 1) {
             viewModelScope.launch {
                 swapBusJourneySequence(busJourney, uiState.value.busJourneys[busJourney.sequence + 1].first)
@@ -208,13 +208,13 @@ class SavedJourneyViewModel (
         }
     }
 
-    private suspend fun swapBusJourneySequence(busJourney1: BusJourneyInfo, busJourney2: BusJourneyInfo) {
-        userDataRepository.deleteBusJourneyInfo(busJourney1)
-        userDataRepository.deleteBusJourneyInfo(busJourney2)
+    private suspend fun swapBusJourneySequence(busJourney1: JourneySegmentInfo, busJourney2: JourneySegmentInfo) {
+        userDataRepository.deleteJourneySegment(busJourney1)
+        userDataRepository.deleteJourneySegment(busJourney2)
         val newBusJourney1 = busJourney1.copy(sequence = busJourney2.sequence)
         val newBusJourney2 = busJourney2.copy(sequence = busJourney1.sequence)
-        userDataRepository.insertBusJourneyInfo(newBusJourney1)
-        userDataRepository.insertBusJourneyInfo(newBusJourney2)
+        userDataRepository.insertJourneySegment(newBusJourney1)
+        userDataRepository.insertJourneySegment(newBusJourney2)
         refreshList(afterNewAddition = false)
     }
 

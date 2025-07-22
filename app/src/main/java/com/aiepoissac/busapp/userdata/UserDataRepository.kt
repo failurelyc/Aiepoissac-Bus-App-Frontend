@@ -2,24 +2,24 @@ package com.aiepoissac.busapp.userdata
 
 interface UserDataRepository {
 
-    suspend fun insertBusJourneyListInfo(busJourneyListInfo: BusJourneyListInfo)
+    suspend fun insertJourney(journeyInfo: JourneyInfo)
 
-    suspend fun updateBusJourneyListInfo(busJourneyListInfo: BusJourneyListInfo)
+    suspend fun updateJourney(journeyInfo: JourneyInfo)
 
-    suspend fun deleteBusJourneyListInfo(busJourneyListInfo: BusJourneyListInfo)
+    suspend fun deleteJourney(journeyInfo: JourneyInfo)
 
-    suspend fun getAllBusJourneyListInfo(): List<BusJourneyListInfo>
+    suspend fun getAllJourneys(): List<JourneyInfo>
 
-    suspend fun getBusJourneyListInfo(journeyID: String): BusJourneyListInfo
+    suspend fun getJourney(journeyID: String): JourneyInfo
 
-    suspend fun insertBusJourneyInfo(busJourneyInfo: BusJourneyInfo)
+    suspend fun insertJourneySegment(journeySegmentInfo: JourneySegmentInfo)
 
-    suspend fun updateBusJourneyInfo(busJourneyInfo: BusJourneyInfo)
+    suspend fun updateJourneySegment(journeySegmentInfo: JourneySegmentInfo)
 
-    suspend fun deleteBusJourneyInfo(busJourneyInfo: BusJourneyInfo)
+    suspend fun deleteJourneySegment(journeySegmentInfo: JourneySegmentInfo)
 
-    suspend fun deleteBusJourneyList(journeyID: String)
+    suspend fun deleteAllJourneySegments(journeyID: String)
 
-    suspend fun getBusJourneyList(journeyID: String): List<BusJourneyInfo>
+    suspend fun getAllJourneySegments(journeyID: String): List<JourneySegmentInfo>
 
 }

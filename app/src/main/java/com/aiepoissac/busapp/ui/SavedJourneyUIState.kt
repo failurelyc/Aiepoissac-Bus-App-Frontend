@@ -2,10 +2,10 @@ package com.aiepoissac.busapp.ui
 
 import com.aiepoissac.busapp.data.busarrival.BusService
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
-import com.aiepoissac.busapp.userdata.BusJourneyInfo
+import com.aiepoissac.busapp.userdata.JourneySegmentInfo
 
 data class SavedJourneyUIState (
-    val busJourneys: List<Pair<BusJourneyInfo, Pair<Pair<BusRouteInfoWithBusStopInfo, BusService?>, Pair<BusRouteInfoWithBusStopInfo, BusService?>>>>
+    val busJourneys: List<Pair<JourneySegmentInfo, Pair<Pair<BusRouteInfoWithBusStopInfo, BusService?>, Pair<BusRouteInfoWithBusStopInfo, BusService?>>>>
         = listOf(),
     val showAddDialog: Boolean = false,
     val serviceNoInput: String = "",

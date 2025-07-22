@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 import androidx.core.net.toUri
 import com.aiepoissac.busapp.data.bicycle.BicycleParkingGetter
 import com.aiepoissac.busapp.data.businfo.BusStopInfoWithBusRoutesInfo
-import com.aiepoissac.busapp.data.businfo.MRTStation
+import com.aiepoissac.busapp.data.mrtstation.MRTStation
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.CameraPositionState

@@ -1,7 +1,7 @@
 package com.aiepoissac.busapp
 
 import com.aiepoissac.busapp.data.HasCoordinates
-import com.aiepoissac.busapp.data.businfo.MRTStation
+import com.aiepoissac.busapp.data.mrtstation.MRTStation
 
 object GoogleMapsURLGenerator {
 

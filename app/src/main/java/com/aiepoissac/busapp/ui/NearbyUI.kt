@@ -63,7 +63,7 @@ import androidx.navigation.NavHostController
 import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.GoogleMapsURLGenerator
 import com.aiepoissac.busapp.data.HasCoordinates
-import com.aiepoissac.busapp.data.businfo.MRTStation
+import com.aiepoissac.busapp.data.mrtstation.MRTStation
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
@@ -104,9 +104,8 @@ fun NearbyUI(
     Scaffold (
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    nearbyViewModel.toggleFreezeLocation()
-                }
+                onClick = nearbyViewModel::toggleFreezeLocation
+
             ) {
                 Icon(
                     if (nearbyUIState.isLiveLocation) Icons.Filled.LocationOn else Icons.Filled.LocationOff,
@@ -126,15 +125,7 @@ fun NearbyUI(
                     CollapsibleSection(
                         text = "Nearby MRT Stations",
                         expanded = nearbyUIState.showNearbyMRTStations,
-                        onClick = { nearbyViewModel.toggleShowNearbyMRTStations() },
-                        contents = {
-                            MRTStationList(
-                                navController = navController,
-                                openDirections = nearbyViewModel::openDirectionsToMRTStation,
-                                stopLiveLocation = nearbyViewModel::stopLiveLocation,
-                                uiState = nearbyUIState
-                            )
-                        },
+                        onClick = nearbyViewModel::toggleShowNearbyMRTStations,
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Filled.Subway,
@@ -142,30 +133,19 @@ fun NearbyUI(
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                    )
+                    ) {
+                        MRTStationList(
+                            navController = navController,
+                            openDirections = nearbyViewModel::openDirectionsToMRTStation,
+                            stopLiveLocation = nearbyViewModel::stopLiveLocation,
+                            uiState = nearbyUIState
+                        )
+                    }
 
                     CollapsibleSection(
                         text = "Nearby Bus Stops",
                         expanded = nearbyUIState.showNearbyBusStops,
-                        onClick = { nearbyViewModel.toggleShowNearbyBusStops() },
-                        contents = {
-                            BusStopList(
-                                navController = navController,
-                                openDirections = {
-                                    nearbyViewModel.openDirections(
-                                        destination = it,
-                                        travelMode = GoogleMapsURLGenerator.TravelMode.Walking
-                                    )
-                                },
-                                updateCameraPosition = nearbyViewModel::setCameraPositionToLocation,
-                                stopLiveLocation = nearbyViewModel::stopLiveLocation,
-                                uiState = nearbyUIState,
-                                showOnlyOperatingBusServicesOnCheckedChange = nearbyViewModel::setShowOnlyOperatingBusServices,
-                                setDayOfWeek = nearbyViewModel::setDayOfWeek,
-                                setShowTimeDial = nearbyViewModel::setShowTimeDial,
-                                updateTime = nearbyViewModel::updateTime
-                            )
-                        },
+                        onClick = nearbyViewModel::toggleShowNearbyBusStops,
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Filled.DirectionsBus,
@@ -173,10 +153,28 @@ fun NearbyUI(
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                    )
+                    ) {
+                        BusStopList(
+                            navController = navController,
+                            openDirections = {
+                                nearbyViewModel.openDirections(
+                                    destination = it,
+                                    travelMode = GoogleMapsURLGenerator.TravelMode.Walking
+                                )
+                            },
+                            updateCameraPosition = nearbyViewModel::setCameraPositionToLocation,
+                            stopLiveLocation = nearbyViewModel::stopLiveLocation,
+                            uiState = nearbyUIState,
+                            showOnlyOperatingBusServicesOnCheckedChange = nearbyViewModel::setShowOnlyOperatingBusServices,
+                            setDayOfWeek = nearbyViewModel::setDayOfWeek,
+                            setShowTimeDial = nearbyViewModel::setShowTimeDial,
+                            updateTime = nearbyViewModel::updateTime
+                        )
+                    }
                 }
 
-                if (!nearbyUIState.showNearbyBusStops && !nearbyUIState.showNearbyMRTStations) {
+                if ((!nearbyUIState.showNearbyBusStops && !nearbyUIState.showNearbyMRTStations)
+                    || configuration.orientation == 2) {
                     Row {
 
                         IconTextSwitch(

@@ -1,5 +1,7 @@
 package com.aiepoissac.busapp.data.businfo
 
+import com.aiepoissac.busapp.data.mrtstation.MRTStation
+
 interface BusRepository {
 
     suspend fun insertBusService(busServiceInfo: BusServiceInfo)

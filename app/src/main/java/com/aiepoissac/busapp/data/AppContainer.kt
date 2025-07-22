@@ -36,8 +36,8 @@ class AppDataContainer(private val context: Context): AppContainer {
 
     override val userDataRepository: UserDataRepository by lazy {
         OfflineUserDataRepository(
-            busJourneyInfoDAO = UserDataDatabase.getDatabase(context).busJourneyInfoDAO(),
-            busJourneyListInfoDAO = UserDataDatabase.getDatabase(context).busJourneyListInfoDAO()
+            journeySegmentInfoDAO = UserDataDatabase.getDatabase(context).busJourneyInfoDAO(),
+            journeyInfoDAO = UserDataDatabase.getDatabase(context).busJourneyListInfoDAO()
         )
     }
 

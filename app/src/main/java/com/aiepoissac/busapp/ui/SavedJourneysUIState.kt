@@ -1,11 +1,11 @@
 package com.aiepoissac.busapp.ui
 
-import com.aiepoissac.busapp.userdata.BusJourneyListInfo
+import com.aiepoissac.busapp.userdata.JourneyInfo
 
 data class SavedJourneysUIState (
-    val savedJourneys: List<BusJourneyListInfo> = listOf(),
+    val savedJourneys: List<JourneyInfo> = listOf(),
     val showAddDialog: Boolean = false,
     val descriptionInput: String = "",
-    val selectedSavedJourney: BusJourneyListInfo? = null,
+    val selectedSavedJourney: JourneyInfo? = null,
     val showDeleteDialog: Boolean = false
 )

@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "Bus_Journey_List_Info_Table"
 )
-data class BusJourneyListInfo (
+data class JourneyInfo (
     @PrimaryKey val journeyID: String,
     val description: String
 )

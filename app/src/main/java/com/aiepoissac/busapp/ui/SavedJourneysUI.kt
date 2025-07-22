@@ -34,7 +34,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.aiepoissac.busapp.BusApplication
-import com.aiepoissac.busapp.userdata.BusJourneyListInfo
+import com.aiepoissac.busapp.userdata.JourneyInfo
 
 @Composable
 fun SavedJourneysUI(
@@ -124,8 +124,8 @@ fun SavedJourneysUI(
 private fun SavedJourneysList(
     navController: NavHostController,
     uiState: SavedJourneysUIState,
-    onEdit: (BusJourneyListInfo) -> Unit,
-    onDelete: (BusJourneyListInfo) -> Unit
+    onEdit: (JourneyInfo) -> Unit,
+    onDelete: (JourneyInfo) -> Unit
 ) {
 
     val data = uiState.savedJourneys
@@ -148,9 +148,9 @@ private fun SavedJourneysList(
 @Composable
 private fun SavedJourneyInformation(
     navController: NavHostController,
-    data: BusJourneyListInfo,
-    onEdit: (BusJourneyListInfo) -> Unit,
-    onDelete: (BusJourneyListInfo) -> Unit
+    data: JourneyInfo,
+    onEdit: (JourneyInfo) -> Unit,
+    onDelete: (JourneyInfo) -> Unit
 ) {
 
     Row(

@@ -44,7 +44,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.aiepoissac.busapp.data.busarrival.BusService
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
-import com.aiepoissac.busapp.userdata.BusJourneyInfo
+import com.aiepoissac.busapp.userdata.JourneySegmentInfo
 
 @Composable
 fun SavedJourneyUI(
@@ -220,9 +220,9 @@ fun SavedJourneyUI(
 private fun SavedJourneySegmentList(
     navController: NavHostController,
     uiState: SavedJourneyUIState,
-    onDelete: (BusJourneyInfo) -> Unit,
-    onMoveUp: (BusJourneyInfo) -> Unit,
-    onMoveDown: (BusJourneyInfo) -> Unit
+    onDelete: (JourneySegmentInfo) -> Unit,
+    onMoveUp: (JourneySegmentInfo) -> Unit,
+    onMoveDown: (JourneySegmentInfo) -> Unit
 ) {
 
     val data = uiState.busJourneys
@@ -249,10 +249,10 @@ private fun SavedJourneySegmentList(
 @Composable
 private fun SavedJourneySegmentInformation(
     navController: NavHostController,
-    data: Pair<BusJourneyInfo, Pair<Pair<BusRouteInfoWithBusStopInfo, BusService?>, Pair<BusRouteInfoWithBusStopInfo, BusService?>>>,
-    onDelete: (BusJourneyInfo) -> Unit,
-    onMoveUp: (BusJourneyInfo) -> Unit,
-    onMoveDown: (BusJourneyInfo) -> Unit,
+    data: Pair<JourneySegmentInfo, Pair<Pair<BusRouteInfoWithBusStopInfo, BusService?>, Pair<BusRouteInfoWithBusStopInfo, BusService?>>>,
+    onDelete: (JourneySegmentInfo) -> Unit,
+    onMoveUp: (JourneySegmentInfo) -> Unit,
+    onMoveDown: (JourneySegmentInfo) -> Unit,
     showBusType: Boolean,
     showDestinationBusArrivals: Boolean,
     showFirstLastBus: Boolean

@@ -1,48 +1,48 @@
 package com.aiepoissac.busapp.userdata
 
 class OfflineUserDataRepository(
-    private val busJourneyListInfoDAO: BusJourneyListInfoDAO,
-    private val busJourneyInfoDAO: BusJourneyInfoDAO
+    private val journeyInfoDAO: JourneyInfoDAO,
+    private val journeySegmentInfoDAO: JourneySegmentInfoDAO
 ): UserDataRepository {
 
-    override suspend fun insertBusJourneyListInfo(busJourneyListInfo: BusJourneyListInfo) {
-        busJourneyListInfoDAO.insert(busJourneyListInfo)
+    override suspend fun insertJourney(journeyInfo: JourneyInfo) {
+        journeyInfoDAO.insert(journeyInfo)
     }
 
-    override suspend fun updateBusJourneyListInfo(busJourneyListInfo: BusJourneyListInfo) {
-        busJourneyListInfoDAO.update(busJourneyListInfo)
+    override suspend fun updateJourney(journeyInfo: JourneyInfo) {
+        journeyInfoDAO.update(journeyInfo)
     }
 
-    override suspend fun deleteBusJourneyListInfo(busJourneyListInfo: BusJourneyListInfo) {
-        busJourneyListInfoDAO.delete(busJourneyListInfo)
+    override suspend fun deleteJourney(journeyInfo: JourneyInfo) {
+        journeyInfoDAO.delete(journeyInfo)
     }
 
-    override suspend fun getAllBusJourneyListInfo(): List<BusJourneyListInfo> {
-        return busJourneyListInfoDAO.getAllBusJourneyListInfo()
+    override suspend fun getAllJourneys(): List<JourneyInfo> {
+        return journeyInfoDAO.getAllJourneys()
     }
 
-    override suspend fun getBusJourneyListInfo(journeyID: String): BusJourneyListInfo {
-        return busJourneyListInfoDAO.getBusJourneyListInfo(journeyID)
+    override suspend fun getJourney(journeyID: String): JourneyInfo {
+        return journeyInfoDAO.getJourney(journeyID)
     }
 
-    override suspend fun insertBusJourneyInfo(busJourneyInfo: BusJourneyInfo) {
-        busJourneyInfoDAO.insert(busJourneyInfo)
+    override suspend fun insertJourneySegment(journeySegmentInfo: JourneySegmentInfo) {
+        journeySegmentInfoDAO.insert(journeySegmentInfo)
     }
 
-    override suspend fun updateBusJourneyInfo(busJourneyInfo: BusJourneyInfo) {
-        busJourneyInfoDAO.update(busJourneyInfo)
+    override suspend fun updateJourneySegment(journeySegmentInfo: JourneySegmentInfo) {
+        journeySegmentInfoDAO.update(journeySegmentInfo)
     }
 
-    override suspend fun deleteBusJourneyInfo(busJourneyInfo: BusJourneyInfo) {
-        busJourneyInfoDAO.delete(busJourneyInfo)
+    override suspend fun deleteJourneySegment(journeySegmentInfo: JourneySegmentInfo) {
+        journeySegmentInfoDAO.delete(journeySegmentInfo)
     }
 
-    override suspend fun deleteBusJourneyList(journeyID: String) {
-        busJourneyInfoDAO.deleteBusJourneyList(journeyID)
+    override suspend fun deleteAllJourneySegments(journeyID: String) {
+        journeySegmentInfoDAO.deleteAllJourneySegments(journeyID)
     }
 
-    override suspend fun getBusJourneyList(journeyID: String): List<BusJourneyInfo> {
-        return busJourneyInfoDAO.getBusJourneyList(journeyID)
+    override suspend fun getAllJourneySegments(journeyID: String): List<JourneySegmentInfo> {
+        return journeySegmentInfoDAO.getAllJourneySegments(journeyID)
     }
 
 }

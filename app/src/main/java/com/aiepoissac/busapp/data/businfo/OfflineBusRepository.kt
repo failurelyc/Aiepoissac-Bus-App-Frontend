@@ -1,5 +1,8 @@
 package com.aiepoissac.busapp.data.businfo
 
+import com.aiepoissac.busapp.data.mrtstation.MRTStation
+import com.aiepoissac.busapp.data.mrtstation.MRTStationDAO
+
 class OfflineBusRepository(
     private val busServiceInfoDAO: BusServiceInfoDAO,
     private val busRouteInfoDAO: BusRouteInfoDAO,

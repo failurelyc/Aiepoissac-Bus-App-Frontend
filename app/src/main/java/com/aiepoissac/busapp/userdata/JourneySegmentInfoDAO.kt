@@ -7,21 +7,21 @@ import androidx.room.Query
 import androidx.room.Update
 
 @Dao
-interface BusJourneyInfoDAO {
+interface JourneySegmentInfoDAO {
 
     @Insert
-    suspend fun insert(busJourney: BusJourneyInfo)
+    suspend fun insert(journeySegmentInfo: JourneySegmentInfo)
 
     @Update
-    suspend fun update(busJourney: BusJourneyInfo)
+    suspend fun update(journeySegmentInfo: JourneySegmentInfo)
 
     @Delete
-    suspend fun delete(busJourney: BusJourneyInfo)
+    suspend fun delete(journeySegmentInfo: JourneySegmentInfo)
 
     @Query("DELETE FROM Bus_Journey_Info_Table WHERE journeyID = :journeyID")
-    suspend fun deleteBusJourneyList(journeyID: String)
+    suspend fun deleteAllJourneySegments(journeyID: String)
 
     @Query("SELECT * FROM Bus_Journey_Info_Table WHERE journeyID = :journeyID")
-    suspend fun getBusJourneyList(journeyID: String): List<BusJourneyInfo>
+    suspend fun getAllJourneySegments(journeyID: String): List<JourneySegmentInfo>
 
 }

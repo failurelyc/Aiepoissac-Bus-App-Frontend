@@ -6,15 +6,15 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [BusJourneyInfo::class, BusJourneyListInfo::class],
+    entities = [JourneySegmentInfo::class, JourneyInfo::class],
     version = 1,
     exportSchema = false
 )
 abstract class UserDataDatabase: RoomDatabase() {
 
-    abstract fun busJourneyInfoDAO(): BusJourneyInfoDAO
+    abstract fun busJourneyInfoDAO(): JourneySegmentInfoDAO
 
-    abstract fun busJourneyListInfoDAO(): BusJourneyListInfoDAO
+    abstract fun busJourneyListInfoDAO(): JourneyInfoDAO
 
     companion object {
         @Volatile

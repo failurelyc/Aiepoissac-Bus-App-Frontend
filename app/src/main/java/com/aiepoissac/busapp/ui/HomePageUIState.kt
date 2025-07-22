@@ -2,7 +2,7 @@ package com.aiepoissac.busapp.ui
 
 import com.aiepoissac.busapp.data.businfo.BusServiceInfoWithBusStopInfo
 import com.aiepoissac.busapp.data.businfo.BusStopInfo
-import com.aiepoissac.busapp.data.businfo.MRTStation
+import com.aiepoissac.busapp.data.mrtstation.MRTStation
 
 data class HomePageUIState (
     val busStopCodeInput: String = "",
@@ -17,5 +17,4 @@ data class HomePageUIState (
     val mrtStationInput: String = "",
     val mrtStationSearchResult: List<MRTStation> = listOf(),
     val mrtStationSearchBarExpanded: Boolean = false
-
 )

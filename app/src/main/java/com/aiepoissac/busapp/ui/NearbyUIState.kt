@@ -4,7 +4,7 @@ import com.aiepoissac.busapp.data.HasCoordinates
 import com.aiepoissac.busapp.data.bicycle.BicycleParking
 import com.aiepoissac.busapp.data.businfo.BusStopInfo
 import com.aiepoissac.busapp.data.businfo.BusStopInfoWithBusRoutesInfo
-import com.aiepoissac.busapp.data.businfo.MRTStation
+import com.aiepoissac.busapp.data.mrtstation.MRTStation
 import java.time.DayOfWeek
 import java.time.LocalTime
 
