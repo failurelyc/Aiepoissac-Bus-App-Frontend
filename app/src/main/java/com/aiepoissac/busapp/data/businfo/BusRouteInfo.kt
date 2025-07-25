@@ -111,8 +111,8 @@ fun truncateTillBusStop(
             return@dropWhile it.busRouteInfo.stopSequence < stopSequence }
 
     if (visitedFirstStopAgain >= 0) { //bus route is a dual loop continuous
-        truncatedRoute = truncatedRoute +
-                addStopSequenceOffset(route, truncatedRoute.last())
+        truncatedRoute = truncatedRoute + addStopSequenceOffset(route, truncatedRoute.last())
+                //if (adjustStopSequence) addStopSequenceOffset(route, truncatedRoute.last()) else route
     }
 
     if (adjustStopSequence) {
@@ -185,7 +185,7 @@ fun truncateLoopRoute(
     if (!after) {
         return Pair(0, truncatedRoute)
     } else {
-        val stopSequenceOffset = (seenBusStopCodes.get(lastSeen)?: 0) + 1
+        val stopSequenceOffset = (seenBusStopCodes[lastSeen] ?: 0) + 1
         return Pair(
             first = stopSequenceOffset,
             second = truncateTillBusStop(
@@ -241,15 +241,17 @@ suspend fun findBusServiceTo(
         if (!seenBusRoutes.contains(busRouteNearby.second)) {
             val remainingDistanceThreshold = distanceThreshold - busRouteNearby.first
             val busRouteInfo = busRouteNearby.second.busRouteInfo
-            val fullBusRoute = busRepository.getBusServiceRoute(
-                serviceNo = busRouteInfo.serviceNo,
-                direction = busRouteInfo.direction
-            )
-            val routeFromThisStop = truncateTillBusStop(
-                route = fullBusRoute,
-                stopSequence = busRouteInfo.stopSequence,
-                adjustStopSequence = false
-            )
+            val fullBusRoute =
+                busRepository.getBusServiceRoute(
+                    serviceNo = busRouteInfo.serviceNo,
+                    direction = busRouteInfo.direction
+                )
+            val routeFromThisStop =
+                truncateTillBusStop(
+                    route = fullBusRoute,
+                    stopSequence = busRouteInfo.stopSequence,
+                    adjustStopSequence = false
+                )
             var destination: Pair<Int, BusRouteInfoWithBusStopInfo>? = null
             var alternativeDestination: Pair<Int, BusRouteInfoWithBusStopInfo>? = null
             var alternativeOrigin: Pair<Int, BusRouteInfoWithBusStopInfo>? = null
@@ -303,31 +305,26 @@ suspend fun findBusServiceTo(
                     break
                 }
             }
-            if (checkProposedRoute(
-                    origin = busRouteNearby,
+            if (checkProposedRoute(origin = busRouteNearby,
                     destination = destination,
-                    distanceFromOriginToDestination = distanceToTarget)
-                ) {
+                    distanceThreshold = distanceThreshold)) {
                 routes.add(Pair(busRouteNearby, destination!!))
                 if (checkProposedRoute(
                         origin = alternativeOrigin,
                         destination = destination,
-                        distanceFromOriginToDestination = distanceToTarget)
-                ) {
+                        distanceThreshold = distanceThreshold)) {
                     routes.add(Pair(alternativeOrigin!!, destination))
                 }
 
                 if (checkProposedRoute(
                         origin = busRouteNearby,
                         destination = alternativeDestination,
-                        distanceFromOriginToDestination = distanceToTarget)
-                ) {
+                        distanceThreshold = distanceThreshold)) {
                     routes.add(Pair(busRouteNearby, alternativeDestination!!))
                     if (checkProposedRoute(
                             origin = alternativeOrigin,
                             destination = alternativeDestination,
-                            distanceFromOriginToDestination = distanceToTarget)
-                    ) {
+                            distanceThreshold = distanceThreshold)) {
                         routes.add(Pair(alternativeOrigin!!, alternativeDestination))
                     }
                 }
@@ -340,11 +337,11 @@ suspend fun findBusServiceTo(
 private fun checkProposedRoute(
     origin: Pair<Int, BusRouteInfoWithBusStopInfo>?,
     destination: Pair<Int, BusRouteInfoWithBusStopInfo>?,
-    distanceFromOriginToDestination: Int
+    distanceThreshold: Int
 ): Boolean {
     return origin != null &&
             destination != null &&
-            origin.first + destination.first <= distanceFromOriginToDestination &&
+            origin.first + destination.first <= distanceThreshold &&
             destination.second.busRouteInfo.stopSequence - origin.second.busRouteInfo.stopSequence > 0
 }
 

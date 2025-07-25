@@ -11,6 +11,7 @@ import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.busarrival.BusArrivalGetter
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
+import com.aiepoissac.busapp.data.businfo.truncateTillBusStop
 import com.aiepoissac.busapp.userdata.JourneySegmentInfo
 import com.aiepoissac.busapp.userdata.UserDataRepository
 import com.aiepoissac.busapp.userdata.attachBusArrivalsToBusJourneyWithBusRouteInfo
@@ -140,22 +141,25 @@ class SavedJourneyViewModel (
     }
 
     fun addBusJourney() {
-        val originStop = uiState.value.originStopInput
-        val destinationStop = uiState.value.destinationStopInput
+        val originStop = uiState.value.originStopInput?.busRouteInfo
+        val destinationStop = uiState.value.destinationStopInput?.busRouteInfo
 
         if (originStop != null && destinationStop != null
-            && originStop.busRouteInfo.serviceNo == destinationStop.busRouteInfo.serviceNo
-            && originStop.busRouteInfo.direction == destinationStop.busRouteInfo.direction
+            && originStop.serviceNo == destinationStop.serviceNo
+            && originStop.direction == destinationStop.direction
             ) {
 
             viewModelScope.launch {
+
+                val routeLength = busRepository.getBusServiceRouteLength(originStop.serviceNo, originStop.direction)
+
                 userDataRepository.insertJourneySegment(
                     JourneySegmentInfo(
                         journeyID = journeyID,
-                        serviceNo = originStop.busRouteInfo.serviceNo,
-                        direction = originStop.busRouteInfo.direction,
-                        originBusStopSequence = originStop.busRouteInfo.stopSequence,
-                        destinationBusStopSequence = destinationStop.busRouteInfo.stopSequence,
+                        serviceNo = originStop.serviceNo,
+                        direction = originStop.direction,
+                        originBusStopSequence = originStop.stopSequence % routeLength,
+                        destinationBusStopSequence = destinationStop.stopSequence % routeLength,
                         sequence = uiState.value.busJourneys.size
                     )
                 )
@@ -294,13 +298,21 @@ class SavedJourneyViewModel (
     fun updateOriginStopInput(originStop: BusRouteInfoWithBusStopInfo) {
         viewModelScope.launch {
             _uiState.update {
+                val busRoute =
+                    busRepository.getBusServiceRoute(
+                        serviceNo = originStop.busRouteInfo.serviceNo,
+                        direction = originStop.busRouteInfo.direction
+                    )
+
                 it.copy(
                     originStopInput = originStop,
                     destinationStopInput = null,
-                    destinationStopSearchResults = busRepository.getBusServiceRouteAfterSpecifiedStop(
-                        serviceNo = uiState.value.serviceNoInput,
-                        direction = if (uiState.value.isDirectionTwo) 2 else 1,
-                        stopSequence = originStop.busRouteInfo.stopSequence)
+                    destinationStopSearchResults =
+                        truncateTillBusStop(
+                            route = busRoute,
+                            stopSequence = originStop.busRouteInfo.stopSequence,
+                            adjustStopSequence = false
+                        )
                 )
             }
         }

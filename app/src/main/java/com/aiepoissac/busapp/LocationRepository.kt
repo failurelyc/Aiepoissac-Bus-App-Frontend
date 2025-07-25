@@ -44,6 +44,8 @@ class RealLocationRepository : LocationRepository {
     private val _currentLocation = MutableStateFlow<Location?>(null)
     override val currentLocation: StateFlow<Location?> = _currentLocation
 
+    private var isFetchingLocation = false
+
     private var locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             for (location in locationResult.locations) {
@@ -54,16 +56,22 @@ class RealLocationRepository : LocationRepository {
 
     @SuppressLint("MissingPermission")
     override fun startFetchingLocation(fastRefresh: Boolean) {
-        fusedLocationClient.requestLocationUpdates(
-            if (fastRefresh) fastLocationRequest else slowLocationRequest,
-            locationCallback,
-            Looper.getMainLooper()
-        )
+        if (!isFetchingLocation) {
+            fusedLocationClient.requestLocationUpdates(
+                if (fastRefresh) fastLocationRequest else slowLocationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
+            isFetchingLocation = true
+        }
 
     }
 
     override fun stopFetchingLocation() {
-        fusedLocationClient.removeLocationUpdates(locationCallback)
+        if (isFetchingLocation) {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+            isFetchingLocation = false
+        }
     }
 
 }

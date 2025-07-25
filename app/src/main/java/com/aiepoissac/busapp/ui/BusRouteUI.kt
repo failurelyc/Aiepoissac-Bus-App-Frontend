@@ -1,7 +1,7 @@
 package com.aiepoissac.busapp.ui
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.isSystemInDarkTheme
+
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -31,7 +30,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -40,7 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -85,9 +82,11 @@ fun BusRouteUI(
 
     val gridState = rememberLazyGridState()
 
-    RequestLocationPermission {
-        busRouteViewModel.updateLiveLocation()
-    }
+    RequestLocationPermission(
+        onGranted = busRouteViewModel::updateLiveLocation,
+        message = "Location permission is required to view your location. " +
+                "Press cancel if you do not require this feature."
+    )
 
     Scaffold (
         floatingActionButton = {
@@ -165,6 +164,9 @@ fun BusRouteUI(
                 .fillMaxSize()
                 .consumeWindowInsets(innerPadding)
         ) {
+
+
+
             BusRouteList(
                 navController = navController,
                 uiState = busRouteUIState,
@@ -174,6 +176,7 @@ fun BusRouteUI(
                         gridState.scrollToItem(0)
                     }
                                       },
+                toggleShowBusServiceInfo = busRouteViewModel::toggleShowBusServiceInfo,
                 setIsLiveLocationOnClick = busRouteViewModel::setIsLiveLocation,
                 setShowFirstLastBusOnClick = busRouteViewModel::setShowFirstLastBusTimings,
                 setShowLiveBusesOnClick = busRouteViewModel::setShowLiveBuses,
@@ -198,6 +201,7 @@ private fun BusRouteList(
     navController: NavHostController,
     uiState: BusRouteUIState,
     revertButtonOnClick: () -> Unit,
+    toggleShowBusServiceInfo: () -> Unit,
     setIsLiveLocationOnClick: (Boolean) -> Unit,
     setShowFirstLastBusOnClick: (Boolean) -> Unit,
     setShowLiveBusesOnClick: (Boolean) -> Unit,
@@ -216,22 +220,61 @@ private fun BusRouteList(
     if (busServiceInfo != null) {
         if (configuration.orientation == 1 && !uiState.showMap) {
 
-            Text(
-                text = "${busServiceInfo.operator} ${busServiceInfo.category} ${busServiceInfo.serviceNo}",
-                fontSize = 24.sp,
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
+            Column(
+                modifier = Modifier.fillMaxWidth()
+                    .clickable {
+                        toggleShowBusServiceInfo()
+                    }
+            ) {
+                Text(
+                    text = "${busServiceInfo.operator} ${busServiceInfo.category} ${busServiceInfo.serviceNo}",
+                    fontSize = 24.sp,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
 
-            if (!busServiceInfo.isLoop()) {
-                Text(
-                    text = "Direction: ${busServiceInfo.direction}",
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-            } else {
-                Text(
-                    text = "Loop At: ${busServiceInfo.loopDesc}",
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
+                if (!busServiceInfo.isLoop()) {
+                    Text(
+                        text = "Direction: ${busServiceInfo.direction}",
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                } else {
+                    Text(
+                        text = "Loop At: ${busServiceInfo.loopDesc}",
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                }
+
+                if (uiState.showBusServiceInfo) {
+
+                    if (busServiceInfo.hasAMPeakFrequency()) {
+                        Text(
+                            text = "0630H - 0830H ${busServiceInfo.amPeakFreq} minutes",
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                    }
+
+                    if (busServiceInfo.hasAMOffPeakFrequency()) {
+                        Text(
+                            text = "0830H - 1700H ${busServiceInfo.pmPeakFreq} minutes",
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                    }
+
+                    if (busServiceInfo.hasPMPeakFrequency()) {
+                        Text(
+                            text = "1700H - 1900H ${busServiceInfo.pmPeakFreq} minutes",
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                    }
+
+                    if (busServiceInfo.hasPMOffPeakFrequency()) {
+                        Text(
+                            text = "After 1900H ${busServiceInfo.pmOffPeakFreq} minutes",
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                    }
+
+                }
             }
 
         }
@@ -367,7 +410,9 @@ private fun BusRouteList(
 
                 if (uiState.isLiveLocation) {
                     Marker(
-                        state = markerState
+                        state = markerState,
+                        title = "Selected location",
+                        snippet = "${markerState.position.latitude}, ${markerState.position.longitude}"
                     )
                 }
 
@@ -447,23 +492,14 @@ private fun BusRouteList(
                     }
                     .forEach {
                         val busStopInfo = it.busStopInfo
-                        val busRouteInfo = it.busRouteInfo
 
                         MarkerComposable(
-                            state = MarkerState(position = LatLng(busStopInfo.latitude, busStopInfo.longitude)),
-                            onClick = {
-                                setIsLiveLocationOnClick(false)
-                                navigateToBusArrival(
-                                    navController = navController,
-                                    busStopInput = busRouteInfo.busStopCode
-                                )
-                                return@MarkerComposable true
-                            }
+                            state = MarkerState(position = LatLng(busStopInfo.latitude, busStopInfo.longitude))
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.DirectionsBus,
                                 contentDescription = "Bus Stop outside selected route",
-                                tint = Color.LightGray
+                                tint = Color.LightGray.copy(alpha = 0.5f)
                             )
                         }
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -93,6 +94,21 @@ fun BusToMRTStationsUI(
             }
         }
     ) { innerPadding ->
+
+        if (uiState.showAddSavedJourneyDialog) {
+            TextFieldDialog(
+                value = uiState.descriptionInput,
+                title = "Add journey",
+                label = "New description",
+                onValueChange = viewModel::updateDescriptionInput,
+                onDismissRequest = viewModel::toggleShowAddSavedJourneyDialog,
+                onConfirmRequest = {
+                    viewModel.addSavedJourney()
+                    navigateToSavedJourneys(navController = navController)
+                }
+            )
+        }
+
         Column(
             modifier = Modifier.padding(innerPadding)
         ) {
@@ -101,10 +117,11 @@ fun BusToMRTStationsUI(
 
             if (mrtStation != null && !uiState.searchingForBusServices) {
                 Text(
-                    text = "${mrtStation.stationCode} ${mrtStation.stationName} MRT",
-                    textAlign = TextAlign.Center,
+                    text = "${mrtStation.second.stationCode} ${mrtStation.second.stationName} " +
+                            "${mrtStation.second.type} (${mrtStation.first}m)",
+                    textAlign = TextAlign.Left,
                     fontSize = 24.sp,
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(8.dp).fillMaxWidth()
                 )
 
                 TimeSettings(
@@ -117,6 +134,15 @@ fun BusToMRTStationsUI(
                     setDayOfWeek = viewModel::setDayOfWeek,
                     currentTime = uiState.currentTime
                 )
+
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = viewModel::toggleShowAddSavedJourneyDialog
+                ) {
+                    Text(
+                        text = "Save all to new Journey (max 10)"
+                    )
+                }
 
                 if (uiState.routes.isNotEmpty()) {
 

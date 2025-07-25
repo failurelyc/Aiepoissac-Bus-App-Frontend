@@ -261,6 +261,14 @@ class BusRouteViewModel(
 
     }
 
+    fun toggleShowBusServiceInfo() {
+        _uiState.update {
+            it.copy(
+                showBusServiceInfo = !uiState.value.showBusServiceInfo
+            )
+        }
+    }
+
     fun updateLiveLocation() {
         viewModelScope.launch {
             if (uiState.value.isLiveLocation) {
@@ -344,7 +352,30 @@ class BusRouteViewModel(
                             .getBusArrival(firstStop.busStopCode)
                             .getBusArrivalsOfASingleService(serviceNo = busServiceInfo.serviceNo)
                             .flatMap { listOf(it.nextBus, it.nextBus2, it.nextBus3) }
-                            .filter { it.isLive() && it.destinationCode == lastStop.busStopCode }
+                            .filter {
+                                it.destinationCode == lastStop.busStopCode
+                            }
+                            .map {
+                                if (it.isLive()) {
+                                    it
+                                } else {
+                                    val busOrigin = busRepository.getBusStop(it.originCode)
+
+                                    if (busOrigin == null) {
+                                        val busRouteOrigin = uiState.value.originalBusRoute.first().busStopInfo
+                                        it.copy(
+                                            latitude = busRouteOrigin.latitude,
+                                            longitude = busRouteOrigin.longitude
+                                        )
+                                    } else {
+                                        it.copy(
+                                            latitude = busOrigin.latitude,
+                                            longitude = busOrigin.longitude
+                                        )
+                                    }
+
+                                }
+                            }
 
                         _uiState.update {
                             it.copy(

@@ -24,6 +24,8 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 import androidx.core.content.edit
 import com.aiepoissac.busapp.data.businfo.populatePlannedBusRoutes
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 class HomePageViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository
@@ -213,7 +215,8 @@ class HomePageViewModel(
         }
 
         //downloading planned (future) bus routes
-        if (checkIfPlannedBusRoutesOutdated()) {
+        if (checkIfPlannedBusRoutesOutdated()
+            || busRepository.getPlannedBusRoutesCount() == 0) {
             try {
                 Log.d(Pages.HomePage.title, "Started Downloading Planned Bus Routes")
                 populatePlannedBusRoutes(busRepository)
@@ -224,6 +227,8 @@ class HomePageViewModel(
                 busRepository.deleteAllPlannedBusRoutes()
             }
         }
+
+
 
 
     }

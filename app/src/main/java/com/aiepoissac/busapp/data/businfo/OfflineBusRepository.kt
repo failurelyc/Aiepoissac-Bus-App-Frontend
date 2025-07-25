@@ -59,6 +59,10 @@ class OfflineBusRepository(
         return busRouteInfoDAO.getBusRoutesCount()
     }
 
+    override suspend fun getBusServiceRouteLength(serviceNo: String, direction: Int): Int {
+        return busRouteInfoDAO.getBusServiceRouteLength(serviceNo, direction)
+    }
+
     override suspend fun getBusServiceRoute(
         serviceNo: String, direction: Int
     ): List<BusRouteInfoWithBusStopInfo> {
@@ -173,6 +177,10 @@ class OfflineBusRepository(
 
     override suspend fun deleteAllPlannedBusRoutes() {
         plannedBusRouteInfoDAO.deleteAll()
+    }
+
+    override suspend fun getPlannedBusRoutesCount(): Int {
+        return plannedBusRouteInfoDAO.getPlannedBusRoutesCount()
     }
 
     override suspend fun getAllPlannedBusRoutes(): List<PlannedBusRouteInfoWithBusStopInfo> {

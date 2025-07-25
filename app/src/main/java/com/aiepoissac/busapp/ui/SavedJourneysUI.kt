@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -189,7 +190,7 @@ private fun SavedJourneyInformation(
 }
 
 @Composable
-private fun TextFieldDialog(
+fun TextFieldDialog(
     value: String,
     title: String = "",
     label: String = "",
@@ -204,14 +205,14 @@ private fun TextFieldDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
+                .height(320.dp)
                 .padding(8.dp),
             shape = RoundedCornerShape(8.dp),
         ) {
             Text(
                 text = title,
                 modifier = Modifier
-                    .padding(8.dp)
+                    .padding(4.dp)
                     .align(Alignment.CenterHorizontally)
             )
 
@@ -222,8 +223,21 @@ private fun TextFieldDialog(
                 label = { Text(text = label) },
                 isError = isError,
                 keyboardActions = KeyboardActions(onDone = { onConfirmRequest() }),
-                modifier = Modifier.padding(8.dp).fillMaxWidth()
+                modifier = Modifier.padding(4.dp).fillMaxWidth()
             )
+
+            Button(
+                onClick = onDismissRequest,
+                modifier = Modifier.padding(4.dp)
+            ) {
+                Text(text = "Cancel")
+            }
+            Button(
+                onClick = onConfirmRequest,
+                modifier = Modifier.padding(4.dp)
+            ) {
+                Text(text = "Confirm")
+            }
         }
     }
 }

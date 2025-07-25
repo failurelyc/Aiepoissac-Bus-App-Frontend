@@ -113,7 +113,7 @@ class SavedJourneysViewModel(
 
 }
 
-private fun generateRandomString(length: Int): String {
+fun generateRandomString(length: Int): String {
     val validChars = ('A'..'Z') + ('a'..'z') + ('0'..'9')
     return List(length) { validChars.random() }.joinToString(separator = "")
 }

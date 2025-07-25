@@ -118,8 +118,8 @@ class NearbyViewModel(
         if (uiState.value.isLiveLocation) {
             stopLiveLocation()
         } else {
-                locationRepository.startFetchingLocation(fastRefresh = false)
-                _uiState.update { it.copy(isLiveLocation = true) }
+            locationRepository.startFetchingLocation(fastRefresh = false)
+            _uiState.update { it.copy(isLiveLocation = true) }
 
         }
     }

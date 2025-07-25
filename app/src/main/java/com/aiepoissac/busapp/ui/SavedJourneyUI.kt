@@ -13,7 +13,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DepartureBoard
 import androidx.compose.material.icons.filled.DirectionsBus
@@ -69,13 +72,13 @@ fun SavedJourneyUI(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(600.dp)
-                    .padding(8.dp),
+                    .padding(4.dp),
                 shape = RoundedCornerShape(8.dp),
             ) {
                 Text(
                     text = "Add segment",
                     modifier = Modifier
-                        .padding(8.dp)
+                        .padding(4.dp)
                         .align(Alignment.CenterHorizontally)
                 )
 
@@ -86,7 +89,7 @@ fun SavedJourneyUI(
                     label = { Text(text = "Service Number") },
                     isError = savedJourneyUIState.originStopSearchResults.isEmpty(),
                     modifier = Modifier
-                        .padding(8.dp)
+                        .padding(4.dp)
                         .fillMaxWidth()
                 )
 
@@ -117,7 +120,8 @@ fun SavedJourneyUI(
                     selected = originBusStop?.toString() ?: "",
                     selections = savedJourneyUIState.originStopSearchResults,
                     onExpandedChange = savedJourneyViewModel::setOriginStopSearchExpanded,
-                    onItemClick = savedJourneyViewModel::updateOriginStopInput
+                    onItemClick = savedJourneyViewModel::updateOriginStopInput,
+                    modifier = Modifier.fillMaxWidth().padding(4.dp)
                 )
 
                 OptionsSelector(
@@ -126,18 +130,43 @@ fun SavedJourneyUI(
                     selected = destinationBusStop?.toString() ?: "",
                     selections = savedJourneyUIState.destinationStopSearchResults,
                     onExpandedChange = savedJourneyViewModel::setDestinationStopSearchExpanded,
-                    onItemClick = savedJourneyViewModel::updateDestinationStopInput
+                    onItemClick = savedJourneyViewModel::updateDestinationStopInput,
+                    modifier = Modifier.fillMaxWidth().padding(4.dp)
                 )
 
                 Button(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
+                        .padding(4.dp),
                     onClick = savedJourneyViewModel::addBusJourney
                 ) {
-                    Text(
-                        text = "Add",
-                        textAlign = TextAlign.Center
+                    TitleWithIcon(
+                        title = "Add",
+                        icon = Icons.Filled.Add
+                    )
+                }
+
+                Button(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp),
+                    onClick = { savedJourneyViewModel.setShowAddDialog(false) }
+                ) {
+                    TitleWithIcon(
+                        title = "Cancel and close",
+                        icon = Icons.Filled.Cancel
+                    )
+                }
+
+                Button(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp),
+                    onClick = savedJourneyViewModel::clearInput
+                ) {
+                    TitleWithIcon(
+                        title = "Clear input",
+                        icon = Icons.AutoMirrored.Filled.Backspace
                     )
                 }
             }
@@ -438,14 +467,13 @@ private fun <T> OptionsSelector(
     label: String,
     selections: List<T>,
     onExpandedChange: (Boolean) -> Unit,
-    onItemClick: (T) -> Unit
+    onItemClick: (T) -> Unit,
+    modifier: Modifier
 ) {
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = onExpandedChange,
-        modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth()
+        modifier = modifier
     ) {
         OutlinedTextField(
             value = selected,

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.LocationSearching
 import androidx.compose.material.icons.filled.Subway
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -48,6 +49,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -97,9 +101,12 @@ fun NearbyUI(
 
     val configuration = LocalConfiguration.current
 
-    RequestLocationPermission {
-        nearbyViewModel.updateLiveLocation()
-    }
+    RequestLocationPermission(
+        onGranted = nearbyViewModel::updateLiveLocation,
+        message = "Location permission is required to view bus stops near you. " +
+                "Press cancel if you do not require this feature."
+    )
+
 
     Scaffold (
         floatingActionButton = {
@@ -684,10 +691,10 @@ fun TimeSettingDialog(
                 state = timePickerState,
             )
             Button(onClick = onDismiss) {
-                Text("Dismiss picker")
+                Text(text = "Dismiss picker")
             }
             Button(onClick = { onConfirm(timePickerState) }) {
-                Text("Confirm selection")
+                Text(text = "Confirm selection")
             }
         }
     }
@@ -709,8 +716,12 @@ private fun navigateToBusToMRTStations(
 }
 
 @Composable
-fun RequestLocationPermission(onGranted: () -> Unit) {
+fun RequestLocationPermission(
+    onGranted: () -> Unit,
+    message: String,
+) {
     val context = LocalContext.current
+    var showDialog by remember { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -723,9 +734,30 @@ fun RequestLocationPermission(onGranted: () -> Unit) {
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            showDialog = true
         } else {
             onGranted()
         }
+    }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Permission Required") },
+            text = { Text(message) },
+            confirmButton = {
+                Button(onClick = {
+                    showDialog = false
+                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                }) {
+                    Text("Allow")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

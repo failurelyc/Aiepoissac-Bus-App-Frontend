@@ -22,6 +22,9 @@ interface PlannedBusRouteInfoDAO {
     @Query("DELETE FROM Planned_Bus_Routes_Table")
     suspend fun deleteAll()
 
+    @Query("SELECT COUNT(*) FROM Planned_Bus_Routes_Table")
+    suspend fun getPlannedBusRoutesCount(): Int
+
     @Transaction
     @Query("SELECT * FROM Planned_Bus_Routes_Table")
     suspend fun getAll(): List<PlannedBusRouteInfoWithBusStopInfo>

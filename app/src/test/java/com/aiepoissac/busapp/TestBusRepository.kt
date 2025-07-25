@@ -681,6 +681,10 @@ class TestBusRepository(
         return busRouteList.size
     }
 
+    override suspend fun getBusServiceRouteLength(serviceNo: String, direction: Int): Int {
+        return getBusServiceRoute(serviceNo, direction).size
+    }
+
     override suspend fun getBusServiceRoute(
         serviceNo: String,
         direction: Int
@@ -822,6 +826,10 @@ class TestBusRepository(
     }
 
     override suspend fun deleteAllPlannedBusRoutes() {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getPlannedBusRoutesCount(): Int {
         TODO("Not yet implemented")
     }
 

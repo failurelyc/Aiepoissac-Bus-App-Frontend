@@ -10,6 +10,7 @@ data class BusRouteUIState (
     val busStopSequenceOffset: Int = 0,
     val originalBusRoute: List<BusRouteInfoWithBusStopInfo> = listOf(),
     val busServiceInfo: BusServiceInfo? = null,
+    val showBusServiceInfo: Boolean = false,
     val busServiceVariants: List<BusServiceInfoWithBusStopInfo> = listOf(),
     val truncated: Boolean = false,
     val firstStopIsStartOfLoopingPoint: Boolean = false,
