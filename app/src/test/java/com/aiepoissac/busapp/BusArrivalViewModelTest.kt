@@ -224,21 +224,33 @@ class BusArrivalViewModelTest {
                     direction = 1,
                     stopSequence = 10,
                     busStopCode = "18309",
-                    distance = 5.3
+                    distance = 5.3,
+                    wdFirstBus = "0718",
+                    wdLastBus = "2348",
+                    satFirstBus = "0618",
+                    satLastBus = "2348",
+                    sunFirstBus = "0918",
+                    sunLastBus = "2248"
                 ),
                 BusRouteInfo(
                     serviceNo = "1004B",
                     direction = 1,
                     stopSequence = 3,
                     busStopCode = "18309",
-                    distance = 1.6
+                    distance = 1.6,
+                    wdFirstBus = "1306",
+                    wdLastBus = "2006"
                 ),
                 BusRouteInfo(
                     serviceNo = "1011",
                     direction = 1,
                     stopSequence = 12,
                     busStopCode = "18309",
-                    distance = 4.9
+                    distance = 4.9,
+                    wdFirstBus = "0721",
+                    wdLastBus = "2121",
+                    satFirstBus = "0921",
+                    satLastBus = "1521"
                 )
             ),
             newUIState.busRoutes,
@@ -284,26 +296,39 @@ class BusArrivalViewModelTest {
         assertEquals(
             newUIState.busRoutes,
             listOf(
+
                 BusRouteInfo(
                     serviceNo = "1004",
                     direction = 1,
                     stopSequence = 10,
                     busStopCode = "18309",
-                    distance = 5.3
+                    distance = 5.3,
+                    wdFirstBus = "0718",
+                    wdLastBus = "2348",
+                    satFirstBus = "0618",
+                    satLastBus = "2348",
+                    sunFirstBus = "0918",
+                    sunLastBus = "2248"
                 ),
                 BusRouteInfo(
                     serviceNo = "1004B",
                     direction = 1,
                     stopSequence = 3,
                     busStopCode = "18309",
-                    distance = 1.6
+                    distance = 1.6,
+                    wdFirstBus = "1306",
+                    wdLastBus = "2006"
                 ),
                 BusRouteInfo(
                     serviceNo = "1011",
                     direction = 1,
                     stopSequence = 12,
                     busStopCode = "18309",
-                    distance = 4.9
+                    distance = 4.9,
+                    wdFirstBus = "0721",
+                    wdLastBus = "2121",
+                    satFirstBus = "0921",
+                    satLastBus = "1521"
                 )
             )
 
@@ -344,21 +369,39 @@ class BusArrivalViewModelTest {
                     direction = 1,
                     stopSequence = 0,
                     busStopCode = "1000169",
-                    distance = 0.0
+                    distance = 0.0,
+                    wdFirstBus = "0600",
+                    wdLastBus = "2330",
+                    satFirstBus = "0700",
+                    satLastBus = "2330",
+                    sunFirstBus = "0900",
+                    sunLastBus = "2230"
                 ),
                 BusRouteInfo(
                     serviceNo = "1004",
                     direction = 1,
                     stopSequence = 13,
                     busStopCode = "1000169",
-                    distance = 7.5
+                    distance = 7.5,
+                    wdFirstBus = "0627",
+                    wdLastBus = "2357",
+                    satFirstBus = "0727",
+                    satLastBus = "2357",
+                    sunFirstBus = "0927",
+                    sunLastBus = "2257"
                 ),
                 BusRouteInfo(
                     serviceNo = "1004",
                     direction = 1,
                     stopSequence = 26,
                     busStopCode = "1000169",
-                    distance = 12.5
+                    distance = 12.5,
+                    wdFirstBus = "0620",
+                    wdLastBus = "0020",
+                    satFirstBus = "0750",
+                    satLastBus = "0020",
+                    sunFirstBus = "0950",
+                    sunLastBus = "2320"
                 )
             ),
             newUIState.busRoutes
@@ -407,21 +450,39 @@ class BusArrivalViewModelTest {
                     direction = 1,
                     stopSequence = 0,
                     busStopCode = "1000169",
-                    distance = 0.0
+                    distance = 0.0,
+                    wdFirstBus = "0600",
+                    wdLastBus = "2330",
+                    satFirstBus = "0700",
+                    satLastBus = "2330",
+                    sunFirstBus = "0900",
+                    sunLastBus = "2230"
                 ),
                 BusRouteInfo(
                     serviceNo = "1004",
                     direction = 1,
                     stopSequence = 13,
                     busStopCode = "1000169",
-                    distance = 7.5
+                    distance = 7.5,
+                    wdFirstBus = "0627",
+                    wdLastBus = "2357",
+                    satFirstBus = "0727",
+                    satLastBus = "2357",
+                    sunFirstBus = "0927",
+                    sunLastBus = "2257"
                 ),
                 BusRouteInfo(
                     serviceNo = "1004",
                     direction = 1,
                     stopSequence = 26,
                     busStopCode = "1000169",
-                    distance = 12.5
+                    distance = 12.5,
+                    wdFirstBus = "0620",
+                    wdLastBus = "0020",
+                    satFirstBus = "0750",
+                    satLastBus = "0020",
+                    sunFirstBus = "0950",
+                    sunLastBus = "2320"
                 )
             ),
             newUIState.busRoutes
