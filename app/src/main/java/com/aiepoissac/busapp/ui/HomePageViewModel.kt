@@ -24,8 +24,6 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 import androidx.core.content.edit
 import com.aiepoissac.busapp.data.businfo.populatePlannedBusRoutes
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 class HomePageViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository

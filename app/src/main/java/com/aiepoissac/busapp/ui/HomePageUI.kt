@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.RailwayAlert
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Subway
@@ -66,7 +67,8 @@ enum class Pages(val route: String, val title: String) {
     BusesToMRTStation(route = "BusesToMRTStation/{text1}/{text2}/{text3}", title = "Bus Service to MRT station"),
     SavedJourneys(route = "SavedJourneys", title = "Saved Journeys"),
     SavedJourney(route = "SavedJourney/{text}", title = "Saved Journey"),
-    TrainServiceAlerts(route = "TrainServiceAlerts", title = "Train Service Alerts");
+    TrainServiceAlerts(route = "TrainServiceAlerts", title = "Train Service Alerts"),
+    GuessTheBusRoute(route = "GuessTheBusRoute", title = "Guess The Bus Route");
 
     fun withText(text: String): String {
         return route.replace("{text}", text)
@@ -101,6 +103,7 @@ enum class Pages(val route: String, val title: String) {
                 route.startsWith(SavedJourneys.route) -> SavedJourneys
                 route.startsWith(SavedJourney.route) -> SavedJourney
                 route.startsWith(TrainServiceAlerts.route) -> TrainServiceAlerts
+                route.startsWith(GuessTheBusRoute.route) -> GuessTheBusRoute
                 else -> HomePage
             }
         }
@@ -226,6 +229,10 @@ fun BusApp(
                 composable(route = Pages.TrainServiceAlerts.route) {
                     TrainServiceAlertUI(navController = navController)
                 }
+
+                composable(route = Pages.GuessTheBusRoute.route) {
+                    GuessTheBusRouteUI(navController = navController)
+                }
             }
     }
 
@@ -250,67 +257,28 @@ private fun HomePageUI(
                 .consumeWindowInsets(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            if (!homePageUIState.busStopSearchBarExpanded &&
-                    !homePageUIState.busServiceSearchBarExpanded &&
-                    !homePageUIState.busStopRoadSearchBarExpanded &&
-                    !homePageUIState.mrtStationSearchBarExpanded
-                ) {
-                Button(
-                    onClick = {
-                        navigateToNearby(
-                            navController = navController,
-                            isLiveLocation = true
-                        )
-                              },
-                modifier = Modifier
-                    .padding(4.dp)
-                    .fillMaxWidth()
-                ) {
 
-                    TitleWithIcon(
-                        title = "Nearby bus/MRT",
-                        icon = Icons.Filled.NearMe
+            Button(
+                onClick = {
+                    navigateToNearby(
+                        navController = navController,
+                        isLiveLocation = true
                     )
+                },
+                modifier = Modifier.padding(4.dp).fillMaxWidth()
+            ) {
 
-                }
+                TitleWithIcon(
+                    title = "Nearby bus/MRT",
+                    icon = Icons.Filled.NearMe
+                )
 
-                Button(
-                    onClick = {
-                        navigateToSavedJourneys(navController = navController)
-                    },
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .fillMaxWidth()
-                ) {
-
-                    TitleWithIcon(
-                        title = "Saved journeys",
-                        icon = Icons.Filled.Save
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        navigateToTrainServiceAlerts(navController = navController)
-                    },
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .fillMaxWidth()
-                ) {
-
-                    TitleWithIcon(
-                        title = "Train service alerts",
-                        icon = Icons.Filled.RailwayAlert
-                    )
-                }
             }
 
             if (!homePageUIState.busServiceSearchBarExpanded &&
                 !homePageUIState.mrtStationSearchBarExpanded) {
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
+                    modifier = Modifier.fillMaxWidth().padding(8.dp)
                 ) {
 
                     TitleWithIcon(
@@ -531,6 +499,54 @@ private fun HomePageUI(
                 }
             }
 
+            if (!homePageUIState.busStopSearchBarExpanded &&
+                !homePageUIState.busServiceSearchBarExpanded &&
+                !homePageUIState.busStopRoadSearchBarExpanded &&
+                !homePageUIState.mrtStationSearchBarExpanded
+            ) {
+
+                Button(
+                    onClick = {
+                        navigateToTrainServiceAlerts(navController = navController)
+                    },
+                    modifier = Modifier.padding(4.dp).fillMaxWidth()
+                ) {
+
+                    TitleWithIcon(
+                        title = "Train service alerts",
+                        icon = Icons.Filled.RailwayAlert
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        navigateToSavedJourneys(navController = navController)
+                    },
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .fillMaxWidth()
+                ) {
+
+                    TitleWithIcon(
+                        title = "Saved journeys",
+                        icon = Icons.Filled.Save
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        navigateToGuessTheBusRoute(navController = navController)
+                    },
+                    modifier = Modifier.padding(4.dp).fillMaxWidth()
+                ) {
+
+                    TitleWithIcon(
+                        title = "Guess the bus route",
+                        icon = Icons.Filled.Route
+                    )
+                }
+            }
+
         }
     } else if (!homePageViewModel.failedDownload) {
         LoadingScreen(description = "Downloading bus data. Please do not leave this screen.")
@@ -726,4 +742,10 @@ fun navigateToTrainServiceAlerts(
     navController: NavHostController
 ) {
     navController.navigate(Pages.TrainServiceAlerts.route)
+}
+
+fun navigateToGuessTheBusRoute(
+    navController: NavHostController
+) {
+    navController.navigate(Pages.GuessTheBusRoute.route)
 }

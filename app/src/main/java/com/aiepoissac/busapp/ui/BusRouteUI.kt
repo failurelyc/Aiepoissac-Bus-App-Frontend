@@ -48,6 +48,7 @@ import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
 import com.aiepoissac.busapp.data.businfo.isLoop
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.CameraPositionState
+import com.google.maps.android.compose.Circle
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerComposable
@@ -443,19 +444,19 @@ private fun BusRouteList(
                     val latLng = LatLng(busStopInfo.latitude, busStopInfo.longitude)
                     marked.add(latLng)
 
-                    MarkerComposable(
-                        keys = arrayOf(uiState.busRoute, zoomedIn),
-                        state = MarkerState(position = latLng),
-                        onClick = {
-                            setIsLiveLocationOnClick(false)
-                            navigateToBusArrival(
-                                navController = navController,
-                                busStopInput = busRouteInfo.busStopCode
-                            )
-                            return@MarkerComposable true
-                        }
-                    ) {
-                        if (zoomedIn) {
+                    if (zoomedIn) {
+                        MarkerComposable(
+                            keys = arrayOf(uiState.busRoute, zoomedIn),
+                            state = MarkerState(position = latLng),
+                            onClick = {
+                                setIsLiveLocationOnClick(false)
+                                navigateToBusArrival(
+                                    navController = navController,
+                                    busStopInput = busRouteInfo.busStopCode
+                                )
+                                return@MarkerComposable true
+                            }
+                        ) {
                             Card {
                                 Text(
                                     text = "${busRouteInfo.stopSequence} (${busRouteInfo.distance}km)",
@@ -475,13 +476,21 @@ private fun BusRouteList(
                                     modifier = Modifier.align(Alignment.CenterHorizontally)
                                 )
                             }
-                        } else {
-                            Icon(
-                                imageVector = Icons.Filled.DirectionsBus,
-                                contentDescription = "Bus stop",
-                                tint = Color.Black
-                            )
                         }
+                    } else {
+                        Circle(
+                            center = LatLng(busStopInfo.latitude,busStopInfo.longitude),
+                            fillColor = Color.Black,
+                            strokeColor = Color.Black,
+                            clickable = true,
+                            onClick = {
+                                setIsLiveLocationOnClick(false)
+                                navigateToBusArrival(
+                                    navController = navController,
+                                    busStopInput = busRouteInfo.busStopCode
+                                )
+                            }
+                        )
                     }
 
                 }
@@ -493,15 +502,11 @@ private fun BusRouteList(
                     .forEach {
                         val busStopInfo = it.busStopInfo
 
-                        MarkerComposable(
-                            state = MarkerState(position = LatLng(busStopInfo.latitude, busStopInfo.longitude))
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.DirectionsBus,
-                                contentDescription = "Bus Stop outside selected route",
-                                tint = Color.LightGray.copy(alpha = 0.5f)
-                            )
-                        }
+                        Circle(
+                            center = LatLng(busStopInfo.latitude,busStopInfo.longitude),
+                            fillColor = Color.LightGray.copy(alpha = 0.5f),
+                            strokeColor = Color.LightGray.copy(alpha = 0.5f)
+                        )
 
                     }
 
