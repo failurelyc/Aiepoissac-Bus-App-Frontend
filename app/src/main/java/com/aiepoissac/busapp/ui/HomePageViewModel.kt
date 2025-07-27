@@ -272,30 +272,25 @@ class HomePageViewModel(
         lastDate.timeInMillis = lastDownloadTime
         val thisDate = Calendar.getInstance()
         thisDate.timeInMillis = System.currentTimeMillis()
+
         val dayOfLastOpenedDate = lastDate.get(Calendar.DAY_OF_WEEK)
+
         if (dayOfLastOpenedDate == Calendar.SUNDAY) {
             val hourOfLastOpenTime = lastDate.get(Calendar.HOUR_OF_DAY)
             lastDate.set(Calendar.HOUR_OF_DAY, 4)
             lastDate.set(Calendar.MINUTE, 0)
             lastDate.set(Calendar.SECOND, 0)
             if (hourOfLastOpenTime >= 4) {
-                lastDate.add(Calendar.DAY_OF_YEAR, 1) // Set to coming Monday 4am
+                lastDate.add(Calendar.DAY_OF_YEAR, 7) // Set to the next Sunday 4 AM
             }
-        } else if (dayOfLastOpenedDate == Calendar.MONDAY) {
-            val hourOfLastOpenTime = lastDate.get(Calendar.HOUR_OF_DAY)
-            lastDate.set(Calendar.HOUR_OF_DAY, 4)
-            lastDate.set(Calendar.MINUTE, 0)
-            lastDate.set(Calendar.SECOND, 0)
-            if (hourOfLastOpenTime >= 4) {
-                lastDate.add(Calendar.DAY_OF_YEAR, 6) // Set to coming Sunday 4am
-            }
-        } else { //dayOfLastDate is not Sunday or Monday
+        } else { // If it's not Sunday, set the next Sunday at 4 AM
             val daysFromLastDateToSunday = (Calendar.SUNDAY - dayOfLastOpenedDate + 7) % 7
             lastDate.add(Calendar.DAY_OF_YEAR, daysFromLastDateToSunday)
             lastDate.set(Calendar.HOUR_OF_DAY, 4)
             lastDate.set(Calendar.MINUTE, 0)
             lastDate.set(Calendar.SECOND, 0)
         }
+
         return thisDate.after(lastDate)
     }
 

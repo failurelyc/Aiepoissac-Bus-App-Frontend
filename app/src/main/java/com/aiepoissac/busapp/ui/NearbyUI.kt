@@ -292,67 +292,58 @@ fun NearbyUI(
 
                     if (nearbyUIState.showBicycleParkingOnMap) {
                         val bicycleParkingList = nearbyUIState.bicycleParkingList
-                        if (bicycleParkingList != null) {
-                            bicycleParkingList.forEach {
-                                val bicycleParking = it.second
-                                MarkerComposable(
-                                    keys = arrayOf(bicycleParkingList, showMoreDetails),
-                                    state = MarkerState(position = LatLng(bicycleParking.latitude, bicycleParking.longitude)),
-                                    onClick = {
-                                        nearbyViewModel.openDirections(
-                                            destination = bicycleParking,
-                                            travelMode = GoogleMapsURLGenerator.TravelMode.Bicycling
-                                        )
-                                        return@MarkerComposable true
-                                    }
+                        bicycleParkingList?.forEach {
+                            val bicycleParking = it.second
+                            MarkerComposable(
+                                keys = arrayOf(bicycleParkingList, showMoreDetails),
+                                state = MarkerState(position = LatLng(bicycleParking.latitude, bicycleParking.longitude)),
+                                onClick = {
+                                    nearbyViewModel.openDirections(
+                                        destination = bicycleParking,
+                                        travelMode = GoogleMapsURLGenerator.TravelMode.Bicycling
+                                    )
+                                    return@MarkerComposable true
+                                }
+                            ) {
+                                Card(
+                                    modifier = Modifier.widthIn(max = 240.dp)
                                 ) {
-                                    Card(
-                                        modifier = Modifier.widthIn(max = 240.dp)
-                                    ) {
-                                        if (showMoreDetails) {
-                                            Text(
-                                                text = "${bicycleParking.rackCount} (${it.first}m)",
-                                                fontSize = 10.sp,
-                                                modifier = Modifier
-                                                    .align(Alignment.CenterHorizontally)
-                                                    .padding(horizontal = 2.dp)
-                                            )
+                                    if (showMoreDetails) {
+                                        Text(
+                                            text = "${bicycleParking.rackCount} (${it.first}m)",
+                                            fontSize = 10.sp,
+                                            modifier = Modifier
+                                                .align(Alignment.CenterHorizontally)
+                                                .padding(horizontal = 2.dp)
+                                        )
 
-                                            Text(
-                                                text = "${bicycleParking.rackType} " +
-                                                        if (bicycleParking.hasShelter()) "sheltered" else "",
-                                                fontSize = 8.sp,
-                                                modifier = Modifier
-                                                    .align(Alignment.CenterHorizontally)
-                                                    .padding(horizontal = 2.dp)
-                                            )
+                                        Text(
+                                            text = "${bicycleParking.rackType} " +
+                                                    if (bicycleParking.hasShelter()) "sheltered" else "",
+                                            fontSize = 8.sp,
+                                            modifier = Modifier
+                                                .align(Alignment.CenterHorizontally)
+                                                .padding(horizontal = 2.dp)
+                                        )
 
 
-                                        } else {
-                                            Text(
-                                                text = it.first.toString() + "m",
-                                                fontSize = 8.sp,
-                                                modifier = Modifier
-                                                    .align(Alignment.CenterHorizontally)
-                                                    .padding(horizontal = 2.dp)
-                                            )
-                                        }
-
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.DirectionsBike,
-                                            contentDescription = "Bicycle parking",
-                                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                                    } else {
+                                        Text(
+                                            text = it.first.toString() + "m",
+                                            fontSize = 8.sp,
+                                            modifier = Modifier
+                                                .align(Alignment.CenterHorizontally)
+                                                .padding(horizontal = 2.dp)
                                         )
                                     }
+
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.DirectionsBike,
+                                        contentDescription = "Bicycle parking",
+                                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                                    )
                                 }
                             }
-                        } else {
-                            Toast.makeText(
-                                BusApplication.instance,
-                                "Failed to obtain bicycle parking locations",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            nearbyViewModel.setShowBicycleParkingOnMap(false)
                         }
                     }
                 }

@@ -205,7 +205,7 @@ private fun GuessTheBusRouteQuestion(
                         } else if (uiState.showAnswer && uiState.correctChoice == it) {
                             if (!isSystemInDarkTheme()) GreenLight else GreenDark
                         } else if (uiState.selected == it) {
-                            if (!isSystemInDarkTheme()) Color.Gray else Color.DarkGray
+                            if (!isSystemInDarkTheme()) Color.LightGray else Color.DarkGray
                         } else {
                             Color.Unspecified
                         },

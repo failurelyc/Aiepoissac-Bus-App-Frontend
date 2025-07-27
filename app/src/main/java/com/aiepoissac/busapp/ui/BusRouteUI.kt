@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -430,8 +431,10 @@ private fun BusRouteList(
                             BusArrivalLayout(
                                 data = it,
                                 hasCoordinates = uiState.busRoute.first().second.busStopInfo,
-                                modifier = Modifier,
+                                modifier = Modifier
+                                    .widthIn(max = if (zoomedIn) 80.dp else 40.dp),
                                 showBusType = true,
+                                showDetails = zoomedIn
                             )
                         }
                     }

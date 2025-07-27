@@ -77,12 +77,12 @@ suspend fun attachBusArrivalsToBusJourneyWithBusRouteInfo(
             .getBusArrivalsOfASingleService(origin.busRouteInfo.serviceNo)
 
         if (originBusArrivals.size > 1) {
-            val busRoute = busRepository.getBusServiceRoute(
+            val busServiceInfo = busRepository.getBusService(
                 serviceNo = origin.busRouteInfo.serviceNo,
                 direction = origin.busRouteInfo.direction
             )
             originBusArrivals = originBusArrivals.filter {
-                it.nextBus.destinationCode == busRoute.last().busStopInfo.busStopCode
+                it.nextBus.destinationCode == busServiceInfo?.destinationCode
             }
         }
 
@@ -90,12 +90,12 @@ suspend fun attachBusArrivalsToBusJourneyWithBusRouteInfo(
             .getBusArrivalsOfASingleService(destination.busRouteInfo.serviceNo)
 
         if (destinationBusArrivals.size > 1) {
-            val busRoute = busRepository.getBusServiceRoute(
+            val busServiceInfo = busRepository.getBusService(
                 serviceNo = destination.busRouteInfo.serviceNo,
                 direction = destination.busRouteInfo.direction
             )
             destinationBusArrivals = destinationBusArrivals.filter {
-                it.nextBus.destinationCode == busRoute.last().busStopInfo.busStopCode
+                it.nextBus.destinationCode == busServiceInfo?.destinationCode
             }
         }
 

@@ -70,7 +70,7 @@ class NearbyViewModel(
     private val busRepository: BusRepository,
     private val locationRepository: LocationRepository,
     private val bicycleParkingGetter: BicycleParkingGetter,
-    point: LatLong,
+    point: HasCoordinates,
     isLiveLocation: Boolean,
     distanceThreshold: Int,
     busStopListLimit: Int
@@ -175,7 +175,7 @@ class NearbyViewModel(
         }
     }
 
-    private suspend fun updateLocation(point: LatLong) {
+    private suspend fun updateLocation(point: HasCoordinates) {
 
         _uiState.update { nearbyUIState ->
             nearbyUIState.copy(

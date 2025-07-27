@@ -626,7 +626,8 @@ fun BusArrivalLayout(
     data: Bus,
     hasCoordinates: HasCoordinates,
     modifier: Modifier = Modifier,
-    showBusType: Boolean = false
+    showBusType: Boolean = false,
+    showDetails: Boolean = true
 ) {
 
 
@@ -646,33 +647,55 @@ fun BusArrivalLayout(
                 )
             }
 
-            if (data.isValid()) {
+            if (showDetails) {
+                if (data.isValid()) {
+                    Text(
+                        text = "${data.getDuration()} min",
+                        color = Color.Black,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text(
+                        text = if (data.isLive()) data.getDistanceFrom(hasCoordinates).toString() + "m" else "-",
+                        color = Color.Black,
+                        fontSize = 10.sp,
+                        lineHeight = 12.sp,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    if (data.visitNumber != "1") {
+                        Text(
+                            text = "(Visit: ${data.visitNumber})",
+                            color = Color.Black,
+                            fontSize = 10.sp,
+                            lineHeight = 12.sp,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "-",
+                        color = Color.Black,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            } else if (data.isValid()) {
                 Text(
                     text = "${data.getDuration()} min",
                     color = Color.Black,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-
-                Text(
-                    text = if (data.isLive()) data.getDistanceFrom(hasCoordinates).toString() + "m" else "-",
-                    color = Color.Black,
                     fontSize = 10.sp,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-
-                if (data.visitNumber != "1") {
-                    Text(
-                        text = "(Visit: ${data.visitNumber})",
-                        color = Color.Black,
-                        fontSize = 10.sp,
-                        modifier = Modifier.padding(horizontal = 4.dp)
-                    )
-                }
-            } else {
-                Text(
-                    text = "-",
-                    color = Color.Black,
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    lineHeight = 12.sp,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 

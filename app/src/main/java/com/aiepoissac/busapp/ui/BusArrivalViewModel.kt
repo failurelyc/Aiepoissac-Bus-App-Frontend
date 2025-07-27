@@ -258,20 +258,20 @@ class BusArrivalViewModel(
                 //bus stops here more than once in the same direction
                 busRouteInfo.complete(busRoutes.minBy { it.stopSequence }) //returns the first stop along the route
             } else { //bus stops here more than once in different directions
-                val busRoute1 = busRepository
-                    .getBusServiceRoute(serviceNo = busService.serviceNo, direction = 1)
-                val busRoute1Destination = busRoute1.last().busRouteInfo
-                val busRoute2 = busRepository
-                    .getBusServiceRoute(serviceNo = busService.serviceNo, direction = 2)
-                val busRoute2Destination = busRoute2.last().busRouteInfo
+                val busService1 = busRepository
+                    .getBusService(serviceNo = busService.serviceNo, direction = 1)
+                val busService1Destination = busService1?.destinationCode
+                val busService2 = busRepository
+                    .getBusService(serviceNo = busService.serviceNo, direction = 2)
+                val busService2Destination = busService2?.destinationCode
 
-                if (busService.nextBus.destinationCode == busRoute1Destination.busStopCode) {
+                if (busService.nextBus.destinationCode == busService1Destination) {
                     busRouteInfo.complete(
-                        busRoute1.find { it.busStopInfo == uiState.value.busStopInfo }?.busRouteInfo
+                        busRoutes.find { it.direction == busService1.direction }
                     )
-                } else if (busService.nextBus.destinationCode == busRoute2Destination.busStopCode){
+                } else if (busService.nextBus.destinationCode == busService2Destination){
                     busRouteInfo.complete(
-                        busRoute2.find { it.busStopInfo == uiState.value.busStopInfo }?.busRouteInfo
+                        busRoutes.find { it.direction == busService2.direction }
                     )
                 } else {
                     busRouteInfo.complete(null)

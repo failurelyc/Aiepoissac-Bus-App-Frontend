@@ -228,13 +228,13 @@ fun TextFieldDialog(
 
             Button(
                 onClick = onDismissRequest,
-                modifier = Modifier.padding(4.dp)
+                modifier = Modifier.padding(4.dp).fillMaxWidth()
             ) {
                 Text(text = "Cancel")
             }
             Button(
                 onClick = onConfirmRequest,
-                modifier = Modifier.padding(4.dp)
+                modifier = Modifier.padding(4.dp).fillMaxWidth()
             ) {
                 Text(text = "Confirm")
             }

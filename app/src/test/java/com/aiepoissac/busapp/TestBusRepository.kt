@@ -549,7 +549,6 @@ class TestBusRepository(
                 satFirstBus = "0908",
                 satLastBus = "1508"
             ),
-
             BusRouteInfo(
                 serviceNo = "1011",
                 direction = 1,
@@ -1030,7 +1029,10 @@ class TestBusRepository(
     }
 
     override suspend fun getBusStopWithBusRoutes(busStopCode: String): BusStopInfoWithBusRoutesInfo {
-        TODO("Not yet implemented")
+        return BusStopInfoWithBusRoutesInfo(
+                busStopInfo = getBusStop(busStopCode)!!,
+                busRoutesInfo = getBusRoutesAtBusStop(busStopCode)
+        )
     }
 
     override suspend fun insertMRTStation(mrtStation: MRTStation) {
@@ -1050,7 +1052,7 @@ class TestBusRepository(
     }
 
     override suspend fun getMRTStationCount(): Int {
-        TODO("Not yet implemented")
+        return 1
     }
 
     override suspend fun getMRTStation(stationCode: String): MRTStation {
@@ -1062,7 +1064,15 @@ class TestBusRepository(
     }
 
     override suspend fun getAllMRTStations(): List<MRTStation> {
-        TODO("Not yet implemented")
+        return listOf(
+            MRTStation(
+                type = "MRT",
+                stationCode = "CC24",
+                stationName = "Kent Ridge",
+                latitude = 1.293451782,
+                longitude = 103.7844978
+            )
+        )
     }
 
     override suspend fun insertPlannedBusRoute(plannedBusRouteInfo: PlannedBusRouteInfo) {
