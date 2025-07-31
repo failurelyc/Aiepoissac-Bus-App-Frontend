@@ -2,7 +2,6 @@ package com.aiepoissac.busapp.data.businfo
 
 import androidx.room.Entity
 import com.aiepoissac.busapp.data.HasCoordinates
-import com.aiepoissac.busapp.data.LatLong
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.LocalTime
@@ -16,6 +15,23 @@ data class BusRoutesInfo(
     @SerialName("value") val value: List<BusRouteInfo>
 )
 
+/**
+ * This class contains information of the nth stop of a bus service, including the
+ * first/last bus timings for this stop.
+ *
+ * @param serviceNo The bus service number
+ * @param operator Operator for this bus service
+ * @param direction The direction in which the bus travels (1 or 2), loop services only have 1 direction
+ * @param stopSequence The i-th bus stop for this route
+ * @param busStopCode The unique 5-digit identifier for this physical bus stop
+ * @param distance Distance travelled by bus from starting location to this bus stop (in kilometres)
+ * @param wdFirstBus Scheduled arrival of first bus on weekdays
+ * @param wdLastBus Scheduled arrival of last bus on weekdays
+ * @param satFirstBus Scheduled arrival of first bus on Saturdays
+ * @param satLastBus Scheduled arrival of last bus on Saturdays
+ * @param sunFirstBus Scheduled arrival of first bus on Sundays
+ * @param sunLastBus Scheduled arrival of last bus on Sundays
+ */
 @Entity(
     tableName = "Bus_Routes_Table",
     primaryKeys = ["serviceNo", "direction", "stopSequence"]
@@ -36,26 +52,62 @@ data class BusRouteInfo (
     @SerialName("SUN_LastBus") val sunLastBus: String = ""
 ) {
 
+    /**
+     * Checks if the bus is operating on weekdays
+     *
+     * @return True if the bus have valid first/last bus timings on weekdays.
+     */
     fun isOperatingOnWeekday(): Boolean {
         return getTime(wdLastBus) != null && getTime(wdFirstBus) != null
     }
 
+    /**
+     * Checks if the bus is operating on saturdays
+     *
+     * @return True if the bus have valid first/last bus timings on saturdays.
+     */
     fun isOperatingOnSaturday(): Boolean {
         return getTime(satLastBus) != null && getTime(satFirstBus) != null
     }
 
+    /**
+     * Checks if the bus is operating on sundays
+     *
+     * @return True if the bus have valid first/last bus timings on sundays.
+     */
     fun isOperatingOnSunday(): Boolean {
         return getTime(sunLastBus) != null && getTime(sunFirstBus) != null
     }
 
+    /**
+     * Checks if the bus is operating on weekdays at the input time.
+     *
+     * @param time The time to check
+     * @return True if the time is between 30 minutes before the first bus timing
+     * and the last bus timing for weekdays, false otherwise.
+     */
     fun isOperatingOnWeekday(time: LocalTime): Boolean {
         return isOperatingAtThisTime(time, getTime(wdFirstBus), getTime(wdLastBus))
     }
 
+    /**
+     * Checks if the bus is operating on saturdays at the input time.
+     *
+     * @param time The time to check
+     * @return True if the time is between 30 minutes before the first bus timing
+     * and the last bus timing for saturdays, false otherwise.
+     */
     fun isOperatingOnSaturday(time: LocalTime): Boolean {
         return isOperatingAtThisTime(time, getTime(satFirstBus), getTime(satLastBus))
     }
 
+    /**
+     * Checks if the bus is operating on sundays at the input time.
+     *
+     * @param time The time to check
+     * @return True if the time is between 30 minutes before the first bus timing
+     * and the last bus timing for sundays, false otherwise.
+     */
     fun isOperatingOnSunday(time: LocalTime): Boolean {
         return isOperatingAtThisTime(time, getTime(sunFirstBus), getTime(sunLastBus))
     }
@@ -80,6 +132,12 @@ data class BusRouteInfo (
     }
 }
 
+/**
+ * Convert a String to a LocalTime
+ *
+ * @param s the String input of pattern HHmm
+ * @return the LocalTime representation of the String
+ */
 fun getTime(s: String): LocalTime? {
     try {
         val timeFormat = DateTimeFormatter.ofPattern("HHmm")
@@ -89,11 +147,26 @@ fun getTime(s: String): LocalTime? {
     }
 }
 
+/**
+ * Check if a route is looped.
+ *
+ * @param route The FULL route list of a bus service.
+ * @return True if the route is looped, false otherwise.
+ */
 fun isLoop(route: List<BusRouteInfoWithBusStopInfo>): Boolean {
     return route.first().busStopInfo.description == route.last().busStopInfo.description ||
             oppositeBusStopCode(route.first().busStopInfo.busStopCode) == route.last().busStopInfo.busStopCode
 }
 
+/**
+ * Truncate the route until the nth bus stop.
+ *
+ * @param route The FULL route list of a bus service.
+ * @param stopSequence n
+ * @param adjustStopSequence Whether the route returned have the truncated route stop sequence
+ * and distance or the original route stop sequence and distance
+ * @return The truncated route list of a bus service.
+ */
 fun truncateTillBusStop(
     route: List<BusRouteInfoWithBusStopInfo>,
     stopSequence: Int,
@@ -126,6 +199,13 @@ fun truncateTillBusStop(
     }
 }
 
+/**
+ * Add the stop sequence and distance of a stop to every stop in the route list.
+ *
+ * @param route The route list of a bus service.
+ * @param firstStop The BusRouteInfo
+ * @return The route list with the added stop sequence and distance
+ */
 private fun addStopSequenceOffset(
     route: List<BusRouteInfoWithBusStopInfo>,
     firstStop: BusRouteInfoWithBusStopInfo
@@ -141,6 +221,13 @@ private fun addStopSequenceOffset(
     }
 }
 
+/**
+ * Subtract the stop sequence and distance of every stop in the route list
+ * from the first stop in the route list
+ *
+ * @param truncatedRoute The route list of a bus service.
+ * @return The route list with the updated stop sequence and distance
+ */
 private fun removeStopSequenceOffset(truncatedRoute: List<BusRouteInfoWithBusStopInfo>):
         List<BusRouteInfoWithBusStopInfo> {
     if (truncatedRoute.isNotEmpty()) {
@@ -160,6 +247,16 @@ private fun removeStopSequenceOffset(truncatedRoute: List<BusRouteInfoWithBusSto
     }
 }
 
+/**
+ * Drops every stop in the route list that is before the first stop of the looping point
+ * or after the last stop of the looping point
+ *
+ * @param route The route list of a bus service.
+ * @param after Whether to drop before the first stop of the looping point
+ * or after the last stop of the looping point
+ * @return the stop sequence of the first stop in the truncated route list,
+ * and the truncated route list itself.
+ */
 fun truncateLoopRoute(
     route: List<BusRouteInfoWithBusStopInfo>,
     after: Boolean = false
@@ -196,6 +293,13 @@ fun truncateLoopRoute(
     }
 }
 
+/**
+ * Get the bus stop code of the opposite bus stop, if it exists
+ *
+ * @param busStopCode The bus stop code of this bus stop
+ * @return The bus stop code of the opposite bus stop, or the original bus stop code if it does not exist
+ *
+ */
 fun oppositeBusStopCode(busStopCode: String): String {
     return if (busStopCode.last() == '9') {
         busStopCode.substring(0, busStopCode.length - 1) + '1'
@@ -206,6 +310,17 @@ fun oppositeBusStopCode(busStopCode: String): String {
     }
 }
 
+/**
+ * Finds a list of bus services between two points
+ *
+ * @param origin The origin point
+ * @param target The destination point
+ * @param distanceThreshold The maximum distance between the origin point and the origin bus stop
+ * added with that of between the destination bus stop and destination point
+ * @param busRepository The busRepository the repository of the bus data
+ * @return A list of pairs of origin and destination bus stops, as well as the distance between
+ * the origin or destination bus stops and the origin and destination point respectively
+ */
 suspend fun findBusServiceTo(
     origin: HasCoordinates,
     target: HasCoordinates,
@@ -345,7 +460,14 @@ private fun checkProposedRoute(
             destination.second.busRouteInfo.stopSequence - origin.second.busRouteInfo.stopSequence > 0
 }
 
-fun attachDistanceFromPoint(point: LatLong, route: List<BusRouteInfoWithBusStopInfo>)
+/**
+ * Adds distance information between a point and all bus stops along a route
+ *
+ * @param point The point
+ * @param route The route of a bus service
+ * @return A list containing distance information between a point and a bus stop, and the bus stop itself.
+ */
+fun attachDistanceFromPoint(point: HasCoordinates, route: List<BusRouteInfoWithBusStopInfo>)
 : List<Pair<Int, BusRouteInfoWithBusStopInfo>> {
     return route.map { Pair(it.busStopInfo.distanceFromInMetres(point), it) }
 }

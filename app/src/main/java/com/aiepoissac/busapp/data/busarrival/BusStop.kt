@@ -12,12 +12,28 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
+/**
+ * Represent a bus stop that contains bus arrival data of operating bus services.
+ *
+ * @param metadata
+ * @param busStopCode Bus stop reference code
+ * @param services Bus services that are operating at this bus stop and time.
+ */
 @Serializable
 data class BusStop (
     @SerialName("odata.metadata") val metadata: String = "",
     @SerialName("BusStopCode") val busStopCode: String,
     @SerialName("Services") val services: List<BusService> = listOf()
 ) {
+    /**
+     * Get the bus arrivals of a specific bus service.
+     *
+     * @param serviceNo The bus service number
+     * @return A list of bus services with this bus service number that is operating at this bus stop.
+     * The list is empty if the bus service is not operating at this bus stop.
+     * The list is of size two if the bus service serves this bus stop twice in different directions,
+     * and both directions are operating.
+     */
     fun getBusArrivalsOfASingleService(serviceNo: String): List<BusService> {
         //result is at most of size 2
         return services.filter { it.serviceNo == serviceNo }

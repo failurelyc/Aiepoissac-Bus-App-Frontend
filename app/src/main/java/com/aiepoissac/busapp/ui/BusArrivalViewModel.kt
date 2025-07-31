@@ -218,14 +218,6 @@ class BusArrivalViewModel(
         }
     }
 
-    fun getDistance(bus: Bus): String {
-        return if (bus.isLive()) {
-            "${bus.getDistanceFrom(uiState.value.busStopInfo)}m"
-        } else {
-            "-"
-        }
-    }
-
     fun setShowBusArrival(showBusArrivals: Boolean) {
         _uiState.update {
             it.copy(showBusArrival = showBusArrivals)
@@ -256,7 +248,7 @@ class BusArrivalViewModel(
                 busRouteInfo.complete(busRoutes[0])
             } else if (busRoutes.map {it.direction} .distinct().size == 1 ) {
                 //bus stops here more than once in the same direction
-                busRouteInfo.complete(busRoutes.minBy { it.stopSequence }) //returns the first stop along the route
+                busRouteInfo.complete(busRoutes[busService.nextBus.visitNumber.toInt() - 1]) //returns the first stop along the route
             } else { //bus stops here more than once in different directions
                 val busService1 = busRepository
                     .getBusService(serviceNo = busService.serviceNo, direction = 1)

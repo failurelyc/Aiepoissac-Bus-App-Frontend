@@ -658,7 +658,7 @@ fun BusArrivalLayout(
                     )
 
                     Text(
-                        text = if (data.isLive()) data.getDistanceFrom(hasCoordinates).toString() + "m" else "-",
+                        text = if (data.isLive()) data.distanceFromInMetres(hasCoordinates).toString() + "m" else "-",
                         color = Color.Black,
                         fontSize = 10.sp,
                         lineHeight = 12.sp,

@@ -12,7 +12,15 @@ data class BusStopsInfo(
     @SerialName("value") val value: List<BusStopInfo>
 )
 
-
+/**
+ * This class contains information of a bus stop, including location coordinates
+ *
+ * @param busStopCode The unique 5-digit identifier for this physical bus stop
+ * @param roadName The road on which this bus stop is located
+ * @param description Landmarks next to the bus stop (if any) to aid in identifying this bus stop
+ * @param latitude Location coordinates for this bus stop
+ * @param longitude Location coordinates for this bus stop
+ */
 @Entity(
     tableName = "Bus_Stops_Table"
 )
@@ -32,6 +40,14 @@ data class BusStopInfo (
 
 }
 
+/**
+ * Finds nearby bus stops within a circle centred on a point.
+ *
+ * @param point The centre of the circle
+ * @param busRepository the repository of the bus data
+ * @param distanceThreshold The radius of the circle
+ * @return A list of bus stops within this circle, as well as the distances between the point and each bus stop.
+ */
 suspend fun findNearbyBusStops(
     point: HasCoordinates,
     busRepository: BusRepository,
