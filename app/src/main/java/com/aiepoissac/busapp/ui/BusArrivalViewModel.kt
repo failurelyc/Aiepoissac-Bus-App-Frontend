@@ -37,6 +37,14 @@ import java.io.IOException
 import java.time.Duration
 import java.time.LocalDateTime
 
+/**
+ * This class is the View Model factory for the View Model
+ * for Bus Arrival and Bus Stop Information pages
+ *
+ * @param busRepository The repository of the bus data
+ * @param busArrivalGetter The source of the bus arrival data
+ * @param busStopCodeInput The bus stop code of the initial bus stop to be displayed
+ */
 class BusArrivalViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
     private val busArrivalGetter: BusArrivalGetter = BusApplication.instance.container.busArrivalGetter,
@@ -56,6 +64,14 @@ class BusArrivalViewModelFactory(
     }
 }
 
+/**
+ * This class is the View Model for Bus Arrival and Bus Stop Information pages
+ *
+ * @param busRepository The repository of the bus data
+ * @param busArrivalGetter The source of the bus arrival data
+ * @param busStopCode The bus stop code of the initial bus stop to be displayed
+ * @param autoRefresh Whether to auto refresh the bus arrivals.
+ */
 class BusArrivalViewModel(
     private val busRepository: BusRepository,
     private val busArrivalGetter: BusArrivalGetter,
@@ -68,6 +84,11 @@ class BusArrivalViewModel(
 
     private var lastTimeRefreshPressed: LocalDateTime by mutableStateOf(LocalDateTime.MIN)
 
+    /**
+     * Update the bus stop input field and search results.
+     *
+     * @param busStopCodeInput The new bus stop code or description input
+     */
     fun updateBusStopCodeInput(busStopCodeInput: String) {
         _uiState.update {
             it.copy(
@@ -102,16 +123,27 @@ class BusArrivalViewModel(
         }
     }
 
+    /**
+     * Set whether the search results should be expanded.
+     *
+     * @param expanded True if the search results should be expanded, false otherwise
+     */
     fun setExpanded(expanded: Boolean) {
         _uiState.update { it.copy(expanded = expanded) }
     }
 
+    /**
+     * Update the bus stop displayed using the bus stop code input.
+     */
     fun updateBusStop() {
         viewModelScope.launch {
             updateBusStop(uiState.value.busStopCodeInput)
         }
     }
 
+    /**
+     * Switch the bus stop displayed to the opposite bus stop if it exists.
+     */
     fun switchToOppositeBusStop() {
         viewModelScope.launch {
             val busStopInfo = uiState.value.busStopInfo
@@ -136,6 +168,11 @@ class BusArrivalViewModel(
         }
     }
 
+    /**
+     * Update the bus stop displayed to the bus stop with that bus stop code.
+     *
+     * @param busStopCode The bus stop code of the bus stop to be displayed
+     */
     private suspend fun updateBusStop(busStopCode: String) {
 
         lastTimeRefreshPressed = LocalDateTime.MIN
@@ -170,6 +207,9 @@ class BusArrivalViewModel(
 
     }
 
+    /**
+     * Refresh the bus arrival data.
+     */
     fun refreshBusArrival() {
         val busStopInfo = uiState.value.busStopInfo
         if (busStopInfo != null) {
@@ -218,24 +258,46 @@ class BusArrivalViewModel(
         }
     }
 
+    /**
+     * Set whether the bus arrivals or bus stop information should be shown.
+     *
+     * @param showBusArrivals True if the bus arrivals should be shown, false otherwise
+     */
     fun setShowBusArrival(showBusArrivals: Boolean) {
         _uiState.update {
             it.copy(showBusArrival = showBusArrivals)
         }
     }
 
+    /**
+     * Set whether the bus icon for each bus arrival should be shown.
+     *
+     * @param showBusType True if the bus icon should be shown, false otherwise
+     */
     fun setShowBusType(showBusType: Boolean) {
         _uiState.update {
             it.copy(showBusType = showBusType)
         }
     }
 
+    /**
+     * Set whether the first and last bus timings for each bus service should be shown
+     * in bus stop information.
+     *
+     * @param showFirstLastBus True if the first and last bus timings should be shown, false otherwise
+     */
     fun setShowFirstLastBus(showFirstLastBus: Boolean) {
         _uiState.update {
             it.copy(showFirstLastBus = showFirstLastBus)
         }
     }
 
+    /**
+     * Get the bus route information of a bus service in the bus arrival data.
+     *
+     * @param busService The bus service in the bus arrival data
+     * @return The bus route information, or null if it does not exist.
+     */
     fun getBusRoute(busService: BusService): Deferred<BusRouteInfo?> {
         val busRouteInfo = CompletableDeferred<BusRouteInfo?>()
 
@@ -290,6 +352,9 @@ class BusArrivalViewModel(
         }
     }
 
+    /**
+     * Initialise the View Model using the initial bus stop code provided.
+     */
     init {
         this.updateBusStopCodeInput(busStopCode)
         this.updateBusStop()

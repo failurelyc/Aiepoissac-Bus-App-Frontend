@@ -254,7 +254,7 @@ private fun SavedJourneySegmentList(
     onMoveDown: (JourneySegmentInfo) -> Unit
 ) {
 
-    val data = uiState.busJourneys
+    val data = uiState.segments
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 320.dp)

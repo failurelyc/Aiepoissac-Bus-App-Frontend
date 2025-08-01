@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
+import com.aiepoissac.busapp.data.HasCoordinates
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.LatLong
 import com.aiepoissac.busapp.data.businfo.findBusServiceTo
@@ -19,10 +20,20 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalTime
-import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.pow
 
+/**
+ * This class is the View Model factory for the View Model
+ * for Bus Service to other MRT stations page
+ *
+ * @param busRepository The repository of the bus data
+ * @param userDataRepository The repository of the user data
+ * @param latitude The latitude of the origin point
+ * @param longitude The longitude of the origin point
+ * @param stationCode The station code of the destination MRT station
+ * @param distanceThreshold The maximum distance between the origin and the origin bus stop
+ * added with the distance between the destination bus stop and the MRT station
+ */
 class BusToMRTStationsViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
     private val userDataRepository: UserDataRepository = BusApplication.instance.container.userDataRepository,
@@ -46,10 +57,21 @@ class BusToMRTStationsViewModelFactory(
     }
 }
 
+/**
+ * This class is the View Model factory for the View Model
+ * for Bus Service to other MRT stations page
+ *
+ * @param busRepository The repository of the bus data
+ * @param userDataRepository The repository of the user data
+ * @param start The origin location
+ * @param stationCode The station code of the destination MRT station
+ * @param distanceThreshold The maximum distance between the origin and the origin bus stop
+ * added with the distance between the destination bus stop and the MRT station
+ */
 class BusToMRTStationsViewModel (
     private val busRepository: BusRepository,
     private val userDataRepository: UserDataRepository,
-    start: LatLong,
+    start: HasCoordinates,
     stationCode: String,
     distanceThreshold: Int
 ) : ViewModel() {
@@ -62,6 +84,9 @@ class BusToMRTStationsViewModel (
         )
     val uiState: StateFlow<BusesToMRTStationUIState> = _uiState.asStateFlow()
 
+    /**
+     * Loads the routes from the origin location to the destination MRT station.
+     */
     init {
         viewModelScope.launch {
             val mrtStation = busRepository.getMRTStation(stationCode)
@@ -90,6 +115,9 @@ class BusToMRTStationsViewModel (
         }
     }
 
+    /**
+     * Sort the route list displayed by number of stops of each route
+     */
     fun sortByNumberOfStops() {
         _uiState.update { busesToMRTStationUIState ->
             busesToMRTStationUIState.copy(
@@ -103,6 +131,9 @@ class BusToMRTStationsViewModel (
         }
     }
 
+    /**
+     * Sort the route list displayed by the origin bus stop of each route
+     */
     fun sortByOriginBusStop() {
         _uiState.update { busesToMRTStationUIState ->
             busesToMRTStationUIState.copy(
@@ -115,6 +146,10 @@ class BusToMRTStationsViewModel (
         }
     }
 
+    /**
+     * Sort the route list displayed by the distance between the origin and the origin bus stop
+     * added with the distance between the destination bus stop and the MRT station
+     */
     fun sortByWalkingDistance() {
         _uiState.update { busesToMRTStationUIState ->
             busesToMRTStationUIState.copy(
@@ -127,6 +162,11 @@ class BusToMRTStationsViewModel (
         }
     }
 
+    /**
+     * Remove bus services that are not operating at a certain time and day of week.
+     *
+     * @param showOnlyOperatingBusServices True if bus services not operating should be removed.
+     */
     fun setShowOnlyOperatingBusServices(showOnlyOperatingBusServices: Boolean) {
         _uiState.update {
             it.copy(
@@ -136,6 +176,11 @@ class BusToMRTStationsViewModel (
         updateBusRoutesList()
     }
 
+    /**
+     * Sets whether the time input dialog should be displayed.
+     *
+     * @param showTimeDial True if the time input dialog should be displayed.
+     */
     fun setShowTimeDial(showTimeDial: Boolean) {
         _uiState.update {
             it.copy(
@@ -144,6 +189,12 @@ class BusToMRTStationsViewModel (
         }
     }
 
+    /**
+     * Update the time to the time input and update the bus routes list to only show
+     * bus services operating at the updated time and day of week.
+     *
+     * @param timePickerState The time input
+     */
     @OptIn(ExperimentalMaterial3Api::class)
     fun updateTime(timePickerState: TimePickerState) {
         _uiState.update {
@@ -155,6 +206,10 @@ class BusToMRTStationsViewModel (
         updateBusRoutesList()
     }
 
+    /**
+     * Update the day of week and update the bus routes list to only show
+     * bus services operating at the updated day of week and time.
+     */
     fun setDayOfWeek() {
         if (!uiState.value.searchingForBusServices) {
             val dayOfWeek =
@@ -172,6 +227,10 @@ class BusToMRTStationsViewModel (
 
     }
 
+    /**
+     * Update the bus routes list to show the full list or the list that only contains
+     * bus services operating at the updated day of week and time.
+     */
     private fun updateBusRoutesList() {
         _uiState.update {
             it.copy(
@@ -216,6 +275,9 @@ class BusToMRTStationsViewModel (
 
     }
 
+    /**
+     * Toggles whether Add Saved Journey dialog should be shown.
+     */
     fun toggleShowAddSavedJourneyDialog() {
         _uiState.update {
             it.copy(
@@ -224,12 +286,21 @@ class BusToMRTStationsViewModel (
         }
     }
 
+    /**
+     * Updates the description input field for Add Saved Journey dialog.
+     *
+     * @param description The updated description
+     */
     fun updateDescriptionInput(description: String) {
         _uiState.update {
             it.copy(descriptionInput = description)
         }
     }
 
+    /**
+     * Add the list of bus routes to a new saved journey with the description in the
+     * description input field, and close the Add Saved Journey Dialog.
+     */
     fun addSavedJourney() {
         viewModelScope.launch {
             val journeyID = generateRandomString(length = 8)

@@ -22,6 +22,14 @@ import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDateTime
 
+/**
+ * This class is the View Model factory for the View Model for the Saved Journey page
+ *
+ * @param userDataRepository The repository of the user data
+ * @param busRepository The repository of the bus data
+ * @param busArrivalGetter The source of the bus arrival data
+ * @param journeyID The ID of this Saved Journey
+ */
 class SavedJourneyViewModelFactory(
     private val userDataRepository: UserDataRepository = BusApplication.instance.container.userDataRepository,
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
@@ -43,6 +51,14 @@ class SavedJourneyViewModelFactory(
     }
 }
 
+/**
+ * This class is the View Model for the Saved Journey page
+ *
+ * @param userDataRepository The repository of the user data
+ * @param busRepository The repository of the bus data
+ * @param busArrivalGetter The source of the bus arrival data
+ * @param journeyID The ID of this Saved Journey
+ */
 class SavedJourneyViewModel (
     private val userDataRepository: UserDataRepository,
     private val busRepository: BusRepository,
@@ -61,6 +77,13 @@ class SavedJourneyViewModel (
         }
     }
 
+    /**
+     * Refresh the list of segments displayed.
+     *
+     * @param afterNewAddition Whether this method was called after a new segment was added.
+     * If true, the full list of segments, including bus route information and bus arrival
+     * data, is recomputed.
+     */
     private fun refreshList(afterNewAddition: Boolean) {
         viewModelScope.launch {
             val busJourneys = userDataRepository.getAllJourneySegments(journeyID)
@@ -69,7 +92,7 @@ class SavedJourneyViewModel (
             if (afterNewAddition) {
                 _uiState.update { savedJourneyUIState ->
                     savedJourneyUIState.copy(
-                        busJourneys = busJourneys
+                        segments = busJourneys
                             .map {
                                 it.attachBusArrivalsAndBusRouteWithBusStopInfo(
                                     busRepository = busRepository,
@@ -79,10 +102,10 @@ class SavedJourneyViewModel (
                     )
                 }
             } else {
-                val oldBusJourneys = uiState.value.busJourneys
+                val oldBusJourneys = uiState.value.segments
                 _uiState.update { savedJourneyUIState ->
                     savedJourneyUIState.copy(
-                        busJourneys = busJourneys.map { busJourneyInfo ->
+                        segments = busJourneys.map { busJourneyInfo ->
                             Pair(
                                 first = busJourneyInfo,
                                 second =
@@ -98,6 +121,9 @@ class SavedJourneyViewModel (
         }
     }
 
+    /**
+     * Refresh the bus arrival data.
+     */
     fun refreshBusArrivals() {
         val threshold = 20
         val currentTime = LocalDateTime.now()
@@ -107,7 +133,7 @@ class SavedJourneyViewModel (
             viewModelScope.launch {
                 _uiState.update { savedJourneyUIState ->
                     savedJourneyUIState.copy(
-                        busJourneys = uiState.value.busJourneys
+                        segments = uiState.value.segments
                             .map {
                                 attachBusArrivalsToBusJourneyWithBusRouteInfo(
                                     Pair(
@@ -134,12 +160,21 @@ class SavedJourneyViewModel (
         }
     }
 
+    /**
+     * Sets whether Add Segment dialog should be shown.
+     *
+     * @param showAddDialog True if Add Segment dialog should be shown
+     */
     fun setShowAddDialog(showAddDialog: Boolean) {
         _uiState.update {
             it.copy(showAddDialog = showAddDialog)
         }
     }
 
+    /**
+     * Add a segment to the Journey and the database using all the input values.
+     * Also updates the displayed segment list and clears all input values.
+     */
     fun addBusJourney() {
         val originStop = uiState.value.originStopInput?.busRouteInfo
         val destinationStop = uiState.value.destinationStopInput?.busRouteInfo
@@ -160,7 +195,7 @@ class SavedJourneyViewModel (
                         direction = originStop.direction,
                         originBusStopSequence = originStop.stopSequence % routeLength,
                         destinationBusStopSequence = destinationStop.stopSequence % routeLength,
-                        sequence = uiState.value.busJourneys.size
+                        sequence = uiState.value.segments.size
                     )
                 )
                 clearInput()
@@ -172,12 +207,18 @@ class SavedJourneyViewModel (
 
     }
 
-    fun deleteBusJourney(busJourney: JourneySegmentInfo) {
+    /**
+     * Delete the specified segment from the Journey and the database.
+     * Also updates the displayed segment list.
+     *
+     * @param journeySegmentInfo segment to be deleted
+     */
+    fun deleteBusJourney(journeySegmentInfo: JourneySegmentInfo) {
         viewModelScope.launch {
-            userDataRepository.deleteJourneySegment(busJourney)
-            uiState.value.busJourneys
+            userDataRepository.deleteJourneySegment(journeySegmentInfo)
+            uiState.value.segments
                 .forEach {
-                    if (it.first.sequence > busJourney.sequence) {
+                    if (it.first.sequence > journeySegmentInfo.sequence) {
                         userDataRepository.deleteJourneySegment(it.first)
                         userDataRepository.insertJourneySegment(
                             it.first.copy(sequence = it.first.sequence - 1)
@@ -188,58 +229,90 @@ class SavedJourneyViewModel (
         }
     }
 
-    fun hideBusJourney(busJourney: JourneySegmentInfo) {
-
-        viewModelScope.launch {
-
-        }
-
-    }
-
-    fun moveBusJourneyUp(busJourney: JourneySegmentInfo) {
-        if (busJourney.sequence > 0) {
+    /**
+     * Swap the specified segment with the above segment in terms of sequence.
+     * Also updates the displayed segment list.
+     *
+     * @param journeySegmentInfo bottom segment to be swapped
+     */
+    fun moveBusJourneyUp(journeySegmentInfo: JourneySegmentInfo) {
+        if (journeySegmentInfo.sequence > 0) {
             viewModelScope.launch {
-                swapBusJourneySequence(busJourney, uiState.value.busJourneys[busJourney.sequence - 1].first)
+                swapBusJourneySequence(journeySegmentInfo, uiState.value.segments[journeySegmentInfo.sequence - 1].first)
             }
         }
     }
 
-    fun moveBusJourneyDown(busJourney: JourneySegmentInfo) {
-        if (busJourney.sequence < uiState.value.busJourneys.size - 1) {
+    /**
+     * Swap the specified segment with the below segment in terms of sequence.
+     * Also updates the displayed segment list
+     *
+     * @param journeySegmentInfo top segment to be swapped
+     */
+    fun moveBusJourneyDown(journeySegmentInfo: JourneySegmentInfo) {
+        if (journeySegmentInfo.sequence < uiState.value.segments.size - 1) {
             viewModelScope.launch {
-                swapBusJourneySequence(busJourney, uiState.value.busJourneys[busJourney.sequence + 1].first)
+                swapBusJourneySequence(journeySegmentInfo, uiState.value.segments[journeySegmentInfo.sequence + 1].first)
             }
         }
     }
 
-    private suspend fun swapBusJourneySequence(busJourney1: JourneySegmentInfo, busJourney2: JourneySegmentInfo) {
-        userDataRepository.deleteJourneySegment(busJourney1)
-        userDataRepository.deleteJourneySegment(busJourney2)
-        val newBusJourney1 = busJourney1.copy(sequence = busJourney2.sequence)
-        val newBusJourney2 = busJourney2.copy(sequence = busJourney1.sequence)
+    /**
+     * Swap the sequences of the two specified segments.
+     * Also updates the displayed segment list.
+     *
+     * @param journeySegmentInfo1 segment one to be swapped
+     * @param journeySegmentInfo2 segment two to be swapped
+     */
+    private suspend fun swapBusJourneySequence(
+        journeySegmentInfo1: JourneySegmentInfo,
+        journeySegmentInfo2: JourneySegmentInfo
+    ) {
+        userDataRepository.deleteJourneySegment(journeySegmentInfo1)
+        userDataRepository.deleteJourneySegment(journeySegmentInfo2)
+        val newBusJourney1 = journeySegmentInfo1.copy(sequence = journeySegmentInfo2.sequence)
+        val newBusJourney2 = journeySegmentInfo2.copy(sequence = journeySegmentInfo1.sequence)
         userDataRepository.insertJourneySegment(newBusJourney1)
         userDataRepository.insertJourneySegment(newBusJourney2)
         refreshList(afterNewAddition = false)
     }
 
+    /**
+     * Set whether the bus icon for each bus arrival should be shown.
+     *
+     * @param showBusType True if the bus icon should be shown, false otherwise
+     */
     fun setShowBusType(showBusType: Boolean) {
         _uiState.update {
             it.copy(showBusType = showBusType)
         }
     }
 
+    /**
+     * Set whether the first and last bus timings for each bus service should be shown.
+     *
+     * @param showFirstLastBus True if the first and last bus timings should be shown, false otherwise
+     */
     fun setShowFirstLastBus(showFirstLastBus: Boolean) {
         _uiState.update {
             it.copy(showFirstLastBus = showFirstLastBus)
         }
     }
 
+    /**
+     * Set whether the destination bus stop, including the bus arrival data, should be shown.
+     *
+     * @param showDestinationBusArrivals True if the destination bus stop should be shown, false otherwise
+     */
     fun setShowDestinationBusArrivals(showDestinationBusArrivals: Boolean) {
         _uiState.update {
             it.copy(showDestinationBusArrivals = showDestinationBusArrivals)
         }
     }
 
+    /**
+     * Clear all input values in Add Segment dialog
+     */
     fun clearInput() {
         _uiState.update {
             it.copy(
@@ -255,6 +328,11 @@ class SavedJourneyViewModel (
         }
     }
 
+    /**
+     * Set the service number input and update the origin bus stop search list.
+     *
+     * @param serviceNo The service number input
+     */
     fun updateServiceNoInput(serviceNo: String) {
         _uiState.update {
             it.copy(
@@ -277,6 +355,11 @@ class SavedJourneyViewModel (
         }
     }
 
+    /**
+     * Set the direction of the bus service and update the origin bus stop search list.
+     *
+     * @param isDirectionTwo True for direction 2, false otherwise
+     */
     fun setIsDirectionTwo(isDirectionTwo: Boolean) {
         viewModelScope.launch {
             _uiState.update {
@@ -295,6 +378,11 @@ class SavedJourneyViewModel (
         }
     }
 
+    /**
+     * Set the origin bus stop input and update the destination bus stop search list.
+     *
+     * @param originStop The origin bus stop input
+     */
     fun updateOriginStopInput(originStop: BusRouteInfoWithBusStopInfo) {
         viewModelScope.launch {
             _uiState.update {
@@ -318,6 +406,11 @@ class SavedJourneyViewModel (
         }
     }
 
+    /**
+     * Set the destination bus stop input.
+     *
+     * @param destinationStop The destination bus stop input
+     */
     fun updateDestinationStopInput(destinationStop: BusRouteInfoWithBusStopInfo) {
         viewModelScope.launch {
             _uiState.update {
@@ -328,12 +421,22 @@ class SavedJourneyViewModel (
         }
     }
 
+    /**
+     * Set whether the origin bus stops search results should be expanded.
+     *
+     * @param expanded True if the search results should be expanded, false otherwise
+     */
     fun setOriginStopSearchExpanded(expanded: Boolean) {
         _uiState.update {
             it.copy(originStopSearchExpanded = expanded)
         }
     }
 
+    /**
+     * Set whether the destination bus stops search results should be expanded.
+     *
+     * @param expanded True if the search results should be expanded, false otherwise
+     */
     fun setDestinationStopSearchExpanded(expanded: Boolean) {
         _uiState.update {
             it.copy(destinationStopSearchExpanded = expanded)

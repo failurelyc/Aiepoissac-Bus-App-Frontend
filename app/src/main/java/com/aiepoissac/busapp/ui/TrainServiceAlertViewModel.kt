@@ -8,7 +8,6 @@ import androidx.lifecycle.viewModelScope
 import com.aiepoissac.busapp.BusApplication
 import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.mrtstation.RealTrainServiceAlertsGetter
-import com.aiepoissac.busapp.data.mrtstation.TestTrainServiceAlertsGetter
 import com.aiepoissac.busapp.data.mrtstation.TrainServiceAlertsGetter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,6 +17,12 @@ import java.io.IOException
 import java.time.Duration
 import java.time.LocalDateTime
 
+/**
+ * This class is the View Model for the Train Service Alerts page
+ *
+ * @param trainServiceAlertsGetter The source of the Train Service Alerts and Facilities Maintenance data
+ * @param busRepository The repository of the bus data
+ */
 class TrainServiceAlertViewModel(
     private val trainServiceAlertsGetter: TrainServiceAlertsGetter = RealTrainServiceAlertsGetter(),
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository
@@ -32,6 +37,9 @@ class TrainServiceAlertViewModel(
         refresh()
     }
 
+    /**
+     * Refresh the Train Service Alerts and Facilities Maintenance data
+     */
     fun refresh() {
         val threshold = 60
         val currentTime = LocalDateTime.now()
@@ -80,12 +88,18 @@ class TrainServiceAlertViewModel(
 
     }
 
+    /**
+     * Toggle whether facilities maintenance should be shown.
+     */
     fun toggleShowFacilitiesMaintenance() {
         _uiState.update {
             it.copy(showFacilitiesMaintenance = !uiState.value.showFacilitiesMaintenance)
         }
     }
 
+    /**
+     * Toggle whether train service alerts should be shown.
+     */
     fun toggleShowTrainServiceAlerts() {
         _uiState.update {
             it.copy(showTrainServiceAlerts = !uiState.value.showTrainServiceAlerts)

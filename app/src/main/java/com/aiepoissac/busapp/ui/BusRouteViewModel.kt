@@ -36,6 +36,19 @@ import java.io.IOException
 import java.time.Duration
 import java.time.LocalDateTime
 
+/**
+ * This class is the View Model factory for the View Model for the Bus Route Information page
+ *
+ * @param busRepository The repository of the bus data
+ * @param busArrivalGetter The source of the bus arrival data
+ * @param locationRepository The source of the user location
+ * @param serviceNo The bus service number
+ * @param direction The direction in which the bus travels (1 or 2), loop services only have 1 direction
+ * @param stopSequence The bus stop sequence of the bus stop along the route
+ * to be set as the 0th bus stop initially
+ * @param showMap Whether the map should be shown initially
+ * @param showLiveBuses Whether the bus arrival data should be shown initially
+ */
 class BusRouteViewModelFactory(
     private val busRepository: BusRepository = BusApplication.instance.container.busRepository,
     private val busArrivalGetter: BusArrivalGetter = BusApplication.instance.container.busArrivalGetter,
@@ -64,6 +77,19 @@ class BusRouteViewModelFactory(
     }
 }
 
+/**
+ * This class is the View Model for the Bus Route Information page
+ *
+ * @param busRepository The repository of the bus data
+ * @param busArrivalGetter The source of the bus arrival data
+ * @param locationRepository The source of the user location
+ * @param serviceNo The bus service number
+ * @param direction The direction in which the bus travels (1 or 2), loop services only have 1 direction
+ * @param stopSequence The bus stop sequence of the bus stop along the route
+ * to be set as the 0th bus stop initially
+ * @param showMap Whether the map should be shown initially
+ * @param showLiveBuses Whether the bus arrival data should be shown initially
+ */
 class BusRouteViewModel(
     private val busRepository: BusRepository,
     private val busArrivalGetter: BusArrivalGetter,
@@ -98,6 +124,10 @@ class BusRouteViewModel(
 
     val markerState = _markerState.asStateFlow()
 
+    /**
+     * Set the current bus service and route list with the specified initial bus service number and direction.
+     * Also set the 0th bus stop to the bus stop with that stop sequence for the displayed route list.
+     */
     init {
         updateBusService(serviceNo, direction, stopSequence)
         Log.d(
@@ -105,15 +135,32 @@ class BusRouteViewModel(
             "BusServiceViewModel created with parameters: $serviceNo, $direction")
     }
 
+    /**
+     * Stop fetching of location when ViewModel is destroyed.
+     */
     override fun onCleared() {
         super.onCleared()
         locationRepository.stopFetchingLocation()
     }
 
+    /**
+     * Update the current bus service and route list with the Bus Service Information.
+     *
+     * @param busServiceInfo The bus service information
+     */
     fun updateBusService(busServiceInfo: BusServiceInfo) {
         updateBusService(busServiceInfo.serviceNo, busServiceInfo.direction)
     }
 
+    /**
+     * Set the current bus service and route list with the specified bus service number and direction.
+     * Also set the 0th bus stop to the bus stop with that stop sequence for the displayed route list.
+     *
+     * @param serviceNo The bus service number
+     * @param direction The direction in which the bus travels (1 or 2), loop services only have 1 direction
+     * @param stopSequence The bus stop sequence of the bus stop along the route to be set as the
+     * 0th bus stop. If set to a negative value, the full bus route will be displayed.
+     */
     private fun updateBusService(serviceNo: String, direction: Int, stopSequence: Int = -1) {
         viewModelScope.launch {
             val oldBusServiceInfo = uiState.value.busServiceInfo
@@ -153,6 +200,9 @@ class BusRouteViewModel(
         }
     }
 
+    /**
+     * Set the current bus service and route list with the current bus service number but opposite direction.
+     */
     fun toggleDirection() {
         val busServiceInfo = uiState.value.busServiceInfo
         if (!isLoop(uiState.value.originalBusRoute) && busServiceInfo != null) {
@@ -169,6 +219,12 @@ class BusRouteViewModel(
         }
     }
 
+    /**
+     * Set the 0th bus stop to the bus stop with that stop sequence in the displayed route list.
+     *
+     * @param stopSequence The bus stop sequence of the bus stop along the DISPLAYED route to be set as the
+     * 0th bus stop. If set to a negative value, the full bus route will be displayed.
+     */
     fun setFirstBusStop(stopSequence: Int) {
         viewModelScope.launch {
             val truncatedRoute = truncateTillBusStop(
@@ -190,6 +246,10 @@ class BusRouteViewModel(
         }
     }
 
+    /**
+     * Set the 0th bus stop to the first stop in the looping point. Only valid for
+     * non pure clockwise/anticlockwise loop bus routes.
+     */
     fun setLoopingPointAsFirstBusStop() {
         viewModelScope.launch {
             _uiState.update {
@@ -208,6 +268,12 @@ class BusRouteViewModel(
         }
     }
 
+    /**
+     * Set the 0th bus stop to the first stop of the full bus route list.
+     *
+     * @param truncateAfterLoopingPoint Whether to remove all bus stops in the route list
+     * after the last stop in the looping point. If the bus route is not a loop, this has no effect
+     */
     fun setOriginalFirstBusStop(truncateAfterLoopingPoint: Boolean = false) {
         val busRoute = uiState.value.originalBusRoute
         _uiState.update {
@@ -224,6 +290,11 @@ class BusRouteViewModel(
         updateCameraPositionToFirstStop()
     }
 
+    /**
+     * Set whether the map is shown.
+     *
+     * @param showMap True if the map should be shown.
+     */
     fun setShowMap(showMap: Boolean) {
         _uiState.update {
             it.copy(showMap = showMap)
@@ -233,6 +304,12 @@ class BusRouteViewModel(
         }
     }
 
+    /**
+     * Set whether bus arrival data of the 0th stop should be shown.
+     * Also refreshes the bus arrival data and shows the map.
+     *
+     * @param showLiveBuses True if the bus arrival data should be shown, false otherwise
+     */
     fun setShowLiveBuses(showLiveBuses: Boolean) {
         _uiState.update {
             it.copy(showLiveBuses = showLiveBuses)
@@ -243,12 +320,22 @@ class BusRouteViewModel(
         }
     }
 
+    /**
+     * Set whether first/last bus timings for all stops in the route list should be shown.
+     *
+     * @param showFirstLastBus True if the timings should be shown, false otherwise
+     */
     fun setShowFirstLastBusTimings(showFirstLastBus: Boolean) {
         _uiState.update {
             it.copy(showFirstLastBus = showFirstLastBus)
         }
     }
 
+    /**
+     * Set whether live user location and speed should be constantly fetched and shown on the map.
+     *
+     * @param isLiveLocation True if live user location should be turned on, false otherwise
+     */
     fun setIsLiveLocation(isLiveLocation: Boolean) {
 
         if (!isLiveLocation) {
@@ -261,6 +348,9 @@ class BusRouteViewModel(
 
     }
 
+    /**
+     * Toggles whether bus service information should be shown.
+     */
     fun toggleShowBusServiceInfo() {
         _uiState.update {
             it.copy(
@@ -269,6 +359,9 @@ class BusRouteViewModel(
         }
     }
 
+    /**
+     * Listen for updates to user location. This method should only be called once.
+     */
     fun updateLiveLocation() {
         viewModelScope.launch {
             if (uiState.value.isLiveLocation) {
@@ -287,6 +380,12 @@ class BusRouteViewModel(
         }
     }
 
+    /**
+     * Update the location of the user, the distances between the user location and
+     * each bus stop in the bus stop list, and the location of the marker on the map.
+     *
+     * @param location The user location.
+     */
     private fun updateLocation(location: Location) {
         _uiState.update {
             it.copy(
@@ -305,6 +404,9 @@ class BusRouteViewModel(
         }
     }
 
+    /**
+     * Update the camera of the map to the location of the 0th stop in the displayed route list.
+     */
     private fun updateCameraPositionToFirstStop() {
         if (uiState.value.busRoute.isNotEmpty()) {
             val busStopInfo = uiState.value.busRoute.first().second.busStopInfo
@@ -312,12 +414,18 @@ class BusRouteViewModel(
         }
     }
 
+    /**
+     * Update the camera of the map to the specified location.
+     *
+     * @param target The target location
+     * @param zoomIn True if the map should be zoomed in, false otherwise
+     */
     private fun updateCameraPosition(target: LatLng, zoomIn: Boolean = false) {
         _cameraPositionState.update {
             CameraPositionState(
                 position = CameraPosition(
                     target,
-                    if (zoomIn) 25f else it.position.zoom,
+                    if (zoomIn) 20f else it.position.zoom,
                     it.position.tilt,
                     it.position.bearing
                 )
@@ -325,6 +433,12 @@ class BusRouteViewModel(
         }
     }
 
+    /**
+     * Add the distance between the user location and each bus stop in the route list.
+     *
+     * @param route The route list
+     * @return The route list including the distances
+     */
     private fun attachDistanceFromCurrentLocation(route: List<BusRouteInfoWithBusStopInfo>)
     : List<Pair<Int, BusRouteInfoWithBusStopInfo>> {
         val location = locationRepository.currentLocation.value
@@ -335,6 +449,9 @@ class BusRouteViewModel(
         }
     }
 
+    /**
+     * Refresh the bus arrival data. If an exception occurs, show live buses is turned off.
+     */
     fun refreshLiveBuses() {
         val busServiceInfo = uiState.value.busServiceInfo
         if (busServiceInfo != null && uiState.value.showLiveBuses) {
