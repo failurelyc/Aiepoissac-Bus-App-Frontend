@@ -11,8 +11,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Scanner
 
-
-
 private enum class BusDataType {
     BusServices,
     BusRoutes,
@@ -20,6 +18,12 @@ private enum class BusDataType {
     PlannedBusRoutes
 }
 
+/**
+ * This function calls the LTA API using the URL provided.
+ *
+ * @param url The URL
+ * @return The JSON String returned by the LTA API
+ */
 suspend fun getData(url: URL): String = withContext(Dispatchers.IO) {
     val connection = url.openConnection() as HttpURLConnection
     connection.requestMethod = "GET"
@@ -39,6 +43,15 @@ suspend fun getData(url: URL): String = withContext(Dispatchers.IO) {
     }
 }
 
+/**
+ * This function calls the LTA API using the data type and offset provided.
+ * The offset is required as the API only returns a maximum of 500 records per call
+ * for these data types
+ *
+ * @param dataType Either BusServices, BusRoutes, BusStops or PlannedBusRoutes
+ * @param offset The index of the first data to be returned.
+ * @return The JSON String returned by the LTA API
+ */
 private suspend fun getData(dataType: BusDataType, offset: Int = 0): String {
     val url: URL = when (dataType) {
         BusDataType.BusStops -> {
@@ -57,7 +70,11 @@ private suspend fun getData(dataType: BusDataType, offset: Int = 0): String {
     return getData(url)
 }
 
-
+/**
+ * This function repopulates all bus services using data from the LTA API.
+ *
+ * @param busRepository The repository of the bus data
+ */
 suspend fun populateBusServices(busRepository: BusRepository) {
     busRepository.deleteAllBusServices()
     var i = 0
@@ -77,6 +94,11 @@ suspend fun populateBusServices(busRepository: BusRepository) {
     }
 }
 
+/**
+ * This function repopulates all bus routes using data from the LTA API.
+ *
+ * @param busRepository The repository of the bus data
+ */
 suspend fun populateBusRoutes(busRepository: BusRepository) {
     busRepository.deleteAllBusRoutes()
     var i = 0
@@ -107,6 +129,11 @@ suspend fun populateBusRoutes(busRepository: BusRepository) {
     }
 }
 
+/**
+ * This function repopulates all bus stops using data from the LTA API.
+ *
+ * @param busRepository The repository of the bus data
+ */
 suspend fun populateBusStops(busRepository: BusRepository) {
     busRepository.deleteAllBusStops()
     var i = 0
@@ -144,6 +171,11 @@ suspend fun populateMRTStations(busRepository: BusRepository) = withContext(Disp
     inputStream.close()
 }
 
+/**
+ * This function repopulates all planned bus routes using data from the LTA API.
+ *
+ * @param busRepository The repository of the bus data
+ */
 suspend fun populatePlannedBusRoutes(busRepository: BusRepository) {
     busRepository.deleteAllPlannedBusRoutes()
     var previous: PlannedBusRouteInfo? = null

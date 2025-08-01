@@ -55,7 +55,7 @@ data class BusRouteInfo (
     /**
      * Checks if the bus is operating on weekdays
      *
-     * @return True if the bus have valid first/last bus timings on weekdays.
+     * @return True if the bus have valid first/last bus timings on weekdays
      */
     fun isOperatingOnWeekday(): Boolean {
         return getTime(wdLastBus) != null && getTime(wdFirstBus) != null
@@ -64,7 +64,7 @@ data class BusRouteInfo (
     /**
      * Checks if the bus is operating on saturdays
      *
-     * @return True if the bus have valid first/last bus timings on saturdays.
+     * @return True if the bus have valid first/last bus timings on saturdays
      */
     fun isOperatingOnSaturday(): Boolean {
         return getTime(satLastBus) != null && getTime(satFirstBus) != null
@@ -73,7 +73,7 @@ data class BusRouteInfo (
     /**
      * Checks if the bus is operating on sundays
      *
-     * @return True if the bus have valid first/last bus timings on sundays.
+     * @return True if the bus have valid first/last bus timings on sundays
      */
     fun isOperatingOnSunday(): Boolean {
         return getTime(sunLastBus) != null && getTime(sunFirstBus) != null
@@ -84,7 +84,7 @@ data class BusRouteInfo (
      *
      * @param time The time to check
      * @return True if the time is between 30 minutes before the first bus timing
-     * and the last bus timing for weekdays, false otherwise.
+     * and the last bus timing for weekdays, false otherwise
      */
     fun isOperatingOnWeekday(time: LocalTime): Boolean {
         return isOperatingAtThisTime(time, getTime(wdFirstBus), getTime(wdLastBus))
@@ -95,7 +95,7 @@ data class BusRouteInfo (
      *
      * @param time The time to check
      * @return True if the time is between 30 minutes before the first bus timing
-     * and the last bus timing for saturdays, false otherwise.
+     * and the last bus timing for saturdays, false otherwise
      */
     fun isOperatingOnSaturday(time: LocalTime): Boolean {
         return isOperatingAtThisTime(time, getTime(satFirstBus), getTime(satLastBus))
@@ -106,7 +106,7 @@ data class BusRouteInfo (
      *
      * @param time The time to check
      * @return True if the time is between 30 minutes before the first bus timing
-     * and the last bus timing for sundays, false otherwise.
+     * and the last bus timing for sundays, false otherwise
      */
     fun isOperatingOnSunday(time: LocalTime): Boolean {
         return isOperatingAtThisTime(time, getTime(sunFirstBus), getTime(sunLastBus))
@@ -150,8 +150,8 @@ fun getTime(s: String): LocalTime? {
 /**
  * Check if a route is looped.
  *
- * @param route The FULL route list of a bus service.
- * @return True if the route is looped, false otherwise.
+ * @param route The FULL route list of a bus service
+ * @return True if the route is looped, false otherwise
  */
 fun isLoop(route: List<BusRouteInfoWithBusStopInfo>): Boolean {
     return route.first().busStopInfo.description == route.last().busStopInfo.description ||
@@ -161,11 +161,11 @@ fun isLoop(route: List<BusRouteInfoWithBusStopInfo>): Boolean {
 /**
  * Truncate the route until the nth bus stop.
  *
- * @param route The FULL route list of a bus service.
+ * @param route The FULL route list of a bus service
  * @param stopSequence n
  * @param adjustStopSequence Whether the route returned have the truncated route stop sequence
  * and distance or the original route stop sequence and distance
- * @return The truncated route list of a bus service.
+ * @return The truncated route list of a bus service
  */
 fun truncateTillBusStop(
     route: List<BusRouteInfoWithBusStopInfo>,
@@ -225,7 +225,7 @@ private fun addStopSequenceOffset(
  * Subtract the stop sequence and distance of every stop in the route list
  * from the first stop in the route list
  *
- * @param truncatedRoute The route list of a bus service.
+ * @param truncatedRoute The route list of a bus service
  * @return The route list with the updated stop sequence and distance
  */
 private fun removeStopSequenceOffset(truncatedRoute: List<BusRouteInfoWithBusStopInfo>):
@@ -251,11 +251,11 @@ private fun removeStopSequenceOffset(truncatedRoute: List<BusRouteInfoWithBusSto
  * Drops every stop in the route list that is before the first stop of the looping point
  * or after the last stop of the looping point
  *
- * @param route The route list of a bus service.
+ * @param route The route list of a bus service
  * @param after Whether to drop before the first stop of the looping point
  * or after the last stop of the looping point
  * @return the stop sequence of the first stop in the truncated route list,
- * and the truncated route list itself.
+ * and the truncated route list itself
  */
 fun truncateLoopRoute(
     route: List<BusRouteInfoWithBusStopInfo>,
@@ -298,7 +298,6 @@ fun truncateLoopRoute(
  *
  * @param busStopCode The bus stop code of this bus stop
  * @return The bus stop code of the opposite bus stop, or the original bus stop code if it does not exist
- *
  */
 fun oppositeBusStopCode(busStopCode: String): String {
     return if (busStopCode.last() == '9') {
@@ -317,7 +316,7 @@ fun oppositeBusStopCode(busStopCode: String): String {
  * @param target The destination point
  * @param distanceThreshold The maximum distance between the origin point and the origin bus stop
  * added with that of between the destination bus stop and destination point
- * @param busRepository The busRepository the repository of the bus data
+ * @param busRepository The repository of the bus data
  * @return A list of pairs of origin and destination bus stops, as well as the distance between
  * the origin or destination bus stops and the origin and destination point respectively
  */

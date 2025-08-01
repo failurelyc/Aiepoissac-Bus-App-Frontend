@@ -7,6 +7,16 @@ import com.aiepoissac.busapp.data.businfo.BusRepository
 import com.aiepoissac.busapp.data.businfo.BusRouteInfoWithBusStopInfo
 import java.io.IOException
 
+/**
+ * This class contains information of a segment of the Bus Journey.
+ *
+ * @param journeyID The ID of the journey this segment belongs to
+ * @param sequence The sequence of this segment within the journey
+ * @param serviceNo The bus service number
+ * @param direction The direction in which the bus travels (1 or 2)
+ * @param originBusStopSequence The sequence of the origin bus stop along the bus route
+ * @param destinationBusStopSequence The sequence of the destination bus stop along the bus route
+ */
 @Entity(
     tableName = "Bus_Journey_Info_Table",
     primaryKeys = ["journeyID", "sequence"]
@@ -20,6 +30,13 @@ data class JourneySegmentInfo (
     val destinationBusStopSequence: Int
 ) {
 
+    /**
+     * Check if the segment is the same as another segment in terms of
+     * only the origin, destination and bus service.
+     *
+     * @param other The other segment.
+     * @return True if the other segment is the same as this segment, false otherwise
+     */
     fun isSameJourneyAs(other: JourneySegmentInfo): Boolean {
         return serviceNo == other.serviceNo
                 && direction == other.direction
@@ -27,6 +44,14 @@ data class JourneySegmentInfo (
                 && destinationBusStopSequence == other.destinationBusStopSequence
     }
 
+    /**
+     * Add bus arrivals and bus routes information, including bus stop information,
+     * of the origin and destination to this journey segment.
+     *
+     * @param busRepository The repository of the bus data
+     * @param busArrivalGetter The bus arrival data source
+     * @return A pair containing the journey segment and the other data
+     */
     suspend fun attachBusArrivalsAndBusRouteWithBusStopInfo(
         busRepository: BusRepository,
         busArrivalGetter: BusArrivalGetter
@@ -40,6 +65,13 @@ data class JourneySegmentInfo (
         )
     }
 
+    /**
+     * Add bus bus routes information, including bus stop information,
+     * of the origin and destination to this journey segment.
+     *
+     * @param busRepository The repository of the bus data
+     * @return A pair containing the journey segment and the other data
+     */
     private suspend fun attachBusRouteWithBusStopInfo(
         busRepository: BusRepository
     ): Pair<JourneySegmentInfo, Pair<BusRouteInfoWithBusStopInfo, BusRouteInfoWithBusStopInfo>> {
@@ -63,6 +95,16 @@ data class JourneySegmentInfo (
     }
 }
 
+/**
+ * Add bus arrivals information to this journey segment including bus route and bus stop information,
+ * of the origin and destination.
+ *
+ * @param busJourneyWithBusRouteInfo The journey segment
+ * including bus route and bus stop information of the origin and destination
+ * @param busRepository The repository of the bus data
+ * @param busArrivalGetter The bus arrival data source
+ * @return A pair containing the journey segment and the other data
+ */
 suspend fun attachBusArrivalsToBusJourneyWithBusRouteInfo(
     busJourneyWithBusRouteInfo: Pair<JourneySegmentInfo, Pair<BusRouteInfoWithBusStopInfo, BusRouteInfoWithBusStopInfo>>,
     busRepository: BusRepository,

@@ -6,12 +6,18 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.net.URL
 
+/**
+ * This interface provides bus arrival data.
+ */
 interface BusArrivalGetter {
 
     suspend fun getBusArrival(busStopCode: String): BusStop
 
 }
 
+/**
+ * This class provides bus arrival data from the LTA API.
+ */
 class RealBusArrivalGetter : BusArrivalGetter {
 
     override suspend fun getBusArrival(busStopCode: String): BusStop {

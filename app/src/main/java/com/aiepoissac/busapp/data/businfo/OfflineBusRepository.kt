@@ -3,6 +3,15 @@ package com.aiepoissac.busapp.data.businfo
 import com.aiepoissac.busapp.data.mrtstation.MRTStation
 import com.aiepoissac.busapp.data.mrtstation.MRTStationDAO
 
+/**
+ * This class provides the implementation for interacting with the Bus Database
+ *
+ * @param busServiceInfoDAO The Data Access Object for BusServiceInfo/Bus_Services_Table
+ * @param busRouteInfoDAO The Data Access Object for BusRouteInfo/Bus_Routes_Table
+ * @param busStopInfoDAO The Data Access Object for BusStopInfo/Bus_Stops_Table
+ * @param mrtStationDAO The Data Access Object for MRTStation/MRT_Stations_Table
+ * @param plannedBusRouteInfoDAO The Data Access Object for PlannedBusRouteInfo/Planned_Bus_Routes_Table
+ */
 class OfflineBusRepository(
     private val busServiceInfoDAO: BusServiceInfoDAO,
     private val busRouteInfoDAO: BusRouteInfoDAO,

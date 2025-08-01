@@ -3,18 +3,33 @@ package com.aiepoissac.busapp.data.mrtstation
 import com.aiepoissac.busapp.data.businfo.getData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.net.URL
 
+/**
+ * This interface provides train service alerts data.
+ */
 interface TrainServiceAlertsGetter {
 
+    /**
+     * Get all lift maintenance data
+     *
+     * @return Lift maintenance data
+     */
     suspend fun getFacilitiesMaintenance(): FacilitiesMaintenance
 
+    /**
+     * Get all train service alerts data
+     *
+     * @return Train service alerts data
+     */
     suspend fun getTrainServiceAlerts(): TrainServiceAlerts
 
 }
 
+/**
+ * This class provides train service alerts data from the LTA API.
+ */
 class RealTrainServiceAlertsGetter: TrainServiceAlertsGetter {
     override suspend fun getFacilitiesMaintenance(): FacilitiesMaintenance {
         val json = withContext(Dispatchers.IO) {
@@ -29,6 +44,5 @@ class RealTrainServiceAlertsGetter: TrainServiceAlertsGetter {
         }
         return Json.decodeFromString<TrainServiceAlerts>(json)
     }
-
 
 }

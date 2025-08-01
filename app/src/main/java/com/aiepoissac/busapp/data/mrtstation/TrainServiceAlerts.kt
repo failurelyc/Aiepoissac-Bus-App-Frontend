@@ -18,6 +18,15 @@ data class TrainServiceAlerts(
     @SerialName("value") val value: TrainServiceAlertsInfo
 )
 
+/**
+ * This class contains detailed information on train service unavailability during scheduled
+ * operating hours, such as affected line and stations etc.
+ *
+ * @param status Indicates if train service is unavailable:
+ * • 1 (for Normal Train Service) • 2 (for Disrupted Train Service)
+ * @param affectedSegments information of a segment in the MRT network that is disrupted/delayed
+ * @param message Travel advisory notification service for train commuters, published by LTA.
+ */
 @Serializable
 data class TrainServiceAlertsInfo(
     @SerialName("Status") val status: Int,
@@ -25,6 +34,12 @@ data class TrainServiceAlertsInfo(
     @SerialName("Message") val message: List<TrainServiceAlertMessage>
 )
 
+/**
+ * This class contains Travel advisory notification service for train commuters, published by LTA.
+ *
+ * @param content The message contents
+ * @param createdDate The time this message was published
+ */
 @Serializable
 data class TrainServiceAlertMessage(
     @SerialName("Content") val content: String,

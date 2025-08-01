@@ -5,7 +5,7 @@ import androidx.room.Relation
 
 /**
  * This class contains information of the nth stop of a bus service,
- * and information of the bus stop
+ * including information of the bus stop
  *
  * @param busRouteInfo The route information of a bus service at this bus stop
  * @param busStopInfo The bus stop information

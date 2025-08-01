@@ -11,16 +11,30 @@ import com.google.android.gms.location.Priority
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
+/**
+ * This interface provides location data of the user.
+ */
 interface LocationRepository {
 
     val currentLocation: StateFlow<Location?>
 
+    /**
+     * Start fetching user location
+     *
+     * @param fastRefresh Whether to refresh the location frequently or less frequently
+     */
     fun startFetchingLocation(fastRefresh: Boolean)
 
+    /**
+     * Stop fetching user location
+     */
     fun stopFetchingLocation()
 
 }
 
+/**
+ * This class provides location data of the user using the phone GPS.
+ */
 class RealLocationRepository : LocationRepository {
 
     private val fastRefreshInterval = 2

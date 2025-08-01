@@ -1,5 +1,11 @@
 package com.aiepoissac.busapp.userdata
 
+/**
+ * This class provides the implementation for interacting with the local user data database.
+ *
+ * @param journeyInfoDAO The Data Access Object for JourneyInfo/Journey_Table
+ * @param journeySegmentInfoDAO The Data Access Object for JourneySegmentInfo/Journey_Segment_Table
+ */
 class OfflineUserDataRepository(
     private val journeyInfoDAO: JourneyInfoDAO,
     private val journeySegmentInfoDAO: JourneySegmentInfoDAO

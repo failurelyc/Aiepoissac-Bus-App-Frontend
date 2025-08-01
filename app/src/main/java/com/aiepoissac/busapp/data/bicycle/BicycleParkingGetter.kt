@@ -7,12 +7,24 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.net.URL
 
+/**
+ * This interface provides bicycle parking data.
+ */
 interface BicycleParkingGetter {
 
+    /**
+     * Gets all bicycle parking locations near the location provided.
+     *
+     * @param point The location
+     * @return A list of bicycle parking locations
+     */
     suspend fun getBicycleParking(point: HasCoordinates) : List<BicycleParking>
 
 }
 
+/**
+ * This class provides bicycle parking data from the LTA API.
+ */
 class RealBicycleParkingGetter : BicycleParkingGetter {
 
     override suspend fun getBicycleParking(point: HasCoordinates): List<BicycleParking> {
